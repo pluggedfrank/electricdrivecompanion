@@ -86,6 +86,33 @@ function parseArgs(argv) {
   return args;
 }
 
+/**
+ * Liest ein Zahlenargument und bricht bei Unsinn ab.
+ *
+ * Number(undefined) ergibt NaN, und jeder Vergleich mit NaN ist falsch. Ein
+ * fehlender Wert schaltet damit stillschweigend einen Filter ab, statt einen
+ * Fehler zu erzeugen. Genau das ist am 08.09.2026 passiert, als beim Aufräumen
+ * versehentlich eine Vorgabe verschwand: Die Korridorgrenze war weg, ohne dass
+ * sich etwas meldete.
+ */
+function numberArg(args, key, { required = true } = {}) {
+  const raw = args[key];
+  if (raw === undefined || raw === true) {
+    if (required) {
+      console.error(red(`--${key} braucht einen Zahlenwert.`));
+      process.exit(1);
+    }
+    return undefined;
+  }
+
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    console.error(red(`--${key}=${raw} ist keine Zahl.`));
+    process.exit(1);
+  }
+  return value;
+}
+
 function parseCoordinate(text, label) {
   const [lat, lon] = String(text).split(',').map(Number);
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
@@ -196,6 +223,14 @@ async function planRoute(apiKey, from, to) {
 
 async function main() {
   const args = parseArgs(process.argv);
+
+  // Zahlenargumente sofort prüfen, bevor 53 MB gelesen und Anfragen gestellt
+  // werden. Ein Tippfehler soll früh auffallen, nicht spät.
+  const zahl = {
+    corridor: numberArg(args, 'corridor'),
+    power: numberArg(args, 'power'),
+    examples: numberArg(args, 'examples'),
+  };
 
   const registerPath = resolveRegisterPath(args.register);
   if (!existsSync(registerPath)) {
@@ -314,8 +349,8 @@ async function main() {
   console.log(`${route.lengthKm.toFixed(0)} km, ${route.points.length} Stützpunkte`);
 
   // 3. Korridor
-  const corridorMeters = Number(args.corridor) * 1000;
-  const minPower = Number(args.power);
+  const corridorMeters = zahl.corridor * 1000;
+  const minPower = zahl.power;
 
   // --nearby=radius,abstand in Metern, für dichte Gebiete.
   const nearby = args.nearby
@@ -501,7 +536,7 @@ async function main() {
     console.log(green('Nichts. Die Suche findet alles, was das Register im Korridor führt.'));
   } else {
     const nachLeistung = [...missing].sort((a, b) => (b.maxPowerKW ?? 0) - (a.maxPowerKW ?? 0));
-    for (const standort of nachLeistung.slice(0, Number(args.examples))) {
+    for (const standort of nachLeistung.slice(0, zahl.examples)) {
       const geraete = standort.deviceCount > 1 ? `${standort.deviceCount}x ` : '    ';
       console.log(
         `  ${String(Math.round(standort.maxPowerKW ?? 0)).padStart(4)} kW  ${geraete}` +
@@ -512,8 +547,8 @@ async function main() {
           )
       );
     }
-    if (missing.length > Number(args.examples)) {
-      console.log(dim(`  ... und ${missing.length - Number(args.examples)} weitere`));
+    if (missing.length > zahl.examples) {
+      console.log(dim(`  ... und ${missing.length - zahl.examples} weitere`));
     }
 
     const betreiber = new Map();

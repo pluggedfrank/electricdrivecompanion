@@ -34,6 +34,7 @@ const DEFAULTS = {
   // Wie weit darf eine Station seitlich der Route liegen? Ohne diese Grenze
   // schleppt die Umkreissuche Innenstadt-Ladepunkte mit, fuer die niemand von
   // der Autobahn abfaehrt.
+  corridor: '2',
   // 270 Zeilen sind im Terminal unbrauchbar.
   show: '40',
 };
@@ -47,6 +48,33 @@ function parseArgs(argv) {
     args[key] = value ?? true;
   }
   return args;
+}
+
+/**
+ * Liest ein Zahlenargument und bricht bei Unsinn ab.
+ *
+ * Number(undefined) ergibt NaN, und jeder Vergleich mit NaN ist falsch. Ein
+ * fehlender Wert schaltet damit stillschweigend einen Filter ab, statt einen
+ * Fehler zu erzeugen. Genau das ist am 08.09.2026 passiert, als beim Aufräumen
+ * versehentlich eine Vorgabe verschwand: Die Korridorgrenze war weg, ohne dass
+ * sich etwas meldete.
+ */
+function numberArg(args, key, { required = true } = {}) {
+  const raw = args[key];
+  if (raw === undefined || raw === true) {
+    if (required) {
+      console.error(red(`--${key} braucht einen Zahlenwert.`));
+      process.exit(1);
+    }
+    return undefined;
+  }
+
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    console.error(red(`--${key}=${raw} ist keine Zahl.`));
+    process.exit(1);
+  }
+  return value;
 }
 
 function parseCoordinate(text, label) {
@@ -370,17 +398,28 @@ async function main() {
   const from = parseCoordinate(args.from, '--from');
   const to = parseCoordinate(args.to, '--to');
 
+  // Alle Zahlenargumente sofort prüfen, bevor eine einzige Anfrage rausgeht.
+  // Ein Tippfehler soll nicht erst 49 Anfragen kosten und dann abbrechen.
+  const zahl = {
+    detour: numberArg(args, 'detour'),
+    corridor: numberArg(args, 'corridor'),
+    availability: numberArg(args, 'availability'),
+    show: numberArg(args, 'show'),
+    segment: args.segment !== undefined ? numberArg(args, 'segment') : undefined,
+    power: args.power !== undefined ? numberArg(args, 'power') : undefined,
+  };
+
   const options = {
-    maxDetourSeconds: Number(args.detour) * 60,
+    maxDetourSeconds: zahl.detour * 60,
     // Nur setzen, wenn ausdrücklich angegeben. Sonst gilt die Vorgabe der
     // Bibliothek, und die hat einen Grund: Ein 100-km-Abschnitt lief im Test
     // ins 20-Treffer-Limit der Antwort, es blieben also Stationen unsichtbar.
-    ...(args.segment ? { segmentLengthMeters: Number(args.segment) * 1000 } : {}),
+    ...(args.segment ? { segmentLengthMeters: zahl.segment * 1000 } : {}),
     ...(args.query ? { query: args.query } : {}),
     ...(args.category ? { useCategoryFilter: true, categoryId: String(args.category) } : {}),
     ...(args.all ? { onlyEVStations: false } : {}),
     // --power=0 schaltet den Filter ab, --power=150 verlangt HPC.
-    ...(args.power !== undefined ? { minPowerKW: Number(args.power) } : {}),
+    ...(args.power !== undefined ? { minPowerKW: zahl.power } : {}),
     ...(args.fast ? { minPowerKW: ev.POWER_TIERS.hpc } : {}),
   };
 
@@ -464,7 +503,7 @@ async function main() {
   // Abstand. Die Umkreissuche liefert keinen Umweg mit, ohne das stuenden ihre
   // Treffer ohne jede Ortsangabe in der Liste und liessen sich nicht sortieren.
   const vorFilter = stationen.length;
-  stationen = corridor.orderAlongRoute(stationen, route.points, Number(args.corridor) * 1000);
+  stationen = corridor.orderAlongRoute(stationen, route.points, zahl.corridor * 1000);
   const verworfen = vorFilter - stationen.length;
 
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
@@ -473,7 +512,7 @@ async function main() {
   );
   if (verworfen > 0) {
     console.log(
-      dim(`${verworfen} weitere lagen mehr als ${args.corridor} km neben der Route und fielen raus`)
+      dim(`${verworfen} weitere lagen mehr als ${zahl.corridor} km neben der Route und fielen raus`)
     );
   }
   const grenze = options.minPowerKW ?? ev.DEFAULT_OPTIONS.minPowerKW;
@@ -509,7 +548,7 @@ async function main() {
   }
 
   // 4. Live-Belegung fuer die ersten N
-  const availabilityCount = Number(args.availability);
+  const availabilityCount = zahl.availability;
   if (availabilityCount > 0) {
     heading(`4. Live-Belegung der ersten ${availabilityCount}`);
     for (const item of annotated.slice(0, availabilityCount)) {
@@ -533,7 +572,7 @@ async function main() {
   }
 
   // 5. Ergebnis
-  const zeige = Number(args.show);
+  const zeige = zahl.show;
   const sichtbar = args['all-results'] ? annotated : annotated.slice(0, zeige);
   heading(`5. Ergebnis, in Fahrtrichtung sortiert${
     sichtbar.length < annotated.length ? ` (erste ${sichtbar.length} von ${annotated.length})` : ''
