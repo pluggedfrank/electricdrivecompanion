@@ -344,10 +344,29 @@ Delegates und Routenplanung folgen dem offiziellen Beispielprojekt
 kompiliert. Die Aufrufe wurden aus dem echten Quelltext übernommen, nicht aus
 der Erinnerung.
 
-**Nicht kompiliert.** Der Swift-Code hat nie einen Compiler gesehen, weil in der
-Entwicklungsumgebung weder Xcode noch eine Swift-Toolchain vorhanden ist. Beim
-ersten Build sind Fehler zu erwarten. Zwei Stellen sind die wahrscheinlichsten
-Kandidaten:
+**Erster Build gelaufen.** Am 08.09.2026 in Xcode gebaut. Drei Fehler, alle in
+`MapCoordinator.swift`, alle bei den Markern; die übrigen rund 2.300 Zeilen
+gingen durch. Die Fehler sind behoben, und zwar nicht durch Raten: Mit
+`tools/dump-sdk-api.sh` lässt sich die tatsächliche API aus den
+`.swiftinterface`-Dateien lesen, die Xcode beim Auflösen der Pakete ablegt.
+
+Was dabei herauskam, war in allen drei Fällen eine falsche Analogie meinerseits:
+
+| angenommen | tatsächlich |
+|---|---|
+| `map.addMarker(options)` | verlangt das Label `options:` |
+| `map.removeMarkers()` | `map.removeAnnotations()`, Marker sind Annotationen |
+| `MapInteraction.markerClicked` | `.tappedOnAnnotation(annotation:coordinate:)` |
+
+Zwei Stellen, die ich zuvor als riskant benannt hatte, `route.summary` und
+`RouteOptions.color`, kompilierten anstandslos.
+
+**Offen geblieben sind Warnungen.** Drei zur Actor-Isolation: `MapCoordinator`
+ist `@MainActor`, die Delegate-Protokolle des SDK sind es nicht. Im
+Swift-5-Modus sind das Warnungen, im Swift-6-Modus wären es Fehler. Dazu zwei
+Deprecation-Hinweise auf `RoutingError` und `RoutePlanningOptions`.
+
+Die alte Einschätzung, hier zur Nachvollziehbarkeit:
 
 1. `MapCoordinator.redrawMarkers()` benutzt `MarkerOptions(coordinate:pinImage:)`
    und `map.addMarker(_:)`. Diese Aufrufe stammen aus der Dokumentation, nicht

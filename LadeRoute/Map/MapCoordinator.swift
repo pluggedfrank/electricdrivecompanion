@@ -80,8 +80,11 @@ extension MapCoordinator: TomTomSDKMapDisplay.MapDelegate {
         switch interaction {
         case let .longPressed(coordinate):
             trip.setDestination(coordinate)
-        case let .markerClicked(marker):
-            selectStation(nearest: marker.coordinate)
+        case let .tappedOnAnnotation(_, coordinate):
+            // Es gibt keinen eigenen Marker-Fall. Getippt wurde auf eine
+            // Annotation, und die einzigen, die diese App setzt, sind die
+            // Stationsnadeln.
+            selectStation(nearest: coordinate)
         default:
             break
         }
@@ -89,15 +92,22 @@ extension MapCoordinator: TomTomSDKMapDisplay.MapDelegate {
 
     func map(_: TomTomMap, onCameraEvent _: CameraEvent) {}
 
-    /// Zuordnung über die Koordinate statt über die Marker-Identität. Das
-    /// funktioniert unabhängig davon, ob Marker ein Wert- oder Referenztyp ist.
+    /// Ordnet einen Tap der nächstgelegenen Stationsnadel zu.
+    ///
+    /// Die Koordinate im Ereignis ist die Stelle, an der getippt wurde, nicht
+    /// die Position der Nadel. Deshalb wird die nächste genommen und nicht auf
+    /// Gleichheit geprüft. Die Obergrenze fängt nur den Fall ab, dass der Tap
+    /// gar keiner unserer Nadeln galt.
+    ///
+    /// Sauberer wäre der Weg über das Tag, das beim Anlegen gesetzt wird. Das
+    /// setzt voraus, dass `Annotation` es herausgibt; sobald das geklärt ist,
+    /// schrumpft diese Methode auf eine Zeile.
     private func selectStation(nearest coordinate: CLLocationCoordinate2D) {
         let hit = markerCoordinates
             .map { ($0.id, GeoUtils.distance($0.coordinate, coordinate)) }
             .min { $0.1 < $1.1 }
 
-        // Ein Meter Toleranz reicht: die Koordinate stammt aus derselben Quelle.
-        if let hit, hit.1 < 1 {
+        if let hit, hit.1 < 500 {
             trip.selectStation(id: hit.0)
         }
     }
@@ -177,7 +187,8 @@ private extension MapCoordinator {
     func redrawMarkers() {
         guard let map else { return }
 
-        map.removeMarkers()
+        // Marker sind im SDK Annotationen, es gibt kein removeMarkers.
+        map.removeAnnotations()
         markerCoordinates.removeAll()
 
         for (index, annotated) in trip.stations.enumerated() {
