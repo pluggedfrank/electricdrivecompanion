@@ -35,11 +35,6 @@ final class MapCoordinator: NSObject {
     private var routeOnMap: TomTomSDKMapDisplay.Route?
     private var didCenterOnUser = false
     private var cancellables = Set<AnyCancellable>()
-
-    /// Koordinaten der gesetzten Nadeln, in derselben Reihenfolge wie
-    /// `trip.stations`. Ein angetippter Marker wird darüber wieder seiner
-    /// Station zugeordnet.
-    private var markerCoordinates: [(id: String, coordinate: CLLocationCoordinate2D)] = []
 }
 
 // MARK: - MapViewDelegate
@@ -80,37 +75,21 @@ extension MapCoordinator: TomTomSDKMapDisplay.MapDelegate {
         switch interaction {
         case let .longPressed(coordinate):
             trip.setDestination(coordinate)
-        case let .tappedOnAnnotation(_, coordinate):
+        case let .tappedOnAnnotation(annotation, _):
             // Es gibt keinen eigenen Marker-Fall. Getippt wurde auf eine
-            // Annotation, und die einzigen, die diese App setzt, sind die
-            // Stationsnadeln.
-            selectStation(nearest: coordinate)
+            // Annotation, und das Protokoll führt das Tag, das beim Anlegen
+            // die Stations-ID bekommen hat. Die Koordinate im Ereignis ist die
+            // Tap-Stelle, nicht die Nadel; über sie zu suchen wäre umständlich
+            // und ungenau.
+            if let id = annotation.tag {
+                trip.selectStation(id: id)
+            }
         default:
             break
         }
     }
 
     func map(_: TomTomMap, onCameraEvent _: CameraEvent) {}
-
-    /// Ordnet einen Tap der nächstgelegenen Stationsnadel zu.
-    ///
-    /// Die Koordinate im Ereignis ist die Stelle, an der getippt wurde, nicht
-    /// die Position der Nadel. Deshalb wird die nächste genommen und nicht auf
-    /// Gleichheit geprüft. Die Obergrenze fängt nur den Fall ab, dass der Tap
-    /// gar keiner unserer Nadeln galt.
-    ///
-    /// Sauberer wäre der Weg über das Tag, das beim Anlegen gesetzt wird. Das
-    /// setzt voraus, dass `Annotation` es herausgibt; sobald das geklärt ist,
-    /// schrumpft diese Methode auf eine Zeile.
-    private func selectStation(nearest coordinate: CLLocationCoordinate2D) {
-        let hit = markerCoordinates
-            .map { ($0.id, GeoUtils.distance($0.coordinate, coordinate)) }
-            .min { $0.1 < $1.1 }
-
-        if let hit, hit.1 < 500 {
-            trip.selectStation(id: hit.0)
-        }
-    }
 }
 
 // MARK: - Standort
@@ -189,7 +168,6 @@ private extension MapCoordinator {
 
         // Marker sind im SDK Annotationen, es gibt kein removeMarkers.
         map.removeAnnotations()
-        markerCoordinates.removeAll()
 
         for (index, annotated) in trip.stations.enumerated() {
             let image = MarkerImages.stationPin(
@@ -206,9 +184,9 @@ private extension MapCoordinator {
                 tag: annotated.id
             )
 
-            if (try? map.addMarker(options: options)) != nil {
-                markerCoordinates.append((annotated.id, annotated.station.coordinate))
-            }
+            // Der Rückgabewert wird nicht gebraucht: Adressiert wird über
+            // das Tag, entfernt wird über removeAnnotations().
+            _ = try? map.addMarker(options: options)
         }
     }
 }

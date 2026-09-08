@@ -358,6 +358,12 @@ Was dabei herauskam, war in allen drei Fällen eine falsche Analogie meinerseits
 | `map.removeMarkers()` | `map.removeAnnotations()`, Marker sind Annotationen |
 | `MapInteraction.markerClicked` | `.tappedOnAnnotation(annotation:coordinate:)` |
 
+Das Nachsehen hat den Code zusätzlich vereinfacht: Das Protokoll `Annotation`
+führt ein `tag`, und `MarkerOptions` nimmt es beim Anlegen entgegen. Die
+Stations-ID wandert also ins Tag und kommt beim Tap direkt zurück. Eine eigene
+Liste von Nadelkoordinaten und die Suche nach der nächstgelegenen entfallen
+ersatzlos.
+
 Zwei Stellen, die ich zuvor als riskant benannt hatte, `route.summary` und
 `RouteOptions.color`, kompilierten anstandslos.
 
