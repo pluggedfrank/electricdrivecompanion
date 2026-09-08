@@ -15,12 +15,12 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { stdin, stdout } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import * as ev from './lib/evsearch.mjs';
 import * as geo from './lib/geo.mjs';
 import * as editorial from './lib/editorial.mjs';
+import { resolveApiKey } from './lib/apikey.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -42,98 +42,6 @@ function parseArgs(argv) {
     args[key] = value ?? true;
   }
   return args;
-}
-
-// Platzhalter, die in Anleitungen stehen und versehentlich mitkopiert werden.
-const PLACEHOLDER_KEYS = new Set([
-  'IHR_KEY', 'DEIN_KEY', 'NEUER_KEY', 'MEIN_KEY',
-  'YOUR_API_KEY', 'YOUR_KEY', 'DEIN_API_KEY', 'API_KEY', 'KEY',
-]);
-
-/**
- * Prueft den Schluessel, bevor die erste Anfrage rausgeht.
- *
- * Ein Platzhalter ist nicht leer, kommt also durch jede Vorhandensein-Pruefung
- * und produziert dann ein 401, das nach einem kaputten Key aussieht. Ein
- * echter TomTom-Key besteht aus 32 alphanumerischen Zeichen.
- */
-function checkApiKey(key) {
-  if (PLACEHOLDER_KEYS.has(key.trim().toUpperCase())) {
-    return {
-      fatal: true,
-      message:
-        `"${key}" ist ein Platzhalter aus der Anleitung, kein Schluessel.\n` +
-        'Den echten Key eintragen: export TOMTOM_API_KEY=<32 Zeichen aus dem Dashboard>',
-    };
-  }
-  if (!/^[A-Za-z0-9]{20,}$/.test(key.trim())) {
-    return {
-      fatal: false,
-      message:
-        `Der Schluessel sieht ungewoehnlich aus (${key.trim().length} Zeichen). ` +
-        'Ein TomTom-Key hat 32 alphanumerische Zeichen.',
-    };
-  }
-  return null;
-}
-
-/**
- * Fragt den Schluessel im Terminal ab, ohne ihn anzuzeigen.
- *
- * Das raeumt zwei wiederkehrende Fehlerquellen ab: ein export gilt nur fuer das
- * eine Terminalfenster und ist im naechsten wieder weg, und ein Schluessel auf
- * der Kommandozeile landet in der Shell-History.
- *
- * Der Raw-Mode schaltet das Echo des Terminals ab, die getippten Zeichen werden
- * bewusst nirgends ausgegeben. Ohne Raw-Mode spiegelt das Terminal die Eingabe
- * selbst zurueck, dann steht der Schluessel doch wieder sichtbar da.
- *
- * Gibt null zurueck, wenn keine Eingabe moeglich ist, etwa in einer Pipeline.
- */
-function promptForKey() {
-  if (!stdin.isTTY || typeof stdin.setRawMode !== 'function') return Promise.resolve(null);
-
-  stdout.write('TomTom-Key (Eingabe bleibt unsichtbar): ');
-  stdin.setRawMode(true);
-  stdin.resume();
-  stdin.setEncoding('utf8');
-
-  return new Promise((resolve) => {
-    let buffer = '';
-
-    const cleanup = () => {
-      stdin.removeListener('data', onData);
-      stdin.setRawMode(false);
-      stdin.pause();
-      stdout.write('\n');
-    };
-
-    const onData = (chunk) => {
-      for (const character of chunk) {
-        switch (character) {
-          case '\r':
-          case '\n':
-          case '\u0004': // Ctrl+D
-            cleanup();
-            resolve(buffer.trim() || null);
-            return;
-          case '\u0003': // Ctrl+C
-            cleanup();
-            process.exit(130);
-            return;
-          case '\u007f': // Backspace
-          case '\b':
-            buffer = buffer.slice(0, -1);
-            break;
-          default:
-            // Steuerzeichen ignorieren, alles andere sammeln.
-            if (character >= ' ') buffer += character;
-        }
-      }
-    };
-
-    stdin.on('data', onData);
-  });
 }
 
 function parseCoordinate(text, label) {
@@ -477,20 +385,12 @@ async function main() {
     return;
   }
 
-  const apiKey = args.key || process.env.TOMTOM_API_KEY || (await promptForKey());
-  if (!apiKey) {
-    console.error(red('Kein Key.'));
-    console.error(dim('Entweder hier eingeben, --key=... setzen oder TOMTOM_API_KEY exportieren.'));
-    console.error(dim('Key anlegen: https://developer.tomtom.com/ -> Dashboard -> API Keys'));
-    process.exit(1);
-  }
-
-  const keyProblem = checkApiKey(apiKey);
-  if (keyProblem?.fatal) {
-    console.error(red(keyProblem.message));
-    process.exit(1);
-  }
-  if (keyProblem) console.error(dim(keyProblem.message + '\n'));
+  const apiKey = await resolveApiKey({
+    argumentKey: args.key,
+    onNotice: (text) => console.error(dim(text)),
+    onFatal: (text) => console.error(red(text)),
+  });
+  if (!apiKey) process.exit(1);
 
   // 1. Route
   heading('1. Route planen');

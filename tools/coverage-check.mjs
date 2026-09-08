@@ -29,6 +29,7 @@ import * as ev from './lib/evsearch.mjs';
 import * as geo from './lib/geo.mjs';
 import * as bnetza from './lib/bnetza.mjs';
 import * as corridor from './lib/corridor.mjs';
+import { resolveApiKey } from './lib/apikey.mjs';
 
 // Ohne --register wird im Download-Ordner gesucht. Ein Dateiname, den man
 // abtippen muss, ist eine Fehlerquelle ohne Gegenwert.
@@ -296,11 +297,13 @@ async function main() {
     return;
   }
 
-  const apiKey = args.key || process.env.TOMTOM_API_KEY;
-  if (!apiKey) {
-    console.error(red('\nKein TomTom-Key. --key=... setzen oder TOMTOM_API_KEY exportieren.'));
-    process.exit(1);
-  }
+  console.log('');
+  const apiKey = await resolveApiKey({
+    argumentKey: args.key,
+    onNotice: (text) => console.error(dim(text)),
+    onFatal: (text) => console.error(red(text)),
+  });
+  if (!apiKey) process.exit(1);
 
   // 2. Route
   heading('2. Route planen');

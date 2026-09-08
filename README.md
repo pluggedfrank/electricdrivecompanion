@@ -317,7 +317,8 @@ electricdrivecompanion/
     Features/                  ViewModel und Oberfläche
     Resources/                 editorial-stations.json
   tools/
-    lib/                       dieselbe Logik in JavaScript
+    lib/                       dieselbe Logik in JavaScript, dazu Registerleser
+                               und Korridorfilter
     test/                      68 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
