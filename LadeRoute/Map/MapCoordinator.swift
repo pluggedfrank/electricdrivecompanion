@@ -186,9 +186,13 @@ private extension MapCoordinator {
                 hasEditorial: annotated.hasEditorialContent,
                 isSelected: annotated.id == trip.selectedStationID
             )
+            // Das Tag ist der vom SDK vorgesehene Weg, einen Marker
+            // wiederzuerkennen: MarkerOptions führt es als let, und
+            // zoomToMarkers(tag:) adressiert darüber.
             let options = MarkerOptions(
                 coordinate: annotated.station.coordinate,
-                pinImage: image
+                pinImage: image,
+                tag: annotated.id
             )
 
             if (try? map.addMarker(options: options)) != nil {
