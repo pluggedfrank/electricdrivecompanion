@@ -64,7 +64,7 @@ node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 73 Tests
+npm test                            # 79 Tests
 ```
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
@@ -214,8 +214,9 @@ TomTom **zweimal** und stellt beide Ergebnisse gegenüber:
 
 | Lauf | Parameter | wozu |
 |---|---|---|
-| Vorgabewerte | 50-km-Abschnitte, 10 min Umweg | was die App tatsächlich zeigt |
-| betont großzügig | 20-km-Abschnitte, 30 min Umweg | was TomTom überhaupt kennt |
+| Along-Route, Vorgabe | 50-km-Abschnitte, 10 min Umweg | was die App tatsächlich zeigt |
+| Along-Route, großzügig | 20-km-Abschnitte, 30 min Umweg | ob die Umwegschwelle der Engpass ist |
+| **+ Umkreissuchen** | 5-km-Umkreise alle 8 km | was zusätzlich erreichbar ist |
 
 Die Differenz trennt Datenlücke von Suchmechanik. Was auch großzügig nicht
 auftaucht, ist eine echte Lücke; alles davor ist eine Frage der Parameter.
@@ -230,6 +231,29 @@ welche Spalte es wie zugeordnet hat, denn die Spaltennamen des Registers
 als ein Abbruch. Und es sagt dazu, dass das Register auch Firmenparkplätze und
 Hotelstellplätze führt, die für eine Durchgangsfahrt ohne Belang sind. Ein
 Rückstand gegenüber dem Register ist also nicht automatisch ein Mangel.
+
+### Das Ergebnis der ersten Messung
+
+Meerbusch nach Norddeich, 321 km, Zwei-Kilometer-Korridor, alles ab 50 kW.
+118 Standorte im Register, gemessen am 08.09.2026:
+
+| Entfernung zur Route | Trefferquote der Along-Route-Suche |
+|---|---|
+| bis 250 m | 97 % (34 von 35) |
+| 250 bis 500 m | 95 % (20 von 21) |
+| 500 bis 1000 m | 29 % (6 von 21) |
+| über 1000 m | **0 % (0 von 41)** |
+
+**Die Daten sind nicht das Problem, die Suche ist schmal.** Innerhalb von
+500 m deckt TomTom das amtliche Register nahezu vollständig ab. Jenseits von
+einem Kilometer liefert `searchAlongRoute` nichts, und daran ändert auch eine
+Umwegschwelle von 30 Minuten nichts. TomTom legt offenbar einen festen
+geometrischen Korridor um die Route, unabhängig vom erlaubten Umweg.
+
+Daraus folgt der Bauplan: Die Along-Route-Suche bleibt, weil sie den Umweg
+kennt und danach sortiert. Für alles, was weiter abseits liegt, kommen
+Umkreissuchen dazu. Die fragen Luftlinie statt Umweg ab und liefern bis zu 100
+Treffer statt 20.
 
 ### Eine zweite Live-Quelle
 
@@ -263,7 +287,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 73 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 79 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -331,7 +355,7 @@ electricdrivecompanion/
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
-    test/                      73 Tests gegen Fixtures
+    test/                      79 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
 ```

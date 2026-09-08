@@ -2,7 +2,7 @@
 // Spiegelt LadeRoute/TomTom/TomTomAPIClient.swift: Anfrage bauen, Antwort in
 // das Domänenmodell übersetzen.
 
-import { downsample, splitIntoSegments } from './geo.mjs';
+import { coveredCorridorWidth, downsample, samplePointsAlongRoute, splitIntoSegments } from './geo.mjs';
 
 export const BASE_URL = 'https://api.tomtom.com';
 export const EV_STATION_CATEGORY = '7309';
@@ -89,6 +89,23 @@ export const DEFAULT_OPTIONS = {
   spreadResults: true,
   // Pause zwischen zwei Anfragen, damit das Tempolimit nicht greift.
   requestIntervalMs: MIN_REQUEST_INTERVAL_MS,
+
+  // --- Umkreissuche ---
+  // Gemessen am 08.09.2026 gegen das amtliche Register: Die Along-Route-Suche
+  // deckt bis 500 m neben der Route 95 bis 97 Prozent ab, jenseits von 1000 m
+  // exakt null. Auch 30 Minuten erlaubter Umweg aendern daran nichts, TomTom
+  // legt offenbar einen festen geometrischen Korridor um die Route. Wer die
+  // Ladeparks etwas abseits sehen will, braucht deshalb zusaetzlich
+  // Umkreissuchen entlang der Strecke.
+  nearbyRadiusMeters: 5000,
+  // Radius und Abstand haengen zusammen: Der abgedeckte Korridor betraegt
+  // sqrt(R^2 - (Abstand/2)^2). Bei 5000 m Radius und 8000 m Abstand sind das
+  // 3000 m, also mehr als die 2 km, um die es geht. Zu grosse Abstaende
+  // reissen Luecken zwischen die Kreise.
+  nearbySpacingMeters: 8000,
+  // poiSearch liefert bis zu 100 Treffer, deutlich mehr als die 20 der
+  // Along-Route-Suche.
+  nearbyLimit: 100,
 };
 
 /**
@@ -119,6 +136,68 @@ export function buildAlongRouteURL(apiKey, options = {}) {
 /** Request-Body der Along-Route-Suche. */
 export function buildRouteBody(points) {
   return { route: { points: points.map((p) => ({ lat: p.lat, lon: p.lon })) } };
+}
+
+/**
+ * Baut die URL einer Umkreissuche.
+ *
+ * poiSearch statt searchAlongRoute: Hier zaehlt nicht der Umweg, sondern die
+ * Luftlinie, und genau das brauchen wir fuer die Ladeparks, die die
+ * Along-Route-Suche nicht mehr erfasst.
+ */
+export function buildNearbySearchURL(apiKey, point, options = {}) {
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const query = encodeURIComponent(opts.query);
+  const url = new URL(`${BASE_URL}/search/2/poiSearch/${query}.json`);
+
+  url.searchParams.set('key', apiKey);
+  url.searchParams.set('lat', String(point.lat));
+  url.searchParams.set('lon', String(point.lon));
+  url.searchParams.set('radius', String(Math.round(opts.nearbyRadiusMeters)));
+  url.searchParams.set('limit', String(Math.min(opts.nearbyLimit, 100)));
+  if (opts.useCategoryFilter) url.searchParams.set('categorySet', opts.categoryId ?? EV_STATION_CATEGORY);
+  if (opts.minPowerKW) url.searchParams.set('minPowerKW', String(opts.minPowerKW));
+  if (opts.connectorTypes.length > 0) {
+    url.searchParams.set('connectorSet', opts.connectorTypes.join(','));
+  }
+
+  return url.toString();
+}
+
+/**
+ * Sucht im Umkreis von Punkten entlang der Route.
+ *
+ * Ergaenzung zur Along-Route-Suche, kein Ersatz: Die kennt den Umweg und
+ * sortiert danach, was fuer die Reihenfolge wertvoll ist. Die Umkreissuche
+ * holt dafuer, was etwas weiter abseits liegt.
+ */
+export async function searchAroundRoute(apiKey, routeGeometry, options = {}, fetchImpl = fetch) {
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const sleepImpl = opts.sleepImpl ?? sleep;
+
+  const points = samplePointsAlongRoute(routeGeometry, opts.nearbySpacingMeters);
+  const merged = new Map();
+
+  for (const [index, point] of points.entries()) {
+    if (index > 0 && opts.requestIntervalMs > 0) await sleepImpl(opts.requestIntervalMs);
+
+    const url = buildNearbySearchURL(apiKey, point, opts);
+    const response = await requestWithRetry(fetchImpl, url, {}, { sleepImpl });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`TomTom antwortet mit ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    for (const station of parseAlongRouteResponse(await response.json(), opts)) {
+      if (!merged.has(station.id)) merged.set(station.id, station);
+    }
+  }
+
+  return {
+    stations: [...merged.values()],
+    requestCount: points.length,
+    coveredCorridorMeters: coveredCorridorWidth(opts.nearbyRadiusMeters, opts.nearbySpacingMeters),
+  };
 }
 
 export function buildAvailabilityURL(apiKey, availabilityID) {

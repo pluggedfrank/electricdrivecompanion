@@ -138,3 +138,46 @@ export function pathLength(coordinates) {
   }
   return total;
 }
+
+/**
+ * Setzt entlang der Route alle `spacingMeters` einen Punkt.
+ *
+ * Anders als beim Ausduennen geht es hier nicht um die Form der Linie, sondern
+ * um gleichmaessige Abstaende: Diese Punkte werden zu Mittelpunkten von
+ * Umkreissuchen. Anfang und Ende sind immer dabei.
+ */
+export function samplePointsAlongRoute(coordinates, spacingMeters) {
+  if (coordinates.length === 0) return [];
+  if (coordinates.length === 1 || spacingMeters <= 0) return [coordinates[0]];
+
+  const samples = [coordinates[0]];
+  let sinceLast = 0;
+
+  for (let i = 1; i < coordinates.length; i++) {
+    sinceLast += distance(coordinates[i - 1], coordinates[i]);
+    if (sinceLast >= spacingMeters) {
+      samples.push(coordinates[i]);
+      sinceLast = 0;
+    }
+  }
+
+  const last = coordinates[coordinates.length - 1];
+  const lastSample = samples[samples.length - 1];
+  if (lastSample.lat !== last.lat || lastSample.lon !== last.lon) samples.push(last);
+
+  return samples;
+}
+
+/**
+ * Welche Korridorbreite deckt eine Kette von Umkreisen ab?
+ *
+ * Zwei benachbarte Kreise mit Radius R im Abstand S ueberlappen sich so, dass
+ * ein Punkt im senkrechten Abstand d noch erfasst wird, solange
+ * sqrt((S/2)^2 + d^2) <= R gilt. Daraus folgt die abgedeckte Breite. Wird sie
+ * negativ, klaffen zwischen den Kreisen Luecken.
+ */
+export function coveredCorridorWidth(radiusMeters, spacingMeters) {
+  const half = spacingMeters / 2;
+  const squared = radiusMeters * radiusMeters - half * half;
+  return squared <= 0 ? 0 : Math.sqrt(squared);
+}

@@ -347,27 +347,62 @@ async function main() {
 
   const laeufe = [
     {
-      label: 'Vorgabewerte',
-      options: { minPowerKW: minPower },
+      label: 'Along-Route, Vorgabe',
       note: '50-km-Abschnitte, 10 min Umweg',
+      run: async () => {
+        const r = await ev.searchAlongRoute(apiKey, route.points, { minPowerKW: minPower });
+        return { stations: r.stations, requests: r.requests.length };
+      },
     },
     {
-      label: 'betont großzügig',
-      options: { minPowerKW: minPower, segmentLengthMeters: 20000, maxDetourSeconds: 1800 },
+      label: 'Along-Route, großzügig',
       note: '20-km-Abschnitte, 30 min Umweg',
+      run: async () => {
+        const r = await ev.searchAlongRoute(apiKey, route.points, {
+          minPowerKW: minPower,
+          segmentLengthMeters: 20000,
+          maxDetourSeconds: 1800,
+        });
+        return { stations: r.stations, requests: r.requests.length };
+      },
+    },
+    {
+      // Der Vorschlag, der sich aus der Entfernungsaufschlüsselung ergibt.
+      label: 'Along-Route + Umkreissuchen',
+      note: `Umkreise mit ${ev.DEFAULT_OPTIONS.nearbyRadiusMeters / 1000} km Radius ` +
+        `alle ${ev.DEFAULT_OPTIONS.nearbySpacingMeters / 1000} km`,
+      run: async () => {
+        const entlang = await ev.searchAlongRoute(apiKey, route.points, { minPowerKW: minPower });
+        const umkreis = await ev.searchAroundRoute(apiKey, route.points, { minPowerKW: minPower });
+
+        const zusammen = new Map();
+        for (const station of [...entlang.stations, ...umkreis.stations]) {
+          if (!zusammen.has(station.id)) zusammen.set(station.id, station);
+        }
+        return {
+          stations: [...zusammen.values()],
+          requests: entlang.requests.length + umkreis.requestCount,
+          coveredCorridorMeters: umkreis.coveredCorridorMeters,
+        };
+      },
     },
   ];
 
   const ergebnisse = [];
   for (const lauf of laeufe) {
     const t0 = Date.now();
-    const result = await ev.searchAlongRoute(apiKey, route.points, lauf.options);
+    const result = await lauf.run();
     const dauer = ((Date.now() - t0) / 1000).toFixed(0);
-    ergebnisse.push({ ...lauf, stations: result.stations, requests: result.requests.length });
+    ergebnisse.push({ ...lauf, ...result });
     console.log(
       `${String(result.stations.length).padStart(4)} Stationen  ${bold(lauf.label)}  ` +
-        dim(`(${lauf.note}, ${result.requests.length} Anfragen, ${dauer} s)`)
+        dim(`(${lauf.note}, ${result.requests} Anfragen, ${dauer} s)`)
     );
+    if (result.coveredCorridorMeters) {
+      console.log(
+        dim(`      deckt rechnerisch einen Korridor von ${Math.round(result.coveredCorridorMeters)} m ab`)
+      );
+    }
   }
 
   // 5. Abgleich
@@ -384,36 +419,47 @@ async function main() {
     );
   }
 
-  const [vorgabe, grosszuegig] = ergebnisse;
-  const gewinn = grosszuegig.matched.length - vorgabe.matched.length;
+  const [vorgabe, grosszuegig, kombiniert] = ergebnisse;
 
   console.log('');
-  if (gewinn > 0) {
+  const gewinnUmweg = grosszuegig.matched.length - vorgabe.matched.length;
+  const gewinnUmkreis = kombiniert.matched.length - vorgabe.matched.length;
+
+  if (gewinnUmweg <= 0) {
     console.log(
-      `${amber('Suchmechanik statt Datenlücke:')} ${gewinn} Stationen kommen allein durch ` +
-        'kleinere Abschnitte und mehr erlaubten Umweg dazu.'
-    );
-    console.log(
-      dim('Das 20-Treffer-Limit je Antwort ist der wahrscheinlichste Grund, warum in Apps\n' +
-        'Ladepunkte fehlen. Es liegt nicht an der Datenbank.')
+      dim('Mehr erlaubter Umweg und kleinere Abschnitte bringen nichts. Die Umwegschwelle\n' +
+        'ist also nicht der Engpass.')
     );
   } else {
-    console.log(dim('Großzügigere Suchparameter bringen nichts. Was fehlt, fehlt in den Daten.'));
+    console.log(`${amber('Umwegschwelle wirkt:')} ${gewinnUmweg} Standorte mehr.`);
   }
 
-  // 6. Was auch großzügig nicht gefunden wird
-  const missing = grosszuegig.missing;
+  if (gewinnUmkreis > 0) {
+    const faktor = (kombiniert.matched.length / Math.max(vorgabe.matched.length, 1)).toFixed(2);
+    console.log(
+      `${green('Umkreissuchen wirken:')} ${gewinnUmkreis} Standorte mehr als mit der ` +
+        `Along-Route-Suche allein, Faktor ${faktor}.`
+    );
+    console.log(
+      dim(`Preis dafür: ${kombiniert.requests - vorgabe.requests} zusätzliche Anfragen je Route.`)
+    );
+  } else {
+    console.log(dim('Auch Umkreissuchen bringen nichts. Dann fehlt es wirklich in den Daten.'));
+  }
 
-  // Die entscheidende Aufschlüsselung: Wenn die Trefferquote mit der Entfernung
-  // zur Route einbricht, ist es eine Frage des Suchradius und keine Datenlücke.
+  // 6. Wo die Treffer verloren gehen
   heading('6. Trefferquote nach Entfernung zur Route');
+  // Bewertet wird der beste Lauf, sonst misst man die schlechtere Methode.
+  const bester = ergebnisse.reduce((a, b) => (b.matched.length > a.matched.length ? b : a));
+  const missing = bester.missing;
+  console.log(dim(`Grundlage: Lauf "${bester.label}"`));
   const stufen = [
     { label: 'bis 250 m', min: 0, max: 250 },
     { label: '250 bis 500 m', min: 250, max: 500 },
     { label: '500 bis 1000 m', min: 500, max: 1000 },
     { label: 'über 1000 m', min: 1000, max: Infinity },
   ];
-  const gefundeneIds = new Set(grosszuegig.matched);
+  const gefundeneIds = new Set(bester.matched);
   for (const stufe of stufen) {
     const inStufe = standorte.filter(
       (s) =>
@@ -428,7 +474,7 @@ async function main() {
     );
   }
 
-  heading(`7. Auch großzügig nicht gefunden: ${missing.length} Standorte`);
+  heading(`7. Auch im besten Lauf nicht gefunden: ${missing.length} Standorte`);
 
   if (missing.length === 0) {
     console.log(green('Nichts. Die Suche findet alles, was das Register im Korridor führt.'));

@@ -773,3 +773,74 @@ test('der Standort erbt die kürzeste Entfernung zur Route', () => {
 test('ohne Einträge gibt es keine Standorte', () => {
   assert.deepEqual(sites.clusterSites([], 75), []);
 });
+
+
+// ============================================================= Umkreissuche
+
+test('die Route wird gleichmäßig abgetastet, Anfang und Ende inklusive', () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 2000);
+  const punkte = geo.samplePointsAlongRoute(route, 8000);
+
+  assert.deepEqual(punkte[0], route[0]);
+  assert.deepEqual(punkte.at(-1), route.at(-1));
+
+  // Die Abstände dürfen die Vorgabe nicht deutlich überschreiten, sonst
+  // klaffen zwischen den Umkreisen Lücken.
+  for (let i = 1; i < punkte.length - 1; i++) {
+    const d = geo.distance(punkte[i - 1], punkte[i]);
+    assert.ok(d <= 8000 * 1.2, `Abstand ${d.toFixed(0)} m zwischen ${i - 1} und ${i}`);
+  }
+
+  const laenge = geo.pathLength(route);
+  assert.ok(punkte.length >= Math.floor(laenge / 8000), 'zu wenige Abtastpunkte');
+});
+
+test('die Deckungsformel bestraft zu große Abstände', () => {
+  // Kreise mit 5 km Radius alle 8 km decken einen 3 km breiten Korridor ab.
+  assert.equal(Math.round(geo.coveredCorridorWidth(5000, 8000)), 3000);
+  // Liegen sie weiter auseinander als zwei Radien, bleibt nichts übrig.
+  assert.equal(geo.coveredCorridorWidth(2000, 5000), 0);
+});
+
+test('die Vorgabewerte decken den Zwei-Kilometer-Korridor ab', () => {
+  const gedeckt = geo.coveredCorridorWidth(
+    ev.DEFAULT_OPTIONS.nearbyRadiusMeters,
+    ev.DEFAULT_OPTIONS.nearbySpacingMeters
+  );
+  assert.ok(gedeckt >= 2000, `nur ${gedeckt.toFixed(0)} m gedeckt`);
+});
+
+test('die Umkreissuche fragt Luftlinie ab, nicht Umweg', () => {
+  const url = new URL(ev.buildNearbySearchURL('KEY', { lat: 51.5, lon: 6.5 }));
+  assert.ok(url.pathname.includes('/poiSearch/'), url.pathname);
+  assert.equal(url.searchParams.get('lat'), '51.5');
+  assert.equal(url.searchParams.get('radius'), '5000');
+  assert.equal(url.searchParams.get('maxDetourTime'), null);
+});
+
+test('die Umkreissuche holt bis zu 100 Treffer statt 20', () => {
+  const url = new URL(ev.buildNearbySearchURL('KEY', { lat: 51.5, lon: 6.5 }));
+  assert.equal(url.searchParams.get('limit'), '100');
+});
+
+test('Treffer aus mehreren Umkreisen werden zusammengeführt', async () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 1000);
+  let calls = 0;
+  const mockFetch = async (url) => {
+    calls++;
+    assert.ok(String(url).includes('poiSearch'));
+    return { ok: true, json: async () => fixture('alongroute-response.json') };
+  };
+
+  const result = await ev.searchAroundRoute(
+    'KEY',
+    route,
+    { sleepImpl: noSleep },
+    mockFetch
+  );
+
+  assert.equal(calls, result.requestCount);
+  assert.ok(result.requestCount > 20, `nur ${result.requestCount} Umkreise auf 264 km`);
+  assert.equal(result.stations.length, 5, 'Dubletten wurden nicht zusammengeführt');
+  assert.ok(result.coveredCorridorMeters >= 2000);
+});
