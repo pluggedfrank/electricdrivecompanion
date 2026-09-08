@@ -229,9 +229,19 @@ async function main() {
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
   console.log(
-    `${register.entries.length.toLocaleString('de-DE')} Einträge in ${seconds} s` +
-      (register.skipped ? `, ${register.skipped} ohne Koordinaten übersprungen` : '')
+    `${register.entries.length.toLocaleString('de-DE')} Einträge aus ` +
+      `${register.rowCount.toLocaleString('de-DE')} Datensätzen, in ${seconds} s`
   );
+  if (register.multiLineFields > 0) {
+    // Beleg dafuer, dass zeichenweises Lesen noetig ist: Das Register fuehrt
+    // den Public Key fuers Eichrecht als mehrzeiligen Block im Feld.
+    console.log(
+      dim(
+        `${register.multiLineFields.toLocaleString('de-DE')} Datensätze enthalten ein Feld ` +
+          'mit Zeilenumbruch (Public Key fürs Eichrecht).'
+      )
+    );
+  }
   // Die Spaltenzuordnung wird immer ausgegeben. Eine stille Fehlzuordnung
   // waere schlimmer als ein Abbruch, und die Spaltennamen aendern sich.
   console.log(dim(`Kopfzeile in Zeile ${register.headerIndex + 1}. Erkannte Spalten:`));

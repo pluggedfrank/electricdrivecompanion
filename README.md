@@ -64,7 +64,7 @@ node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 64 Tests
+npm test                            # 68 Tests
 ```
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
@@ -251,7 +251,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 64 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 68 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -318,7 +318,7 @@ electricdrivecompanion/
     Resources/                 editorial-stations.json
   tools/
     lib/                       dieselbe Logik in JavaScript
-    test/                      64 Tests gegen Fixtures
+    test/                      68 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
 ```

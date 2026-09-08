@@ -53,31 +53,84 @@ export function readRegisterFile(path) {
   return buffer.toString('latin1');
 }
 
-/** Zerlegt eine Zeile in Felder, respektiert Anführungszeichen. */
-export function splitRow(line, separator = ';') {
-  const fields = [];
+/**
+ * Zerlegt die gesamte Datei in Datensätze.
+ *
+ * Zeichenweise statt erst nach Zeilen und dann nach Feldern. Das ist der
+ * entscheidende Unterschied bei dieser Datei: Sie führt eine Public-Key-Spalte
+ * für das Eichrecht, und dieser Schlüssel steht als mehrzeiliger Hex-Block im
+ * Feld. Wer erst an Zeilenumbrüchen trennt, zerreißt jeden solchen Datensatz
+ * und verliert ihn. Innerhalb von Anführungszeichen ist ein Zeilenumbruch
+ * deshalb Teil des Feldes, nicht das Ende des Datensatzes.
+ *
+ * `maxFieldLength` ist eine Reißleine: Bleibt ein Anführungszeichen unpaarig,
+ * würde der Rest der Datei in ein Feld laufen. Dann wird das Zeichen als
+ * gewöhnliches Zeichen behandelt und ab dem nächsten Zeilenumbruch neu
+ * aufgesetzt.
+ */
+export function parseRows(content, separator = ';', maxFieldLength = 200000) {
+  const rows = [];
+  let fields = [];
   let current = '';
   let inQuotes = false;
 
-  for (let i = 0; i < line.length; i++) {
-    const character = line[i];
-    if (character === '"') {
-      // Zwei Anführungszeichen hintereinander sind ein echtes Zeichen.
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
+  const endRow = () => {
+    fields.push(current);
+    rows.push(fields);
+    fields = [];
+    current = '';
+  };
+
+  for (let i = 0; i < content.length; i++) {
+    const character = content[i];
+
+    if (inQuotes) {
+      if (character === '"') {
+        // Zwei Anführungszeichen hintereinander sind ein echtes Zeichen.
+        if (content[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else if (current.length > maxFieldLength && character === '\n') {
+        // Reißleine: Das Anführungszeichen war offenbar keines.
+        inQuotes = false;
+        endRow();
       } else {
-        inQuotes = !inQuotes;
+        current += character;
       }
-    } else if (character === separator && !inQuotes) {
-      fields.push(current);
-      current = '';
-    } else {
-      current += character;
+      continue;
+    }
+
+    switch (character) {
+      case '"':
+        inQuotes = true;
+        break;
+      case separator:
+        fields.push(current);
+        current = '';
+        break;
+      case '\r':
+        break; // CRLF: das \n erledigt den Zeilenwechsel
+      case '\n':
+        endRow();
+        break;
+      default:
+        current += character;
     }
   }
-  fields.push(current);
-  return fields;
+
+  if (current !== '' || fields.length > 0) endRow();
+
+  // Leerzeilen tragen nichts bei.
+  return rows.filter((row) => row.some((field) => field.trim() !== ''));
+}
+
+/** Zerlegt eine einzelne Zeile. Nur noch für Tests und Einzelfälle. */
+export function splitRow(line, separator = ';') {
+  const rows = parseRows(line, separator);
+  return rows[0] ?? [''];
 }
 
 /**
@@ -86,9 +139,9 @@ export function splitRow(line, separator = ';') {
  * Erkennungsmerkmal sind die beiden Koordinatenspalten: Ohne sie ist die Datei
  * für uns ohnehin wertlos, und keine Vorspannzeile enthält beide.
  */
-export function findHeaderRow(lines, separator = ';') {
-  for (let i = 0; i < Math.min(lines.length, 40); i++) {
-    const fields = splitRow(lines[i], separator).map(normalize);
+export function findHeaderRow(rows) {
+  for (let i = 0; i < Math.min(rows.length, 40); i++) {
+    const fields = rows[i].map(normalize);
     const hasLat = fields.some((f) => COLUMN_HINTS.latitude.some((h) => f.includes(h)));
     const hasLon = fields.some((f) => COLUMN_HINTS.longitude.some((h) => f.includes(h)));
     if (hasLat && hasLon) return { index: i, fields };
@@ -160,9 +213,9 @@ export function isPlausibleGermanCoordinate(lat, lon) {
  */
 export function parseRegister(content, options = {}) {
   const separator = options.separator ?? ';';
-  const lines = content.split(/\r?\n/);
+  const rows = parseRows(content, separator);
 
-  const header = findHeaderRow(lines, separator);
+  const header = findHeaderRow(rows);
   if (!header) {
     throw new Error(
       'Keine Kopfzeile mit Breiten- und Längengrad gefunden. ' +
@@ -179,8 +232,8 @@ export function parseRegister(content, options = {}) {
 
   const entries = [];
   const columnCount = header.fields.length;
-  // Warum eine Zeile wegfaellt, gehoert protokolliert. Eine hohe Ausschussquote
-  // ohne Begruendung ist ein Messfehler, kein Ergebnis.
+  // Warum ein Datensatz wegfaellt, gehoert protokolliert. Eine hohe
+  // Ausschussquote ohne Begruendung ist ein Messfehler, kein Ergebnis.
   const skipReasons = {
     leereKoordinate: 0,
     unlesbareKoordinate: 0,
@@ -188,20 +241,26 @@ export function parseRegister(content, options = {}) {
     spaltenzahlWeicht: 0,
   };
   const skipSamples = [];
+  let multiLineFields = 0;
 
-  const noteSkip = (reason, line) => {
+  const noteSkip = (reason, row) => {
     skipReasons[reason]++;
-    if (skipSamples.length < 5) skipSamples.push({ reason, line: line.slice(0, 160) });
+    if (skipSamples.length < 5) {
+      skipSamples.push({ reason, line: row.join(separator).slice(0, 160) });
+    }
   };
 
-  for (let i = header.index + 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const fields = splitRow(lines[i], separator);
+  for (let i = header.index + 1; i < rows.length; i++) {
+    const fields = rows[i];
 
-    if (Math.abs(fields.length - columnCount) > 2) {
-      noteSkip('spaltenzahlWeicht', lines[i]);
+    // Nach dem Umbau auf zeichenweises Lesen darf die Spaltenzahl exakt
+    // stimmen. Weicht sie ab, ist der Datensatz wirklich kaputt.
+    if (fields.length !== columnCount) {
+      noteSkip('spaltenzahlWeicht', fields);
       continue;
     }
+
+    if (fields.some((field) => field.includes('\n'))) multiLineFields++;
 
     const rawLat = fields[columns.latitude];
     const rawLon = fields[columns.longitude];
@@ -210,11 +269,11 @@ export function parseRegister(content, options = {}) {
 
     if (lat == null || lon == null) {
       const leer = !String(rawLat ?? '').trim() || !String(rawLon ?? '').trim();
-      noteSkip(leer ? 'leereKoordinate' : 'unlesbareKoordinate', lines[i]);
+      noteSkip(leer ? 'leereKoordinate' : 'unlesbareKoordinate', fields);
       continue;
     }
     if (!isPlausibleGermanCoordinate(lat, lon)) {
-      noteSkip('unplausibleKoordinate', lines[i]);
+      noteSkip('unplausibleKoordinate', fields);
       continue;
     }
 
@@ -246,6 +305,10 @@ export function parseRegister(content, options = {}) {
     headerIndex: header.index,
     headerFields: header.fields,
     columnCount,
+    rowCount: rows.length - header.index - 1,
+    // Wie viele Datensaetze ein Feld mit Zeilenumbruch enthalten. Beleg dafuer,
+    // dass das zeichenweise Lesen noetig war.
+    multiLineFields,
     skipped,
     skipReasons,
     skipSamples,

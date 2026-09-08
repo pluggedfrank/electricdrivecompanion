@@ -509,9 +509,16 @@ const registerPath = join(here, 'fixtures', 'bnetza-auszug.csv');
 
 test('die Kopfzeile wird gesucht, nicht gezählt', () => {
   const result = bnetza.loadRegister(registerPath);
-  // Sechs Zeilen Vorspann stehen davor. Die Zahl ändert sich zwischen den
-  // Ausgaben, deshalb darf sie nirgends fest verdrahtet sein.
-  assert.equal(result.headerIndex, 6);
+
+  // Vor der Kopfzeile steht ein Vorspann. Wie lang er ist, ändert sich
+  // zwischen den Ausgaben: In der Testdatei sind es ein paar Zeilen, in der
+  // echten elf. Genau deshalb wird gesucht statt gezählt, und genau deshalb
+  // steht hier keine feste Zahl.
+  assert.ok(result.headerIndex > 0, 'es gibt einen Vorspann');
+  assert.ok(
+    result.headerFields.some((f) => f.includes('breitengrad')),
+    'die gefundene Zeile ist wirklich die Kopfzeile'
+  );
 });
 
 test('alle gesuchten Spalten werden über Namensfragmente gefunden', () => {
@@ -577,16 +584,53 @@ test('ein Semikolon im Feld zerlegt die Zeile nicht', () => {
 
 test('Zeilen ohne Koordinaten werden gezählt, nicht verschluckt', () => {
   const result = bnetza.loadRegister(registerPath);
-  assert.equal(result.entries.length, 6);
+  assert.equal(result.entries.length, 7);
   assert.equal(result.skipped, 3);
 });
 
 test('Normal- und Schnellladeeinrichtung werden unterschieden', () => {
   const { entries } = bnetza.loadRegister(registerPath);
   const schnell = entries.filter((e) => e.isFastCharger);
-  assert.equal(schnell.length, 5);
+  assert.equal(schnell.length, 6);
   assert.ok(entries.find((e) => e.powerKW === 22 && !e.isFastCharger));
   assert.ok(entries.find((e) => e.powerKW === 350 && e.isFastCharger));
+});
+
+test('ein Feld mit Zeilenumbruch zerreißt den Datensatz nicht', () => {
+  // Das Register führt einen Public Key fürs Eichrecht als mehrzeiligen
+  // Hex-Block. Wer erst an Zeilenumbrüchen trennt, verliert jeden solchen
+  // Datensatz. In der echten Datei betraf das ein Viertel aller Zeilen.
+  const result = bnetza.loadRegister(registerPath);
+  const mvv = result.entries.find((e) => e.operator.includes('MVV'));
+
+  assert.ok(mvv, 'der Datensatz mit mehrzeiligem Feld fehlt');
+  assert.ok(Math.abs(mvv.lat - 48.4983) < 0.001, `lat war ${mvv.lat}`);
+  assert.equal(mvv.powerKW, 300);
+  assert.equal(mvv.city, 'Langenau');
+  assert.ok(result.multiLineFields >= 1, 'mehrzeilige Felder wurden nicht gezählt');
+});
+
+test('der Zeilenumbruch bleibt im Feld erhalten', () => {
+  const rows = bnetza.parseRows('a;"zwei\nZeilen";c\nd;e;f\n');
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows[0], ['a', 'zwei\nZeilen', 'c']);
+  assert.deepEqual(rows[1], ['d', 'e', 'f']);
+});
+
+test('nach dem Umbau stimmt die Spaltenzahl exakt, ohne Toleranz', () => {
+  const result = bnetza.loadRegister(registerPath);
+  assert.equal(
+    result.skipReasons.spaltenzahlWeicht,
+    0,
+    'keine Zeile darf mehr an der Spaltenzahl scheitern'
+  );
+});
+
+test('ein unpaariges Anführungszeichen frisst nicht den Rest der Datei', () => {
+  // Ohne Reißleine liefe alles nach dem Anführungszeichen in ein Feld.
+  const inhalt = 'a;"offen ohne Ende;c\n' + 'd;e;f\n'.repeat(50);
+  const rows = bnetza.parseRows(inhalt, ';', 20);
+  assert.ok(rows.length > 10, `nur ${rows.length} Datensätze, die Reißleine griff nicht`);
 });
 
 test('eine unpassende Datei wird abgelehnt statt falsch gelesen', () => {
