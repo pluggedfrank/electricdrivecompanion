@@ -43,6 +43,39 @@ function parseArgs(argv) {
   return args;
 }
 
+// Platzhalter, die in Anleitungen stehen und versehentlich mitkopiert werden.
+const PLACEHOLDER_KEYS = new Set([
+  'IHR_KEY', 'DEIN_KEY', 'NEUER_KEY', 'MEIN_KEY',
+  'YOUR_API_KEY', 'YOUR_KEY', 'DEIN_API_KEY', 'API_KEY', 'KEY',
+]);
+
+/**
+ * Prueft den Schluessel, bevor die erste Anfrage rausgeht.
+ *
+ * Ein Platzhalter ist nicht leer, kommt also durch jede Vorhandensein-Pruefung
+ * und produziert dann ein 401, das nach einem kaputten Key aussieht. Ein
+ * echter TomTom-Key besteht aus 32 alphanumerischen Zeichen.
+ */
+function checkApiKey(key) {
+  if (PLACEHOLDER_KEYS.has(key.trim().toUpperCase())) {
+    return {
+      fatal: true,
+      message:
+        `"${key}" ist ein Platzhalter aus der Anleitung, kein Schluessel.\n` +
+        'Den echten Key eintragen: export TOMTOM_API_KEY=<32 Zeichen aus dem Dashboard>',
+    };
+  }
+  if (!/^[A-Za-z0-9]{20,}$/.test(key.trim())) {
+    return {
+      fatal: false,
+      message:
+        `Der Schluessel sieht ungewoehnlich aus (${key.trim().length} Zeichen). ` +
+        'Ein TomTom-Key hat 32 alphanumerische Zeichen.',
+    };
+  }
+  return null;
+}
+
 function parseCoordinate(text, label) {
   const [lat, lon] = String(text).split(',').map(Number);
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
@@ -77,10 +110,18 @@ async function planRoute(apiKey, from, to) {
   url.searchParams.set('traffic', 'true');
   url.searchParams.set('travelMode', 'car');
 
-  const response = await fetch(url);
+  const response = await ev.requestWithRetry(fetch, url, {});
   if (!response.ok) {
     const body = (await response.text()).slice(0, 200);
-    throw new Error(`Routing antwortet mit ${response.status}: ${body}`);
+    // Schon die erste Anfrage scheitert, ein Tempolimit scheidet damit aus.
+    const hint = {
+      401: '\nDer Schluessel wird nicht akzeptiert. Pruefen: echo $TOMTOM_API_KEY,' +
+        ' und im Dashboard, ob der Key noch existiert.',
+      403: '\nDie Routing API ist fuer diesen Key nicht freigeschaltet.' +
+        ' Im Dashboard unter Products nachtragen.',
+      429: '\nTageskontingent aufgebraucht.',
+    }[response.status] ?? '';
+    throw new Error(`Routing antwortet mit ${response.status}: ${body}${hint}`);
   }
 
   const json = await response.json();
@@ -276,6 +317,13 @@ async function main() {
     console.error(dim('Key anlegen: https://developer.tomtom.com/ -> Dashboard -> API Keys'));
     process.exit(1);
   }
+
+  const keyProblem = checkApiKey(apiKey);
+  if (keyProblem?.fatal) {
+    console.error(red(keyProblem.message));
+    process.exit(1);
+  }
+  if (keyProblem) console.error(dim(keyProblem.message + '\n'));
 
   // 1. Route
   heading('1. Route planen');
