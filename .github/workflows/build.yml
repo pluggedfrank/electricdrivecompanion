@@ -1,0 +1,82 @@
+# Baut die App und fährt die Tests, bei jedem Push.
+#
+# Zweck: Compilerfehler sollen hier auftauchen und nicht auf einem Rechner, von
+# dem sie jemand abtippen muss. Der Build braucht keinen echten API-Key, er muss
+# nur übersetzen; die Schlüsseldatei wird deshalb mit einem Platzhalter erzeugt.
+#
+# Kosten im Blick behalten: macOS-Läufer zählen bei privaten Repositories
+# zehnfach. Deshalb läuft der Build nur, wenn sich am App-Code wirklich etwas
+# ändert, und die Tests laufen getrennt auf einem Linux-Läufer.
+
+name: Build
+
+on:
+  push:
+    paths:
+      - 'LadeRoute/**'
+      - 'project.yml'
+      - '.github/workflows/build.yml'
+  pull_request:
+    paths:
+      - 'LadeRoute/**'
+      - 'project.yml'
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Tests der geteilten Logik
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests
+        working-directory: tools
+        run: npm test
+
+  build:
+    name: iOS-Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: XcodeGen installieren
+        run: brew install xcodegen
+
+      - name: Schlüsseldatei mit Platzhalter anlegen
+        # Zum Übersetzen genügt irgendein Wert. Ein echter Key hat im Build
+        # nichts zu suchen, die App fragt ihn zur Laufzeit ab.
+        run: sed 's|YOUR_API_KEY|CIPLACEHOLDERKEY0000000000000000|' Secrets.xcconfig.example > Secrets.xcconfig
+
+      - name: Projekt erzeugen
+        run: xcodegen generate
+
+      - name: Bauen
+        # generic/platform vermeidet, einen Gerätenamen zu raten, den es auf dem
+        # Läufer vielleicht nicht gibt. Signieren entfällt.
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project LadeRoute.xcodeproj \
+            -scheme LadeRoute \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee build.log
+
+      - name: Fehler und Warnungen zusammenfassen
+        if: always()
+        run: |
+          echo "### Compiler-Meldungen" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -E "(error|warning):" build.log | sort -u | head -60 >> "$GITHUB_STEP_SUMMARY" || echo "keine" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build-Protokoll aufbewahren
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7

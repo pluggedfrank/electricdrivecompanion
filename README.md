@@ -50,6 +50,23 @@ an, zieht den Ordner `LadeRoute` hinein und fügt das Paket
 `https://github.com/tomtom-international/tomtom-sdk-spm-core` in Version 0.73.2
 hinzu. Die benötigten Produkte stehen in `project.yml`.
 
+## Bauen ohne Handarbeit
+
+`.github/workflows/build.yml` baut die App bei jedem Push, der den App-Code
+berührt, und fährt die Tests der geteilten Logik. Compilerfehler tauchen damit
+im Protokoll auf und müssen nicht von einem Rechner abgetippt werden.
+
+Der Build braucht keinen echten Schlüssel, er muss nur übersetzen; die
+Schlüsseldatei entsteht mit einem Platzhalter. Ein echter Key hat im Build
+nichts zu suchen, die App fragt ihn zur Laufzeit ab.
+
+Zu den Kosten: macOS-Läufer zählen bei privaten Repositories zehnfach, das
+kostenlose Kontingent von 2.000 Minuten entspricht also rund 200 macOS-Minuten
+im Monat. Ein Build dauert je nach Paket-Cache fünf bis zehn Minuten. Deshalb
+läuft er nur, wenn sich unter `LadeRoute/` oder in `project.yml` etwas ändert;
+Änderungen an den Werkzeugen lösen ihn nicht aus. Die Tests laufen getrennt auf
+einem Linux-Läufer, der einfach zählt.
+
 ## Bedienung
 
 Ziel per langem Druck auf die Karte setzen. Die App plant die Route, sucht
