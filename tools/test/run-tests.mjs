@@ -15,6 +15,8 @@ import { fileURLToPath } from 'node:url';
 import * as geo from '../lib/geo.mjs';
 import * as ev from '../lib/evsearch.mjs';
 import * as editorial from '../lib/editorial.mjs';
+import * as bnetza from '../lib/bnetza.mjs';
+import * as corridor from '../lib/corridor.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -498,4 +500,124 @@ test('zwischen den Abschnitten wird gewartet', async () => {
   // Eine Pause weniger als Abschnitte: vor dem ersten wird nicht gewartet.
   assert.equal(pauses.length, result.segmentCount - 1);
   assert.ok(pauses.every((ms) => ms >= ev.MIN_REQUEST_INTERVAL_MS), `Pausen: ${pauses}`);
+});
+
+
+// =========================================================== Bundesnetzagentur
+
+const registerPath = join(here, 'fixtures', 'bnetza-auszug.csv');
+
+test('die Kopfzeile wird gesucht, nicht gezählt', () => {
+  const result = bnetza.loadRegister(registerPath);
+  // Sechs Zeilen Vorspann stehen davor. Die Zahl ändert sich zwischen den
+  // Ausgaben, deshalb darf sie nirgends fest verdrahtet sein.
+  assert.equal(result.headerIndex, 6);
+});
+
+test('alle gesuchten Spalten werden über Namensfragmente gefunden', () => {
+  const { columns } = bnetza.loadRegister(registerPath);
+  for (const key of ['operator', 'latitude', 'longitude', 'powerKW', 'kind', 'city']) {
+    assert.ok(columns[key] !== undefined, `Spalte ${key} fehlt`);
+  }
+});
+
+test('deutsche Dezimalkommata werden gelesen', () => {
+  assert.equal(bnetza.parseGermanNumber('51,50305'), 51.50305);
+  assert.equal(bnetza.parseGermanNumber('300,00'), 300);
+  assert.equal(bnetza.parseGermanNumber('1.234,5'), 1234.5);
+  assert.equal(bnetza.parseGermanNumber(''), null);
+  assert.equal(bnetza.parseGermanNumber('keine Zahl'), null);
+});
+
+test('ein Semikolon im Feld zerlegt die Zeile nicht', () => {
+  const felder = bnetza.splitRow('a;"b; noch b";c');
+  assert.deepEqual(felder, ['a', 'b; noch b', 'c']);
+});
+
+test('Zeilen ohne Koordinaten werden gezählt, nicht verschluckt', () => {
+  const result = bnetza.loadRegister(registerPath);
+  assert.equal(result.entries.length, 5);
+  assert.equal(result.skipped, 1);
+});
+
+test('Normal- und Schnellladeeinrichtung werden unterschieden', () => {
+  const { entries } = bnetza.loadRegister(registerPath);
+  const schnell = entries.filter((e) => e.isFastCharger);
+  assert.equal(schnell.length, 4);
+  assert.ok(entries.find((e) => e.powerKW === 22 && !e.isFastCharger));
+  assert.ok(entries.find((e) => e.powerKW === 350 && e.isFastCharger));
+});
+
+test('eine unpassende Datei wird abgelehnt statt falsch gelesen', () => {
+  assert.throws(
+    () => bnetza.parseRegister('irgendein;Text\nohne;Koordinaten\n'),
+    /Kopfzeile/
+  );
+});
+
+// ================================================================== Korridor
+
+test('nur was nahe genug an der Route liegt, bleibt im Korridor', () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 500);
+  const mitte = route[250];
+
+  const kandidaten = [
+    { id: 'auf-der-route', lat: mitte.lat, lon: mitte.lon },
+    // Rund 1 km seitlich.
+    { id: 'knapp-daneben', lat: mitte.lat + 0.009, lon: mitte.lon },
+    // Weit weg: München.
+    { id: 'weit-weg', lat: 48.137, lon: 11.575 },
+  ];
+
+  const drin = corridor.withinCorridor(kandidaten, route, 2000);
+  const ids = drin.map((k) => k.id);
+  assert.ok(ids.includes('auf-der-route'));
+  assert.ok(ids.includes('knapp-daneben'));
+  assert.ok(!ids.includes('weit-weg'));
+});
+
+test('der Korridorfilter liefert die Entfernung zur Route mit', () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 200);
+  const drin = corridor.withinCorridor([{ id: 'x', ...route[100] }], route, 2000);
+  assert.equal(drin.length, 1);
+  assert.ok(drin[0].distanceToRouteMeters < 1);
+});
+
+test('das Gitter findet dasselbe wie die stumpfe Suche', () => {
+  // Der Index ist eine Optimierung. Er darf das Ergebnis nicht verändern.
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 300);
+  const kandidaten = Array.from({ length: 200 }, (_, i) => ({
+    id: `k${i}`,
+    lat: 51.2 + (i % 20) * 0.13,
+    lon: 6.6 + Math.floor(i / 20) * 0.06,
+  }));
+
+  const ueberGitter = new Set(
+    corridor.withinCorridor(kandidaten, route, 3000).map((k) => k.id)
+  );
+  const stumpf = new Set(
+    kandidaten
+      .filter((k) => Math.min(...route.map((p) => geo.distance(k, p))) <= 3000)
+      .map((k) => k.id)
+  );
+
+  assert.deepEqual([...ueberGitter].sort(), [...stumpf].sort());
+  assert.ok(stumpf.size > 0, 'der Test wäre sonst wertlos');
+});
+
+test('Registereinträge werden den gefundenen Stationen zugeordnet', () => {
+  const register = [
+    { operator: 'A', lat: 51.5030, lon: 6.5448 },
+    { operator: 'B', lat: 52.0000, lon: 7.0000 },
+  ];
+  const stationen = [
+    // 20 m neben A.
+    { id: 'poi-a', lat: 51.50318, lon: 6.5448 },
+  ];
+
+  const { matched, missing } = corridor.matchSources(register, stationen, 250);
+  assert.equal(matched.length, 1);
+  assert.equal(matched[0].operator, 'A');
+  assert.equal(missing.length, 1);
+  assert.equal(missing[0].operator, 'B');
 });

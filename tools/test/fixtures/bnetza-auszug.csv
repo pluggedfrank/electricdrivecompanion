@@ -1,0 +1,14 @@
+Ladesäulenregister der Bundesnetzagentur
+Stand: 01.09.2026
+Quelle: Bundesnetzagentur.de, Lizenz CC BY 4.0
+
+Hinweis: Es werden nur oeffentlich zugaengliche Ladeeinrichtungen gefuehrt.
+
+Betreiber;Straße;Hausnummer;Adresszusatz;Postleitzahl;Ort;Bundesland;Kreis/kreisfreie Stadt;Breitengrad;Längengrad;Inbetriebnahmedatum;Nennleistung Ladeeinrichtung [kW];Art der Ladeeinrichung;Anzahl Ladepunkte;Steckertypen1;P1 [kW]
+EnBW mobility+ AG;Autohofstr.;2;;47475;Kamp-Lintfort;Nordrhein-Westfalen;Wesel;51,50305;6,54480;01.03.2024;300,00;Schnellladeeinrichtung;8;AC Steckdose Typ 2;300,00
+Aral pulse GmbH;Borkener Damm;14;;48712;Gescher;Nordrhein-Westfalen;Borken;51,95480;7,00510;15.06.2023;300,00;Schnellladeeinrichtung;12;DC Kupplung Combo;300,00
+Stadtwerke Musterstadt;Marktplatz;1;;48712;Gescher;Nordrhein-Westfalen;Borken;51,95600;7,00700;03.02.2021;22,00;Normalladeeinrichtung;2;AC Steckdose Typ 2;22,00
+IONITY GmbH;A31 Rastanlage;;;49716;Meppen;Niedersachsen;Emsland;52,69010;7,29020;20.09.2022;350,00;Schnellladeeinrichtung;4;DC Kupplung Combo;350,00
+"Testbetreiber; mit Semikolon";Teststr.;5;;10115;Berlin;Berlin;Berlin;52,53000;13,38000;01.01.2020;50,00;Schnellladeeinrichtung;2;DC Kupplung Combo;50,00
+Kaputte Zeile ohne Koordinaten;;;;;;;;;;;;;;;
+

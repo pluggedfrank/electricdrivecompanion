@@ -64,7 +64,7 @@ node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 48 Tests
+npm test                            # 59 Tests
 ```
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
@@ -171,6 +171,57 @@ wäre der schlimmere Fehler.
 
 Im Werkzeug: `--power=0` schaltet den Filter ab, `--power=150` verlangt HPC.
 
+## Wie vollständig ist TomTom eigentlich?
+
+Ein berechtigter Verdacht aus der Praxis: In der TomTom-Pro-App fehlen
+Lademöglichkeiten. Bevor man deshalb die Quelle wechselt, lohnt eine Messung.
+
+Zur Einordnung vorweg: TomToms Ladeinfrastruktur-Daten stammen von
+Eco-Movement, demselben Zulieferer, der Google, Tesla, Waze, A Better
+Routeplanner, Apple und HERE beliefert. Die Datenbasis ist erstklassig. Was in
+Apps fehlt, fehlt deshalb eher an der Darstellung als an der Datenbank, und
+genau so eine Mechanik haben wir hier selbst gefunden: 20 Treffer pro Antwort.
+
+`coverage-check.mjs` misst das gegen das **Ladesäulenregister der
+Bundesnetzagentur**. Der Betrieb einer öffentlich zugänglichen Ladeeinrichtung
+ist meldepflichtig, das Register ist damit der einzige Datensatz, gegen den
+sich „vollständig" seriös messen lässt. Lizenz CC BY 4.0, Namensnennung
+„Bundesnetzagentur.de".
+
+```bash
+# Liste einmal von bundesnetzagentur.de laden (CSV, rund 51 MB)
+node coverage-check.mjs --register=~/Downloads/Ladesaeulenregister.csv
+node coverage-check.mjs --register=... --parse-only     # nur einlesen, ohne Netz
+node coverage-check.mjs --register=... --corridor=3 --power=150
+```
+
+Das Werkzeug grenzt das Register auf einen Korridor um die Route ein, befragt
+TomTom **zweimal** und stellt beide Ergebnisse gegenüber:
+
+| Lauf | Parameter | wozu |
+|---|---|---|
+| Vorgabewerte | 50-km-Abschnitte, 10 min Umweg | was die App tatsächlich zeigt |
+| betont großzügig | 20-km-Abschnitte, 30 min Umweg | was TomTom überhaupt kennt |
+
+Die Differenz trennt Datenlücke von Suchmechanik. Was auch großzügig nicht
+auftaucht, ist eine echte Lücke; alles davor ist eine Frage der Parameter.
+
+Zwei Dinge, die das Werkzeug bewusst laut macht: Es gibt bei jedem Lauf aus,
+welche Spalte es wie zugeordnet hat, denn die Spaltennamen des Registers
+ändern sich zwischen den Ausgaben und eine stille Fehlzuordnung wäre schlimmer
+als ein Abbruch. Und es sagt dazu, dass das Register auch Firmenparkplätze und
+Hotelstellplätze führt, die für eine Durchgangsfahrt ohne Belang sind. Ein
+Rückstand gegenüber dem Register ist also nicht automatisch ein Mangel.
+
+### Eine zweite Live-Quelle
+
+Für den laufenden Abgleich und für alles außerhalb Deutschlands bietet sich
+**Open Charge Map** an: kostenloser API-Key, `PowerKW` je Anschluss, offene
+Lizenz, gemeinnützig. Noch nicht angebunden, weil erst die Messung zeigen
+sollte, ob es überhaupt nötig ist.
+
+Die Live-Belegung hat keine der beiden Alternativen. Die bleibt bei TomTom.
+
 ## Eigene Daten austauschen
 
 Der Bestand liegt in `LadeRoute/Resources/editorial-stations.json`. Die zehn
@@ -194,7 +245,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 48 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 59 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -261,6 +312,7 @@ electricdrivecompanion/
     Resources/                 editorial-stations.json
   tools/
     lib/                       dieselbe Logik in JavaScript
-    test/                      48 Tests gegen Fixtures
+    test/                      59 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
+    coverage-check.mjs         Abdeckung gegen das amtliche Register
 ```
