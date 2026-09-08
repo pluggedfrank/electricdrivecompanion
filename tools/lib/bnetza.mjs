@@ -106,13 +106,49 @@ export function mapColumns(headerFields) {
   return mapping;
 }
 
-/** Deutsche Dezimalzahl in eine Zahl. */
+/**
+ * Zahl aus einem Feld, egal ob deutsch oder englisch geschrieben.
+ *
+ * Punkte blind als Tausendertrennzeichen zu entfernen wäre gefährlich: Aus
+ * "51.50305" würde 5150305, und das fiele nicht als Fehler auf, sondern
+ * landete als Koordinate irgendwo im Nichts. Deshalb wird entschieden statt
+ * geraten: Sind Komma und Punkt vorhanden, ist das hintere das
+ * Dezimaltrennzeichen. Steht nur eines da, ist es das Dezimaltrennzeichen.
+ */
 export function parseGermanNumber(text) {
   if (text == null) return null;
-  const cleaned = String(text).trim().replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+
+  let cleaned = String(text).trim().replace(/\s/g, '').replace(/"/g, '');
   if (cleaned === '') return null;
+
+  const lastComma = cleaned.lastIndexOf(',');
+  const lastDot = cleaned.lastIndexOf('.');
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    if (lastComma > lastDot) {
+      // 1.234,56 -> Punkte sind Tausender.
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else {
+      // 1,234.56 -> Kommas sind Tausender.
+      cleaned = cleaned.replace(/,/g, '');
+    }
+  } else if (lastComma >= 0) {
+    cleaned = cleaned.replace(',', '.');
+  }
+  // Nur ein Punkt: bleibt, wie er ist. Das ist bereits ein Dezimalpunkt.
+
   const value = Number(cleaned);
   return Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Liegt die Koordinate plausibel in Deutschland?
+ *
+ * Die Prüfung fängt genau den Fehler ab, den ein falsch geratenes
+ * Dezimaltrennzeichen erzeugt: eine formal gültige Zahl an unmöglicher Stelle.
+ */
+export function isPlausibleGermanCoordinate(lat, lon) {
+  return lat >= 47.0 && lat <= 55.3 && lon >= 5.5 && lon <= 15.6;
 }
 
 /**
@@ -142,16 +178,43 @@ export function parseRegister(content, options = {}) {
   }
 
   const entries = [];
-  let skipped = 0;
+  const columnCount = header.fields.length;
+  // Warum eine Zeile wegfaellt, gehoert protokolliert. Eine hohe Ausschussquote
+  // ohne Begruendung ist ein Messfehler, kein Ergebnis.
+  const skipReasons = {
+    leereKoordinate: 0,
+    unlesbareKoordinate: 0,
+    unplausibleKoordinate: 0,
+    spaltenzahlWeicht: 0,
+  };
+  const skipSamples = [];
+
+  const noteSkip = (reason, line) => {
+    skipReasons[reason]++;
+    if (skipSamples.length < 5) skipSamples.push({ reason, line: line.slice(0, 160) });
+  };
 
   for (let i = header.index + 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
     const fields = splitRow(lines[i], separator);
 
-    const lat = parseGermanNumber(fields[columns.latitude]);
-    const lon = parseGermanNumber(fields[columns.longitude]);
+    if (Math.abs(fields.length - columnCount) > 2) {
+      noteSkip('spaltenzahlWeicht', lines[i]);
+      continue;
+    }
+
+    const rawLat = fields[columns.latitude];
+    const rawLon = fields[columns.longitude];
+    const lat = parseGermanNumber(rawLat);
+    const lon = parseGermanNumber(rawLon);
+
     if (lat == null || lon == null) {
-      skipped++;
+      const leer = !String(rawLat ?? '').trim() || !String(rawLon ?? '').trim();
+      noteSkip(leer ? 'leereKoordinate' : 'unlesbareKoordinate', lines[i]);
+      continue;
+    }
+    if (!isPlausibleGermanCoordinate(lat, lon)) {
+      noteSkip('unplausibleKoordinate', lines[i]);
       continue;
     }
 
@@ -175,12 +238,17 @@ export function parseRegister(content, options = {}) {
     });
   }
 
+  const skipped = Object.values(skipReasons).reduce((sum, n) => sum + n, 0);
+
   return {
     entries,
     columns,
     headerIndex: header.index,
     headerFields: header.fields,
+    columnCount,
     skipped,
+    skipReasons,
+    skipSamples,
   };
 }
 

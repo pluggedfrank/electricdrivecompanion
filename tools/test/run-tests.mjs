@@ -529,6 +529,47 @@ test('deutsche Dezimalkommata werden gelesen', () => {
   assert.equal(bnetza.parseGermanNumber('keine Zahl'), null);
 });
 
+test('ein einzelner Punkt ist ein Dezimalpunkt, kein Tausendertrenner', () => {
+  // Der gefährlichste denkbare Fehler in dieser Datei: Punkte blind zu
+  // entfernen macht aus 51.50305 die Zahl 5150305. Formal gültig, als
+  // Koordinate irgendwo im Nichts, und ohne Prüfung nicht zu bemerken.
+  assert.equal(bnetza.parseGermanNumber('51.50305'), 51.50305);
+  assert.equal(bnetza.parseGermanNumber('6.96030'), 6.9603);
+});
+
+test('gemischte Schreibweisen: das hintere Zeichen trennt die Dezimalen', () => {
+  assert.equal(bnetza.parseGermanNumber('1.234,56'), 1234.56);
+  assert.equal(bnetza.parseGermanNumber('1,234.56'), 1234.56);
+});
+
+test('Koordinaten außerhalb Deutschlands gelten als unplausibel', () => {
+  assert.equal(bnetza.isPlausibleGermanCoordinate(51.5, 6.5), true);
+  // Vertauscht: Länge und Breite verwechselt.
+  assert.equal(bnetza.isPlausibleGermanCoordinate(9.99, 53.55), false);
+  // Das Ergebnis eines falsch geratenen Trennzeichens.
+  assert.equal(bnetza.isPlausibleGermanCoordinate(5150305, 6.5), false);
+});
+
+test('eine englisch geschriebene Koordinate landet am richtigen Ort', () => {
+  const { entries } = bnetza.loadRegister(registerPath);
+  const koeln = entries.find((e) => e.city === 'Koeln');
+  assert.ok(koeln, 'die Zeile mit Dezimalpunkt fehlt');
+  assert.ok(Math.abs(koeln.lat - 50.9375) < 0.001, `lat war ${koeln.lat}`);
+  assert.ok(Math.abs(koeln.lon - 6.9603) < 0.001, `lon war ${koeln.lon}`);
+});
+
+test('übersprungene Zeilen werden nach Ursache aufgeschlüsselt', () => {
+  const result = bnetza.loadRegister(registerPath);
+  assert.equal(result.skipReasons.leereKoordinate, 2);
+  assert.equal(result.skipReasons.unplausibleKoordinate, 1, 'die vertauschte Koordinate');
+  assert.equal(
+    result.skipped,
+    Object.values(result.skipReasons).reduce((a, b) => a + b, 0),
+    'die Summe muss aufgehen'
+  );
+  assert.ok(result.skipSamples.length > 0, 'Beispielzeilen fehlen');
+});
+
 test('ein Semikolon im Feld zerlegt die Zeile nicht', () => {
   const felder = bnetza.splitRow('a;"b; noch b";c');
   assert.deepEqual(felder, ['a', 'b; noch b', 'c']);
@@ -536,14 +577,14 @@ test('ein Semikolon im Feld zerlegt die Zeile nicht', () => {
 
 test('Zeilen ohne Koordinaten werden gezählt, nicht verschluckt', () => {
   const result = bnetza.loadRegister(registerPath);
-  assert.equal(result.entries.length, 5);
-  assert.equal(result.skipped, 1);
+  assert.equal(result.entries.length, 6);
+  assert.equal(result.skipped, 3);
 });
 
 test('Normal- und Schnellladeeinrichtung werden unterschieden', () => {
   const { entries } = bnetza.loadRegister(registerPath);
   const schnell = entries.filter((e) => e.isFastCharger);
-  assert.equal(schnell.length, 4);
+  assert.equal(schnell.length, 5);
   assert.ok(entries.find((e) => e.powerKW === 22 && !e.isFastCharger));
   assert.ok(entries.find((e) => e.powerKW === 350 && e.isFastCharger));
 });

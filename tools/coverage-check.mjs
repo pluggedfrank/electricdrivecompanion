@@ -243,6 +243,44 @@ async function main() {
     dim(`Davon als Schnellladeeinrichtung geführt: ${schnell.length.toLocaleString('de-DE')}`)
   );
 
+  // Eine hohe Ausschussquote ohne Begruendung waere ein Messfehler, kein
+  // Ergebnis. Deshalb hier immer aufschluesseln, woran es lag.
+  if (register.skipped > 0) {
+    const quote = (register.skipped / (register.skipped + register.entries.length)) * 100;
+    const auffaellig = quote > 5;
+    const beschriftung = {
+      leereKoordinate: 'Koordinatenfeld leer',
+      unlesbareKoordinate: 'Koordinate nicht lesbar',
+      unplausibleKoordinate: 'Koordinate außerhalb Deutschlands',
+      spaltenzahlWeicht: 'Spaltenzahl weicht ab',
+    };
+
+    console.log('');
+    console.log(
+      (auffaellig ? amber : dim)(
+        `${register.skipped.toLocaleString('de-DE')} Zeilen übersprungen (${quote.toFixed(1)} %):`
+      )
+    );
+    for (const [grund, anzahl] of Object.entries(register.skipReasons)) {
+      if (anzahl > 0) {
+        console.log(dim(`  ${String(anzahl).padStart(7)}  ${beschriftung[grund] ?? grund}`));
+      }
+    }
+
+    if (auffaellig && register.skipSamples.length > 0) {
+      console.log(dim('\nBeispielzeilen, damit die Ursache nachvollziehbar bleibt:'));
+      for (const probe of register.skipSamples) {
+        console.log(dim(`  [${probe.reason}] ${probe.line}`));
+      }
+      console.log(
+        dim(
+          '\nEin Register führt auch Anlagen ohne verwertbare Koordinate. Solange die\n' +
+            'Beispiele das bestätigen, ist die Quote unschön, aber kein Fehler.'
+        )
+      );
+    }
+  }
+
   if (args['parse-only']) {
     console.log(dim('\n--parse-only: hier ist Schluss, es geht keine Anfrage raus.'));
     return;

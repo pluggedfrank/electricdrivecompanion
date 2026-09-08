@@ -11,4 +11,6 @@ Stadtwerke Musterstadt;Marktplatz;1;;48712;Gescher;Nordrhein-Westfalen;Borken;51
 IONITY GmbH;A31 Rastanlage;;;49716;Meppen;Niedersachsen;Emsland;52,69010;7,29020;20.09.2022;350,00;Schnellladeeinrichtung;4;DC Kupplung Combo;350,00
 "Testbetreiber; mit Semikolon";Teststr.;5;;10115;Berlin;Berlin;Berlin;52,53000;13,38000;01.01.2020;50,00;Schnellladeeinrichtung;2;DC Kupplung Combo;50,00
 Kaputte Zeile ohne Koordinaten;;;;;;;;;;;;;;;
-
+Englisch geschrieben GmbH;Punktstr.;3;;50667;Koeln;Nordrhein-Westfalen;Koeln;50.93750;6.96030;01.05.2025;150,00;Schnellladeeinrichtung;2;DC Kupplung Combo;150,00
+Vertauschte Koordinaten AG;Fehlerweg;9;;20095;Hamburg;Hamburg;Hamburg;9,99340;53,55110;01.06.2025;75,00;Schnellladeeinrichtung;2;DC Kupplung Combo;75,00
+Leeres Koordinatenfeld eG;Ohnestr.;1;;10115;Berlin;Berlin;Berlin;;;01.07.2025;22,00;Normalladeeinrichtung;1;AC Steckdose Typ 2;22,00
