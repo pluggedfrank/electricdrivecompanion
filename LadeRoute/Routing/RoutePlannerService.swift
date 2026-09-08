@@ -17,7 +17,7 @@ enum RoutePlanningError: LocalizedError {
         case .noRouteFound:
             return "TomTom hat für diese Punkte keine Route gefunden."
         case let .planner(underlying):
-            if let routingError = underlying as? RoutingError {
+            if let routingError = underlying as? TomTomSDKRoutingCommon.RoutingError {
                 return "Routing-Fehler \(routingError.code): \(routingError.errorDescription ?? "")"
             }
             return underlying.localizedDescription
@@ -47,7 +47,7 @@ final class RoutePlannerService {
         // entlang, er sagt nicht an. Das spart Antwortgröße und Kontingent.
         // Für Turn-by-Turn kämen hier GuidanceOptions dazu, dann aber auch das
         // Navigation SDK, das separat lizenziert wird.
-        let options = try RoutePlanningOptions(
+        let options = try TomTomSDKRoutingCommon.RoutePlanningOptions(
             itinerary: itinerary,
             costModel: CostModel(routeType: .fast)
         )
