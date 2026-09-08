@@ -18,12 +18,15 @@ import * as editorial from '../lib/editorial.mjs';
 import * as bnetza from '../lib/bnetza.mjs';
 import * as corridor from '../lib/corridor.mjs';
 import * as sites from '../lib/sites.mjs';
+import * as redaktion from '../lib/redaktion.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
-const entries = JSON.parse(
-  readFileSync(join(here, '..', '..', 'LadeRoute', 'Resources', 'editorial-stations.json'), 'utf8')
-);
+// Die Redaktionsdatensätze der Tests liegen bewusst bei den Fixtures und nicht
+// in der App. Was die App ausliefert, entsteht aus einem Import echter Treffer
+// und ändert sich mit jedem Testbericht; die Zuordnungslogik braucht dagegen
+// einen Bestand, der sich nicht bewegt.
+const entries = fixture('editorial-entries.json');
 
 const MEERBUSCH = { lat: 51.2560, lon: 6.6890 };
 const NORDDEICH = { lat: 53.6148, lon: 7.1621 };
@@ -945,4 +948,133 @@ test('die Umkreistreffer bekommen dieselbe Ortsangabe wie die Along-Route-Treffe
     assert.ok(Number.isFinite(station.progressMeters));
     assert.ok(Number.isFinite(station.distanceFromRouteMeters));
   }
+});
+
+// -------------------------------------------------------- Redaktionsimport
+
+/** Ein Export, wie tomtom-probe.mjs ihn schreibt: echte IDs, kein Urteil. */
+function export_(...ueberschreibungen) {
+  return ueberschreibungen.map((eintrag, i) => ({
+    id: `ed-${String(i + 1).padStart(3, '0')}`,
+    tomtomPoiID: `poi-${i + 1}`,
+    name: 'Ladepark',
+    operatorName: 'EnBW',
+    latitude: 51.5,
+    longitude: 6.5,
+    rating: null,
+    verdict: null,
+    testedAt: null,
+    pricePerKWh: null,
+    tags: [],
+    author: 'Electric Drive',
+    ...eintrag,
+  }));
+}
+
+test('Platzhalter und Leerzeichen gelten nicht als Urteil', () => {
+  assert.equal(redaktion.urteil({ verdict: null }), null);
+  assert.equal(redaktion.urteil({ verdict: '   ' }), null);
+  assert.equal(redaktion.urteil({ verdict: 'NOCH NICHT GETESTET. Urteil hier eintragen.' }), null);
+  assert.equal(redaktion.urteil({ verdict: '  Acht Punkte, alle frei.  ' }), 'Acht Punkte, alle frei.');
+});
+
+test('leerer Bestand nimmt den Export vollstaendig auf', () => {
+  const { entries, statistik } = redaktion.fuehreZusammen([], export_({}, {}, {}));
+  assert.equal(entries.length, 3);
+  assert.equal(statistik.neu, 3);
+  assert.equal(statistik.getestet, 0);
+  assert.equal(statistik.erfasst, 3);
+});
+
+test('ein zweiter Import derselben Datei aendert nichts', () => {
+  const eingang = export_({}, {});
+  const erster = redaktion.fuehreZusammen([], eingang);
+  const zweiter = redaktion.fuehreZusammen(erster.entries, eingang);
+  assert.deepEqual(zweiter.entries, erster.entries);
+  assert.equal(zweiter.statistik.neu, 0);
+  assert.equal(zweiter.statistik.ergaenzt, 0);
+});
+
+test('ein vorhandenes Urteil ueberlebt jeden weiteren Import', () => {
+  const bestand = export_({
+    verdict: 'Zwoelf Punkte, 300 kW ohne Teilung.',
+    rating: 1.4,
+    testedAt: '2026-03-14T00:00:00Z',
+    tags: ['Dach'],
+  });
+  const { entries, statistik } = redaktion.fuehreZusammen(bestand, export_({}));
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].verdict, 'Zwoelf Punkte, 300 kW ohne Teilung.');
+  assert.equal(entries[0].rating, 1.4);
+  assert.deepEqual(entries[0].tags, ['Dach']);
+  assert.equal(statistik.getestet, 1);
+});
+
+test('Standortdaten kommen dagegen aus dem Import', () => {
+  const bestand = export_({ verdict: 'Gut.', latitude: 51.5, longitude: 6.5, name: 'Alter Name' });
+  const { entries } = redaktion.fuehreZusammen(
+    bestand,
+    export_({ latitude: 51.6, longitude: 6.6, name: 'Ladepark Gescher', operatorName: 'Aral pulse' })
+  );
+  assert.equal(entries[0].latitude, 51.6);
+  assert.equal(entries[0].name, 'Ladepark Gescher');
+  assert.equal(entries[0].operatorName, 'Aral pulse');
+  assert.equal(entries[0].verdict, 'Gut.', 'das Urteil bleibt');
+});
+
+test('zugeordnet wird ueber die POI-ID, nicht ueber den Namen', () => {
+  const bestand = export_({ id: 'ed-042', tomtomPoiID: 'poi-1', verdict: 'Getestet.' });
+  const { entries, statistik } = redaktion.fuehreZusammen(
+    bestand,
+    export_({ id: 'ed-001', tomtomPoiID: 'poi-1', name: 'Voellig anderer Name' })
+  );
+  assert.equal(entries.length, 1, 'derselbe POI darf nicht zweimal entstehen');
+  assert.equal(entries[0].id, 'ed-042', 'die gewachsene Kennung bleibt');
+  assert.equal(statistik.neu, 0);
+});
+
+test('neue Eintraege bekommen freie Kennungen', () => {
+  const bestand = export_({ id: 'ed-007', tomtomPoiID: 'poi-alt' });
+  const { entries } = redaktion.fuehreZusammen(bestand, export_({ tomtomPoiID: 'poi-neu' }));
+  const kennungen = entries.map((e) => e.id).sort();
+  assert.deepEqual(kennungen, ['ed-007', 'ed-008']);
+  assert.equal(new Set(kennungen).size, 2);
+});
+
+test('der Platzhalter aus dem Export landet nicht in der App', () => {
+  const { entries } = redaktion.fuehreZusammen(
+    [],
+    export_({ verdict: 'NOCH NICHT GETESTET. Urteil hier eintragen.' })
+  );
+  assert.equal(entries[0].verdict, null);
+});
+
+test('unbrauchbare Datensaetze brechen den Import ab', () => {
+  const faelle = [
+    [{ latitude: 0, longitude: 0 }, 'Koordinate 0/0'],
+    [{ latitude: 95 }, 'latitude'],
+    [{ rating: 7 }, 'rating'],
+    [{ testedAt: 'irgendwann' }, 'testedAt'],
+    [{ name: '' }, 'name'],
+  ];
+  for (const [abweichung, erwartet] of faelle) {
+    assert.throws(
+      () => redaktion.fuehreZusammen([], export_(abweichung)),
+      (fehler) => fehler.details.some((zeile) => zeile.includes(erwartet)),
+      `${erwartet} haette auffallen muessen`
+    );
+  }
+});
+
+test('ein doppelter POI im Bestand faellt auf', () => {
+  const bestand = [...export_({ id: 'ed-001' }), ...export_({ id: 'ed-002' })];
+  bestand[1].tomtomPoiID = bestand[0].tomtomPoiID;
+  assert.throws(() => redaktion.fuehreZusammen(bestand, []), /doppelt/);
+});
+
+test('nur erfasste Stationen zaehlen nicht als Test', () => {
+  const erfasst = entries.find((e) => e.id === 'ed-011');
+  assert.ok(erfasst, 'die Fixtures brauchen einen nicht getesteten Eintrag');
+  assert.equal(redaktion.istGetestet(erfasst), false);
+  assert.equal(entries.filter(redaktion.istGetestet).length, entries.length - 1);
 });

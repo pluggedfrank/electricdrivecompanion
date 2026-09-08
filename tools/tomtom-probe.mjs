@@ -21,6 +21,7 @@ import * as ev from './lib/evsearch.mjs';
 import * as geo from './lib/geo.mjs';
 import * as corridor from './lib/corridor.mjs';
 import * as editorial from './lib/editorial.mjs';
+import { istGetestet, urteil } from './lib/redaktion.mjs';
 import { resolveApiKey } from './lib/apikey.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -380,7 +381,10 @@ function exportEditorial(stations, targetPath) {
     latitude: station.lat,
     longitude: station.lon,
     rating: null,
-    verdict: 'NOCH NICHT GETESTET. Urteil hier eintragen.',
+    // Kein Platzhaltertext: Was hier steht, steht spaeter in der App. Ein
+    // leeres Urteil ist null, und null zeigt die App als "noch nicht
+    // getestet" an, statt einen Merkzettel abzudrucken.
+    verdict: null,
     testedAt: null,
     pricePerKWh: null,
     tags: [],
@@ -533,16 +537,23 @@ async function main() {
   );
   const annotated = editorial.annotate(stationen, entries);
   const matched = annotated.filter((a) => a.editorial);
+  const getestet = matched.filter((a) => istGetestet(a.editorial));
   console.log(
-    `${matched.length} von ${annotated.length} Stationen haben einen Redaktionseintrag ` +
-      `(Bestand: ${entries.length} Eintraege)`
+    `${matched.length} von ${annotated.length} Stationen stehen im Bestand, ` +
+      `davon ${getestet.length} getestet (Bestand insgesamt: ${entries.length})`
   );
-  if (matched.length === 0 && entries.length > 0) {
+  if (entries.length === 0) {
     console.log(
       dim(
-        'Die mitgelieferten Beispieldaten haben erfundene Koordinaten und treffen deshalb\n' +
-          'keine echten POIs. --export-editorial=datei.json schreibt einen Startbestand\n' +
-          'aus den echten Treffern, den man dann redaktionell fuellt.'
+        'Der Bestand ist leer. --export-editorial=datei.json schreibt die echten Treffer\n' +
+          'als Arbeitsliste heraus, redaktion-einbauen.mjs uebernimmt sie in die App.'
+      )
+    );
+  } else if (matched.length === 0) {
+    console.log(
+      dim(
+        'Kein Eintrag trifft. Stammt der Bestand von einer anderen Strecke, ist das\n' +
+          'richtig so; sonst stimmen die Koordinaten nicht.'
       )
     );
   }
@@ -591,13 +602,18 @@ async function main() {
     ].filter(Boolean);
 
     const km = String(Math.round(s.progressMeters / 1000)).padStart(3);
-    const marker = item.editorial ? red('*') : dim('.');
+    // Drei Zustaende, nicht zwei: getestet, erfasst, unbekannt. Der mittlere
+    // ist der haeufigste, solange die Arbeitsliste noch abgefahren wird.
+    const marker = istGetestet(item.editorial) ? red('*') : item.editorial ? green('o') : dim('.');
     console.log(`${marker} km ${km}  ${bold(s.name)}`);
     console.log(`         ${dim(parts.join(' | '))}`);
     if (s.address) console.log(`         ${dim(s.address)}`);
-    if (item.editorial) {
-      const e = item.editorial;
-      console.log(`         ${red('eigener Test:')} Note ${e.rating} - ${e.verdict.slice(0, 80)}...`);
+    const eigenes = urteil(item.editorial);
+    if (eigenes) {
+      const note = item.editorial.rating != null ? `Note ${item.editorial.rating} - ` : '';
+      console.log(`         ${red('eigener Test:')} ${note}${eigenes.slice(0, 80)}`);
+    } else if (item.editorial) {
+      console.log(`         ${green('auf der Liste,')} ${dim('noch nicht getestet')}`);
     }
   });
 
@@ -617,7 +633,10 @@ async function main() {
   }
 
   const used = 1 + anfragen + Math.min(availabilityCount, annotated.length);
-  console.log(`\n${dim('Legende:')} ${red('*')} mit eigenem Test   ${dim('. nur TomTom-Daten')}`);
+  console.log(
+    `\n${dim('Legende:')} ${red('*')} mit eigenem Test   ${green('o')} erfasst   ` +
+      `${dim('. nur TomTom-Daten')}`
+  );
   console.log(dim(`Verbrauch: ${used} Non-Tile-Anfragen (Freemium: 2.500 pro Tag)`));
 }
 

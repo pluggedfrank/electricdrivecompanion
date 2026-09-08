@@ -89,7 +89,7 @@ node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach No
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --no-wide     # nur Along-Route, wie die TomTom-Pro-App
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 85 Tests
+npm test                            # 96 Tests
 ```
 
 Der Probe-Lauf nutzt beide Suchverfahren, genau wie die App. `--no-wide`
@@ -330,9 +330,36 @@ Die Live-Belegung hat keine der beiden Alternativen. Die bleibt bei TomTom.
 
 ## Eigene Daten austauschen
 
-Der Bestand liegt in `LadeRoute/Resources/editorial-stations.json`. Die zehn
-Einträge sind Beispieldaten entlang der Strecke Meerbusch nach Norddeich, keine
-echten Messwerte.
+Der Bestand liegt in `LadeRoute/Resources/editorial-stations.json` und beginnt
+leer. Gefüllt wird er in zwei Schritten, beide auf dem Rechner mit dem
+API-Schlüssel:
+
+```
+node tools/tomtom-probe.mjs --from=51.2560,6.6890 --to=53.6148,7.1621 \
+     --export-editorial=tools/meine-stationen.json
+node tools/redaktion-einbauen.mjs
+```
+
+Der erste Lauf schreibt die echten Treffer als Arbeitsliste heraus, mit den
+TomTom-POI-IDs, aber ohne Urteil. Der zweite übernimmt sie in die App. Wer die
+Datei danach um `verdict` und `rating` ergänzt, hat einen Test hinterlegt; ein
+erneuter Import lässt ihn stehen.
+
+Die Arbeitsteilung dabei: Kennung, Name und Koordinaten kommen aus dem Import,
+denn das ist TomToms Aufgabe. Das Urteil bleibt beim Bestand, denn das ist
+unseres. `--trocken` zeigt nur, was passieren würde, `--commit` schreibt und
+schiebt gleich hoch.
+
+Ein Eintrag ohne Urteil ist kein Test, sondern ein Vermerk. Die App
+unterscheidet das: Ein Urteil erscheint als eigener Test mit rotem Marker, ein
+bloßer Vermerk als Zeile *steht auf unserer Liste*. Ohne diese Trennung trüge
+nach dem ersten Import jede zweite Station den Marker der Redaktion, ohne dass
+ein Wort darin steht.
+
+Die Beispieldatensätze von früher liegen jetzt unter
+`tools/test/fixtures/editorial-entries.json`. Sie waren erfunden und haben in
+einer App nichts verloren, für die Zuordnungstests sind sie dagegen genau
+richtig, weil sie sich nicht mit jedem Testbericht ändern.
 
 Produktiv träte an die Stelle von `EditorialStore.loadBundled()` ein Backend. Der
 Rest der Klasse bliebe unverändert, insbesondere das Matching.
@@ -384,10 +411,21 @@ ersatzlos.
 Zwei Stellen, die ich zuvor als riskant benannt hatte, `route.summary` und
 `RouteOptions.color`, kompilierten anstandslos.
 
-**Offen geblieben sind Warnungen.** Drei zur Actor-Isolation: `MapCoordinator`
+**Seitdem baut GitHub Actions.** Jeder Push, der `LadeRoute/` berührt, wird auf
+einem macOS-Läufer übersetzt, die Tests laufen getrennt auf Linux. Beide Läufe
+sind grün, für arm64 und x86_64. Damit müssen Compilerfehler nicht mehr von Hand
+aus Xcode herübergereicht werden.
+
+Die zwei Deprecation-Hinweise sind erledigt. `RoutingError` und
+`RoutePlanningOptions` gibt es in zwei Modulen, die alten in
+`TomTomSDKRoutePlanner`, die aktuellen in `TomTomSDKRoutingCommon`; da beide
+importiert sind, griff der unqualifizierte Name auf die alte Fassung. Die
+Modulangabe entscheidet das.
+
+**Offen geblieben sind drei Warnungen zur Actor-Isolation.** `MapCoordinator`
 ist `@MainActor`, die Delegate-Protokolle des SDK sind es nicht. Im
-Swift-5-Modus sind das Warnungen, im Swift-6-Modus wären es Fehler. Dazu zwei
-Deprecation-Hinweise auf `RoutingError` und `RoutePlanningOptions`.
+Swift-5-Modus sind das Warnungen, im Swift-6-Modus wären es Fehler. Im
+CI-Protokoll tauchen sie nicht auf, in Xcode schon.
 
 Die alte Einschätzung, hier zur Nachvollziehbarkeit:
 
@@ -444,7 +482,8 @@ electricdrivecompanion/
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
-    test/                      85 Tests gegen Fixtures
+    test/                      96 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
+    redaktion-einbauen.mjs     Export der Treffer in den Bestand der App
 ```

@@ -14,8 +14,10 @@ struct StationDetailView: View {
                 titleBlock
                 if let availability = station.availability { availabilityBlock(availability) }
                 connectorBlock
-                if let editorial = station.editorial {
+                if let editorial = station.editorial, editorial.isTested {
                     editorialBlock(editorial)
+                } else if station.editorial != nil {
+                    onListHint
                 } else {
                     noEditorialHint
                 }
@@ -124,7 +126,7 @@ struct StationDetailView: View {
                 }
             }
 
-            Text(editorial.verdict)
+            Text(editorial.verdictText ?? "")
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.ink2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -155,6 +157,17 @@ struct StationDetailView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(Theme.signal.opacity(0.25), lineWidth: 1)
         )
+    }
+
+    /// Erfasst, aber noch nicht gefahren. Das ist etwas anderes als "kennen wir
+    /// nicht" und wird auch anders gesagt.
+    private var onListHint: some View {
+        Text("Diese Station steht auf unserer Liste, getestet haben wir sie noch nicht.")
+            .font(.system(size: 13))
+            .foregroundStyle(Theme.meta)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
     }
 
     private var noEditorialHint: some View {

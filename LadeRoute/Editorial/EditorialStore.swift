@@ -154,6 +154,13 @@ struct AnnotatedStation: Identifiable, Hashable, Sendable {
 
     var id: String { station.id }
 
-    /// Stationen mit eigener Bewertung sollen in der Liste nach oben.
-    var hasEditorialContent: Bool { editorial != nil }
+    /// Stationen mit eigenem Urteil sollen in der Liste nach oben.
+    ///
+    /// Ein bloßer Bestandseintrag zählt hier nicht mit: Nach dem Import eines
+    /// Exports trüge sonst jede zweite Station den Marker der Redaktion, ohne
+    /// dass ein Wort darin steht.
+    var hasEditorialContent: Bool { editorial?.isTested == true }
+
+    /// Die Station steht in unserem Bestand, ob getestet oder nicht.
+    var isOnEditorialList: Bool { editorial != nil }
 }

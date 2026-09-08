@@ -167,7 +167,7 @@ struct StationRow: View {
                     availabilityLine(availability)
                 }
 
-                if let editorial = item.editorial {
+                if let editorial = item.editorial, editorial.isTested {
                     editorialLine(editorial)
                 }
             }
@@ -207,7 +207,7 @@ struct StationRow: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Theme.signal)
                 }
-                Text(editorial.verdict)
+                Text(editorial.verdictText ?? "")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.ink2)
                     .lineLimit(2)
