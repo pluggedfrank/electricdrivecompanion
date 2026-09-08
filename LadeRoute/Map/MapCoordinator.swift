@@ -191,7 +191,7 @@ private extension MapCoordinator {
                 pinImage: image
             )
 
-            if (try? map.addMarker(options)) != nil {
+            if (try? map.addMarker(options: options)) != nil {
                 markerCoordinates.append((annotated.id, annotated.station.coordinate))
             }
         }
