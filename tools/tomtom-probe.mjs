@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import * as ev from './lib/evsearch.mjs';
 import * as geo from './lib/geo.mjs';
+import * as corridor from './lib/corridor.mjs';
 import * as editorial from './lib/editorial.mjs';
 import { resolveApiKey } from './lib/apikey.mjs';
 
@@ -30,6 +31,12 @@ const DEFAULTS = {
   to: '53.6148,7.1621',
   detour: '10',
   availability: '5',
+  // Wie weit darf eine Station seitlich der Route liegen? Ohne diese Grenze
+  // schleppt die Umkreissuche Innenstadt-Ladepunkte mit, fuer die niemand von
+  // der Autobahn abfaehrt.
+  corridor: '2',
+  // 270 Zeilen sind im Terminal unbrauchbar.
+  show: '40',
   segment: '100',
 };
 
@@ -451,8 +458,22 @@ async function main() {
     console.log(dim('--no-wide: nur Along-Route, wie in der TomTom-Pro-App'));
   }
 
+  // Auf die Route projizieren: Lage entlang der Strecke und seitlicher
+  // Abstand. Die Umkreissuche liefert keinen Umweg mit, ohne das stuenden ihre
+  // Treffer ohne jede Ortsangabe in der Liste und liessen sich nicht sortieren.
+  const vorFilter = stationen.length;
+  stationen = corridor.orderAlongRoute(stationen, route.points, Number(args.corridor) * 1000);
+  const verworfen = vorFilter - stationen.length;
+
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
-  console.log(`${bold(String(stationen.length))} Stationen aus ${anfragen} Anfragen in ${seconds} s`);
+  console.log(
+    `${bold(String(stationen.length))} Stationen aus ${anfragen} Anfragen in ${seconds} s`
+  );
+  if (verworfen > 0) {
+    console.log(
+      dim(`${verworfen} weitere lagen mehr als ${args.corridor} km neben der Route und fielen raus`)
+    );
+  }
   const grenze = options.minPowerKW ?? ev.DEFAULT_OPTIONS.minPowerKW;
   console.log(
     dim(grenze ? `Leistungsfilter: ab ${grenze} kW` : 'Leistungsfilter aus, alle Saeulen')
@@ -510,25 +531,38 @@ async function main() {
   }
 
   // 5. Ergebnis
-  heading('5. Ergebnis');
-  annotated.forEach((item, index) => {
+  const zeige = Number(args.show);
+  const sichtbar = args['all-results'] ? annotated : annotated.slice(0, zeige);
+  heading(`5. Ergebnis, in Fahrtrichtung sortiert${
+    sichtbar.length < annotated.length ? ` (erste ${sichtbar.length} von ${annotated.length})` : ''
+  }`);
+
+  sichtbar.forEach((item, index) => {
     const s = item.station;
     const power = ev.maxPowerKW(s);
     const parts = [
       power ? `${power.toFixed(0)} kW` : 'kW unbekannt',
+      // Seitlicher Abstand gilt fuer alle Treffer, der Umweg nur fuer die aus
+      // der Along-Route-Suche.
+      `${Math.round(s.distanceFromRouteMeters)} m ab Route`,
       s.detourSeconds != null ? `+${Math.round(s.detourSeconds / 60)} min Umweg` : null,
       item.availability ? `${item.availability.available}/${item.availability.total} frei` : null,
     ].filter(Boolean);
 
+    const km = String(Math.round(s.progressMeters / 1000)).padStart(3);
     const marker = item.editorial ? red('*') : dim('.');
-    console.log(`${marker} ${String(index + 1).padStart(3)}. ${bold(s.name)}`);
-    console.log(`      ${dim(parts.join(' | '))}`);
-    if (s.address) console.log(`      ${dim(s.address)}`);
+    console.log(`${marker} km ${km}  ${bold(s.name)}`);
+    console.log(`         ${dim(parts.join(' | '))}`);
+    if (s.address) console.log(`         ${dim(s.address)}`);
     if (item.editorial) {
       const e = item.editorial;
-      console.log(`      ${red('eigener Test:')} Note ${e.rating} - ${e.verdict.slice(0, 90)}...`);
+      console.log(`         ${red('eigener Test:')} Note ${e.rating} - ${e.verdict.slice(0, 80)}...`);
     }
   });
+
+  if (sichtbar.length < annotated.length) {
+    console.log(dim(`\n... und ${annotated.length - sichtbar.length} weitere. --all-results zeigt alle.`));
+  }
 
   // 6. Optional: Startbestand schreiben
   if (args['export-editorial']) {

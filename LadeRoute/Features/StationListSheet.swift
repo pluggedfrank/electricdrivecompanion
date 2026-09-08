@@ -156,6 +156,10 @@ struct StationRow: View {
                     }
                     if let detour = item.station.detourSeconds {
                         badge("+\(Int((detour / 60).rounded())) min", color: Theme.river)
+                    } else if let abstand = item.station.distanceFromRouteMeters {
+                        // Treffer aus der Umkreissuche bringen keinen Umweg mit.
+                        // Der seitliche Abstand ist der beste Ersatz.
+                        badge("\(Int(abstand.rounded())) m ab Route", color: Theme.river)
                     }
                 }
 

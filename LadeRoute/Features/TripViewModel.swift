@@ -49,6 +49,12 @@ final class TripViewModel: ObservableObject {
     /// Minute auf die vollständige Liste zu warten.
     @Published private(set) var isWideningSearch = false
 
+    /// Wie weit darf eine Station seitlich der Route liegen?
+    ///
+    /// Ohne diese Grenze schleppt die Umkreissuche Innenstadt-Ladepunkte mit,
+    /// für die auf einer Durchgangsfahrt niemand abfährt.
+    @Published var maxDistanceFromRouteMeters: Double = 2_000
+
     /// Filter, die direkt in die Suchanfrage wandern.
     ///
     /// Die Vorgabe ist die Langstreckenschwelle: Unter 50 kW lohnt ein Stopp auf
@@ -146,7 +152,12 @@ final class TripViewModel: ObservableObject {
                 routeGeometry: route.geometry,
                 options: options
             )
-            stations = editorialStore.annotate(found)
+            let sortiert = GeoUtils.orderAlongRoute(
+                found,
+                routeGeometry: route.geometry,
+                maxDistanceMeters: maxDistanceFromRouteMeters
+            )
+            stations = editorialStore.annotate(sortiert)
             phase = .ready
         } catch {
             phase = .failed(error.localizedDescription)
@@ -173,18 +184,32 @@ final class TripViewModel: ObservableObject {
                 options: options
             )
 
-            // Die Reihenfolge der ersten Runde bleibt erhalten, sie folgt dem
-            // Umweg. Neue Treffer kommen hinten dran.
+            // Beide Runden zusammen sortieren, nicht die zweite hinten anhängen.
+            // Die Umkreissuche liefert keinen Umweg mit, ihre Treffer ließen
+            // sich sonst gar nicht einordnen.
             var known = Set(stations.map(\.id))
-            var ergaenzt = stations
+            var alle = stations.map(\.station)
             for station in nearby where !known.contains(station.id) {
                 known.insert(station.id)
-                ergaenzt.append(AnnotatedStation(
-                    station: station,
-                    editorial: editorialStore.match(station)
-                ))
+                alle.append(station)
             }
-            stations = ergaenzt
+
+            let sortiert = GeoUtils.orderAlongRoute(
+                alle,
+                routeGeometry: route.geometry,
+                maxDistanceMeters: maxDistanceFromRouteMeters
+            )
+
+            // Bereits geholte Live-Belegungen nicht wegwerfen.
+            let belegungen = Dictionary(
+                stations.compactMap { item in item.availability.map { (item.id, $0) } },
+                uniquingKeysWith: { first, _ in first }
+            )
+            stations = editorialStore.annotate(sortiert).map { item in
+                var angereichert = item
+                angereichert.availability = belegungen[item.id]
+                return angereichert
+            }
         } catch {
             // Die erste Runde steht bereits. Ein Fehler hier kostet nur die
             // Ergänzung, nicht das Ergebnis.

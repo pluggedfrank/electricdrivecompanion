@@ -116,6 +116,53 @@ enum GeoUtils {
         return stride(of: simplified, toAtMost: maxPoints)
     }
 
+    /// Ordnet Stationen ihrer Lage entlang der Route zu und sortiert sie danach.
+    ///
+    /// `maxDistanceMeters` wirft weg, was zu weit abseits liegt. Ohne diese
+    /// Grenze schleppt die Umkreissuche Innenstadt-Ladepunkte mit, für die
+    /// niemand von der Autobahn abfährt.
+    static func orderAlongRoute(
+        _ stations: [ChargingStation],
+        routeGeometry: [CLLocationCoordinate2D],
+        maxDistanceMeters: CLLocationDistance = .infinity
+    ) -> [ChargingStation] {
+        guard routeGeometry.count >= 2 else { return stations }
+
+        // Wegstrecke bis zu jedem Stützpunkt, einmal vorab.
+        var cumulative = [CLLocationDistance](repeating: 0, count: routeGeometry.count)
+        for i in 1 ..< routeGeometry.count {
+            cumulative[i] = cumulative[i - 1] + distance(routeGeometry[i - 1], routeGeometry[i])
+        }
+
+        var ordered: [ChargingStation] = []
+        ordered.reserveCapacity(stations.count)
+
+        for var station in stations {
+            var best = CLLocationDistance.infinity
+            var bestIndex = 0
+            for (i, point) in routeGeometry.enumerated() {
+                let d = distance(point, station.coordinate)
+                if d < best {
+                    best = d
+                    bestIndex = i
+                }
+            }
+
+            guard best <= maxDistanceMeters else { continue }
+            station.distanceFromRouteMeters = best
+            station.progressAlongRouteMeters = cumulative[bestIndex]
+            ordered.append(station)
+        }
+
+        // Entlang der Fahrtrichtung, bei Gleichstand das Nähere zuerst.
+        return ordered.sorted {
+            let a = $0.progressAlongRouteMeters ?? 0
+            let b = $1.progressAlongRouteMeters ?? 0
+            if a != b { return a < b }
+            return ($0.distanceFromRouteMeters ?? 0) < ($1.distanceFromRouteMeters ?? 0)
+        }
+    }
+
     /// Setzt entlang der Route alle `spacingMeters` einen Punkt.
     ///
     /// Anders als beim Ausdünnen geht es hier nicht um die Form der Linie,

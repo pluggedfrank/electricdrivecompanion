@@ -65,7 +65,7 @@ node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach No
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --no-wide     # nur Along-Route, wie die TomTom-Pro-App
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 81 Tests
+npm test                            # 85 Tests
 ```
 
 Der Probe-Lauf nutzt beide Suchverfahren, genau wie die App. `--no-wide`
@@ -277,6 +277,24 @@ Sekunden da, und die Liste steht. Danach laufen die Umkreissuchen nach und
 ergänzen sie. Der Nutzer sieht sofort etwas, statt eine halbe Minute auf die
 vollständige Liste zu warten.
 
+### Warum jede Station auf die Route projiziert wird
+
+Die beiden Suchen liefern Unterschiedliches: Die Along-Route-Suche bringt den
+tatsächlichen Umweg in Minuten mit, die Umkreissuche gar keine Ortsangabe. Ohne
+Gegenmaßnahme stünden deren Treffer beziehungslos in der Liste, und eine
+gemeinsame Sortierung wäre unmöglich. Der erste Exportlauf zeigte das
+drastisch: 59 Treffer sauber nach Umweg sortiert, danach 211 in
+Abfragereihenfolge, ab Eintrag 60 sprang die Liste von Norddeich zurück nach
+Meerbusch.
+
+`GeoUtils.orderAlongRoute` projiziert deshalb jede Station auf die
+Routengeometrie und ermittelt zwei Werte: den Kilometerstand entlang der
+Strecke und den seitlichen Abstand. Beides kostet keine einzige zusätzliche
+Anfrage. Sortiert wird danach in Fahrtrichtung, und der seitliche Abstand
+dient zugleich als Grenze: Was weiter als zwei Kilometer neben der Route
+liegt, fällt raus. Sonst schleppt die Umkreissuche Innenstadt-Ladepunkte mit,
+für die auf einer Durchgangsfahrt niemand abfährt.
+
 ### Eine zweite Live-Quelle
 
 Für den laufenden Abgleich und für alles außerhalb Deutschlands bietet sich
@@ -309,7 +327,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 81 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 85 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -377,7 +395,7 @@ electricdrivecompanion/
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
-    test/                      81 Tests gegen Fixtures
+    test/                      85 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
 ```

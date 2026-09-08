@@ -18,7 +18,15 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     let availabilityID: String?
     let detourSeconds: Double?
     let detourMeters: Double?
-    let distanceFromRouteMeters: Double?
+    /// Seitlicher Abstand zur Route. Aus der Antwort, sofern vorhanden, sonst
+    /// aus der eigenen Projektion.
+    var distanceFromRouteMeters: Double?
+    /// Wie weit entlang der Strecke die Station liegt.
+    ///
+    /// Die Umkreissuche liefert im Gegensatz zur Along-Route-Suche keinen
+    /// Umweg mit. Ohne diesen Wert stünden ihre Treffer ohne jede Ortsangabe
+    /// in der Liste und ließen sich nicht in Fahrtrichtung sortieren.
+    var progressAlongRouteMeters: Double?
     let operatorName: String?
 
     var coordinate: CLLocationCoordinate2D {
@@ -104,6 +112,7 @@ extension ChargingStation {
         detourSeconds = result.detourTime
         detourMeters = result.detourDistance
         distanceFromRouteMeters = result.dist
+        progressAlongRouteMeters = nil
         operatorName = result.poi?.brands?.compactMap(\.name).first
     }
 }

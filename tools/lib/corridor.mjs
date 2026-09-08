@@ -142,3 +142,90 @@ export function matchSources(registerEntries, stations, thresholdMeters = 250) {
 
   return { matched, missing };
 }
+
+/**
+ * Projiziert Punkte auf die Route.
+ *
+ * Liefert für jeden Punkt, wie weit entlang der Strecke er liegt und wie weit
+ * er seitlich davon entfernt ist. Beides braucht die App, und beides kostet
+ * keine einzige zusätzliche Anfrage.
+ *
+ * Die Umkreissuche liefert im Gegensatz zur Along-Route-Suche keinen Umweg
+ * mit. Ohne diese Projektion stünden ihre Treffer ohne jede Ortsangabe in der
+ * Liste, und eine Sortierung entlang der Fahrtrichtung wäre unmöglich.
+ */
+export function createRouteProjector(routePoints, searchRadiusMeters = 10000) {
+  // Wegstrecke bis zu jedem Stützpunkt, einmal vorab.
+  const cumulative = new Array(routePoints.length);
+  cumulative[0] = 0;
+  for (let i = 1; i < routePoints.length; i++) {
+    cumulative[i] = cumulative[i - 1] + distance(routePoints[i - 1], routePoints[i]);
+  }
+
+  const index = buildRouteIndex(
+    routePoints.map((point, i) => ({ lat: point.lat, lon: point.lon, i })),
+    searchRadiusMeters
+  );
+
+  const totalMeters = cumulative[cumulative.length - 1] ?? 0;
+
+  return {
+    totalMeters,
+    /** Gibt {progressMeters, distanceMeters} oder null, wenn zu weit weg. */
+    project(point) {
+      const latCell = Math.floor(point.lat / index.cellSizeLat);
+      const lonCell = Math.floor(point.lon / index.cellSizeLon);
+
+      let best = Infinity;
+      let bestIndex = -1;
+
+      for (let dLat = -1; dLat <= 1; dLat++) {
+        for (let dLon = -1; dLon <= 1; dLon++) {
+          const bucket = index.cells.get(`${latCell + dLat}:${lonCell + dLon}`);
+          if (!bucket) continue;
+          for (const candidate of bucket) {
+            const d = distance(point, candidate);
+            if (d < best) {
+              best = d;
+              bestIndex = candidate.i;
+            }
+          }
+        }
+      }
+
+      if (bestIndex < 0) return null;
+      return { progressMeters: cumulative[bestIndex], distanceMeters: best };
+    },
+  };
+}
+
+/**
+ * Reichert Stationen um Lage entlang der Route an und sortiert sie danach.
+ *
+ * `maxDistanceMeters` wirft weg, was zu weit abseits liegt. Ohne diese Grenze
+ * schleppt die Umkreissuche Innenstadt-Ladepunkte mit, für die niemand von der
+ * Autobahn abfährt.
+ */
+export function orderAlongRoute(stations, routePoints, maxDistanceMeters = Infinity) {
+  const projector = createRouteProjector(routePoints);
+
+  const ordered = [];
+  for (const station of stations) {
+    const projection = projector.project(station);
+    if (!projection) continue;
+    if (projection.distanceMeters > maxDistanceMeters) continue;
+    ordered.push({
+      ...station,
+      progressMeters: projection.progressMeters,
+      distanceFromRouteMeters: projection.distanceMeters,
+    });
+  }
+
+  // Entlang der Fahrtrichtung, bei Gleichstand das Nähere zuerst.
+  ordered.sort(
+    (a, b) =>
+      a.progressMeters - b.progressMeters ||
+      a.distanceFromRouteMeters - b.distanceFromRouteMeters
+  );
+  return ordered;
+}

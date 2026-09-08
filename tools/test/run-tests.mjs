@@ -879,3 +879,70 @@ test('eine halbvolle Antwort gilt nicht als abgeschnitten', async () => {
   );
   assert.equal(result.truncated.length, 0);
 });
+
+
+// ============================================== Lage entlang der Route
+
+test('Stationen werden in Fahrtrichtung sortiert', () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 500);
+  const durcheinander = [
+    { id: 'spaet', ...route[450] },
+    { id: 'frueh', ...route[50] },
+    { id: 'mitte', ...route[250] },
+  ];
+
+  const sortiert = corridor.orderAlongRoute(durcheinander, route);
+  assert.deepEqual(sortiert.map((s) => s.id), ['frueh', 'mitte', 'spaet']);
+});
+
+test('die Projektion liefert Kilometerstand und seitlichen Abstand', () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 500);
+  const laenge = geo.pathLength(route);
+
+  const [station] = corridor.orderAlongRoute([{ id: 'x', ...route[250] }], route);
+  assert.ok(station.distanceFromRouteMeters < 1, 'liegt auf der Route');
+  assert.ok(
+    Math.abs(station.progressMeters - laenge / 2) < laenge * 0.02,
+    `Kilometerstand ${station.progressMeters.toFixed(0)} statt rund ${(laenge / 2).toFixed(0)}`
+  );
+});
+
+test('was zu weit abseits liegt, fällt raus', () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 300);
+  const mitte = route[150];
+
+  // Quer zur Route versetzen, nicht in der Breite: Die Strecke verläuft fast
+  // nach Norden, ein Versatz in der Breite liefe parallel zu ihr statt seitlich
+  // weg. Auf 52 Grad sind 0,0147 Grad Länge rund ein Kilometer.
+  const kandidaten = [
+    { id: 'nah', lat: mitte.lat, lon: mitte.lon + 0.0147 },
+    { id: 'fern', lat: mitte.lat, lon: mitte.lon + 0.0736 },
+  ];
+
+  const [nah, fern] = kandidaten.map(
+    (k) => corridor.orderAlongRoute([k], route)[0].distanceFromRouteMeters
+  );
+  assert.ok(nah > 800 && nah < 1200, `nah war ${nah.toFixed(0)} m`);
+  assert.ok(fern > 4000, `fern war ${fern.toFixed(0)} m`);
+
+  const imKorridor = corridor.orderAlongRoute(kandidaten, route, 2000);
+  assert.deepEqual(imKorridor.map((s) => s.id), ['nah']);
+});
+
+test('die Umkreistreffer bekommen dieselbe Ortsangabe wie die Along-Route-Treffer', () => {
+  // Der Along-Route-Treffer bringt detourSeconds mit, der Umkreistreffer nicht.
+  // Nach der Projektion haben beide Kilometerstand und seitlichen Abstand, und
+  // erst dadurch lassen sie sich überhaupt gemeinsam sortieren.
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 300);
+  const gemischt = [
+    { id: 'umkreis', ...route[200], detourSeconds: null },
+    { id: 'alongroute', ...route[100], detourSeconds: 180 },
+  ];
+
+  const sortiert = corridor.orderAlongRoute(gemischt, route, 2000);
+  assert.deepEqual(sortiert.map((s) => s.id), ['alongroute', 'umkreis']);
+  for (const station of sortiert) {
+    assert.ok(Number.isFinite(station.progressMeters));
+    assert.ok(Number.isFinite(station.distanceFromRouteMeters));
+  }
+});
