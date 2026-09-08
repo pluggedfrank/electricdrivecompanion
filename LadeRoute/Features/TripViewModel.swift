@@ -41,7 +41,11 @@ final class TripViewModel: ObservableObject {
     @Published var mapBottomInset: CGFloat = 0
 
     /// Filter, die direkt in die Suchanfrage wandern.
-    @Published var onlyFastCharging = false
+    ///
+    /// Die Vorgabe ist die Langstreckenschwelle: Unter 50 kW lohnt ein Stopp auf
+    /// einer langen Fahrt nicht, und da eine Antwort nur 20 Treffer fasst,
+    /// verdrängen langsame Säulen sonst die brauchbaren.
+    @Published var powerTier: PowerTier = .schnell
     @Published var maxDetourMinutes: Double = 10
 
     var selectedStation: AnnotatedStation? {
@@ -60,6 +64,10 @@ final class TripViewModel: ObservableObject {
     var stationsForList: [AnnotatedStation] { stations }
 
     var editorialCount: Int { stations.filter(\.hasEditorialContent).count }
+
+    /// Stationen, deren Ladeleistung TomTom nicht kennt. Sie bleiben in der
+    /// Liste, werden aber gekennzeichnet, damit niemand einen Stopp darauf plant.
+    var unknownPowerCount: Int { stations.filter { !$0.station.hasKnownPower }.count }
 
     // MARK: Aktionen
 
@@ -121,10 +129,7 @@ final class TripViewModel: ObservableObject {
         phase = .searchingStations
         var options = AlongRouteSearchOptions()
         options.maxDetourSeconds = Int(maxDetourMinutes * 60)
-        if onlyFastCharging {
-            options.minPowerKW = 100
-            options.connectorTypes = [.ccs2, .chademo, .tesla]
-        }
+        options.minPowerKW = powerTier.minPowerKW
 
         do {
             let found = try await api.chargingStationsAlongRoute(

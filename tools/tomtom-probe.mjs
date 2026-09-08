@@ -240,6 +240,77 @@ const VARIANTS = [
   { label: 'petrol station, ohne Kategorie (Gegenprobe)', query: 'petrol station', useCategoryFilter: false },
 ];
 
+/**
+ * Prueft, ob der Server den minPowerKW-Filter tatsaechlich anwendet.
+ *
+ * Nach dem Befund zu categorySet, das Ergebnisse stillschweigend geloescht hat,
+ * wird kein Filterparameter mehr ungeprueft geglaubt. Drei Anfragen auf
+ * demselben Abschnitt genuegen fuer eine belastbare Aussage.
+ */
+async function diagnosePowerFilter(apiKey, points, baseOptions) {
+  heading('Greift der Leistungsfilter serverseitig?');
+
+  const stufen = [
+    { label: 'ohne Filter', minPowerKW: 0 },
+    { label: 'ab 50 kW', minPowerKW: ev.POWER_TIERS.schnell },
+    { label: 'ab 150 kW', minPowerKW: ev.POWER_TIERS.hpc },
+  ];
+
+  const ergebnisse = [];
+  for (const [index, stufe] of stufen.entries()) {
+    if (index > 0) await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS * 4);
+
+    // Ohne lokale Nachfilterung, sonst pruefen wir unseren eigenen Code.
+    const options = {
+      ...baseOptions,
+      minPowerKW: stufe.minPowerKW,
+      enforceMinPowerLocally: false,
+      onlyEVStations: false,
+    };
+    try {
+      const { raw } = await searchSegment(apiKey, points, options);
+      const powers = raw.map(ev.maxPowerKW).filter((p) => p != null);
+      const unterGrenze = powers.filter((p) => stufe.minPowerKW && p < stufe.minPowerKW);
+      ergebnisse.push({ stufe, count: raw.length, powers, unterGrenze });
+
+      console.log(`${String(raw.length).padStart(3)} Treffer  ${bold(stufe.label)}`);
+      if (powers.length > 0) {
+        console.log(dim(`      Leistung ${Math.min(...powers)} bis ${Math.max(...powers)} kW`));
+      }
+      if (unterGrenze.length > 0) {
+        console.log(
+          red(`      ${unterGrenze.length} Treffer unter der Grenze: ${unterGrenze.join(', ')} kW`)
+        );
+      }
+    } catch (error) {
+      ergebnisse.push({ stufe, count: 0, error: error.message });
+      console.log(`${red('!!')}          ${bold(stufe.label)}`);
+      console.log(dim(`      ${error.message}`));
+    }
+  }
+
+  const [ohne, ab50] = ergebnisse;
+  console.log('');
+  if (ohne?.error || ab50?.error) {
+    console.log(dim('Nicht auswertbar, eine der Anfragen scheiterte.'));
+  } else if (ohne.count > 0 && ab50.count === 0) {
+    console.log(
+      red('minPowerKW loescht das Ergebnis, genau wie categorySet.') +
+        ' Der Parameter gehoert raus, gefiltert wird dann nur lokal.'
+    );
+  } else if (ab50.unterGrenze.length > 0) {
+    console.log(
+      red('Der Server ignoriert minPowerKW') +
+        ', es kommen Saeulen unter der Grenze durch. Die lokale Pruefung faengt das ab.'
+    );
+  } else {
+    console.log(green('minPowerKW arbeitet korrekt.') + ' Der Filter darf serverseitig bleiben.');
+    console.log(
+      dim('Das ist wertvoll: langsame Saeulen belegen dann keine der 20 Antwortplaetze.')
+    );
+  }
+}
+
 async function diagnose(apiKey, route, baseOptions) {
   const segments = geo.splitIntoSegments(route.points, 100000);
   // Ein Abschnitt aus der Mitte: dort liegt echte Autobahn, nicht Stadtrand.
@@ -328,6 +399,9 @@ async function diagnose(apiKey, route, baseOptions) {
     );
   }
 
+  await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS * 4);
+  await diagnosePowerFilter(apiKey, points, { ...baseOptions, ...best.variant });
+
   const gegenprobe = findings.find((f) => f.variant.query === 'petrol station');
   if (gegenprobe && !gegenprobe.error) {
     const verworfen = gegenprobe.rawCount - gegenprobe.count;
@@ -389,9 +463,9 @@ async function main() {
     ...(args.query ? { query: args.query } : {}),
     ...(args.category ? { useCategoryFilter: true, categoryId: String(args.category) } : {}),
     ...(args.all ? { onlyEVStations: false } : {}),
-    ...(args.fast
-      ? { minPowerKW: 100, connectorTypes: ['IEC62196Type2CCS', 'Chademo', 'Tesla'] }
-      : {}),
+    // --power=0 schaltet den Filter ab, --power=150 verlangt HPC.
+    ...(args.power !== undefined ? { minPowerKW: Number(args.power) } : {}),
+    ...(args.fast ? { minPowerKW: ev.POWER_TIERS.hpc } : {}),
   };
 
   if (args['dry-run']) {
@@ -448,7 +522,10 @@ async function main() {
   console.log(
     `${result.stations.length} Stationen aus ${result.requests.length} Anfragen in ${seconds} s`
   );
-  if (args.fast) console.log(dim('Filter aktiv: ab 100 kW, nur DC-Stecker'));
+  const grenze = options.minPowerKW ?? ev.DEFAULT_OPTIONS.minPowerKW;
+  console.log(
+    dim(grenze ? `Leistungsfilter: ab ${grenze} kW` : 'Leistungsfilter aus, alle Saeulen')
+  );
 
   if (result.stations.length < segments.length * 3) {
     console.log(

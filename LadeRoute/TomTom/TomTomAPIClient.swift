@@ -43,6 +43,40 @@ enum TomTomAPIError: LocalizedError {
     }
 }
 
+// MARK: - Ladeleistung
+
+/// Ladeleistungsstufen.
+///
+/// Auf der Langstrecke ist alles unter 50 kW ohne Belang: Wer 300 km vor sich
+/// hat, lädt nicht an einer 22-kW-AC-Säule. Da eine Antwort nur 20 Treffer
+/// fasst, verdrängen langsame Säulen sonst die brauchbaren.
+enum PowerTier: Double, CaseIterable, Identifiable, Sendable {
+    case alle = 0
+    case schnell = 50
+    case hpc = 150
+
+    var id: Double { rawValue }
+
+    /// nil bedeutet: kein Filter.
+    var minPowerKW: Double? { rawValue > 0 ? rawValue : nil }
+
+    var label: String {
+        switch self {
+        case .alle: return "alle"
+        case .schnell: return "ab 50 kW"
+        case .hpc: return "ab 150 kW"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .alle: return "Auch AC-Säulen. Für die Stadt, nicht für die Langstrecke."
+        case .schnell: return "Schnellladen. Die sinnvolle Untergrenze für lange Fahrten."
+        case .hpc: return "Nur Hochleistungslader. Kurze Stopps, dafür weniger Auswahl."
+        }
+    }
+}
+
 // MARK: - Suchoptionen
 
 struct AlongRouteSearchOptions: Sendable {
@@ -66,8 +100,12 @@ struct AlongRouteSearchOptions: Sendable {
     var maxDetourSeconds: Int = 600
     /// Treffer pro Anfrage. Die Along-Route-Suche liefert höchstens 20.
     var limitPerRequest: Int = 20
-    /// Mindest-Ladeleistung in kW. nil = kein Filter.
-    var minPowerKW: Double?
+    /// Mindest-Ladeleistung in kW. Vorgabe ist die Langstreckenschwelle.
+    /// nil oder 0 schaltet den Filter ab.
+    var minPowerKW: Double? = PowerTier.schnell.minPowerKW
+    /// Die Leistung zusätzlich an den Daten prüfen, statt dem Server zu trauen.
+    /// Nach der Erfahrung mit categorySet ist das keine Paranoia.
+    var enforceMinPowerLocally: Bool = true
     /// Erlaubte Steckertypen. Leer = kein Filter.
     var connectorTypes: [ConnectorType] = []
     /// Länge eines Routenabschnitts in Metern. Pro Abschnitt läuft eine Anfrage,
@@ -84,11 +122,20 @@ struct AlongRouteSearchOptions: Sendable {
     /// "missing valid authentication credentials".
     var requestInterval: Duration = .milliseconds(300)
 
-    static let schnellladen = AlongRouteSearchOptions(
-        maxDetourSeconds: 900,
-        minPowerKW: 100,
-        connectorTypes: [.ccs2, .chademo, .tesla]
-    )
+}
+
+// Der Initializer steht bewusst in einer Extension: Ein eigener Initializer im
+// Typ selbst würde den memberwise-Initializer verdrängen, den der Rest des
+// Codes benutzt.
+extension AlongRouteSearchOptions {
+    init(tier: PowerTier, maxDetourSeconds: Int = 600) {
+        self.init()
+        minPowerKW = tier.minPowerKW
+        self.maxDetourSeconds = maxDetourSeconds
+    }
+
+    static let langstrecke = AlongRouteSearchOptions(tier: .schnell)
+    static let nurHPC = AlongRouteSearchOptions(tier: .hpc, maxDetourSeconds: 900)
 }
 
 // MARK: - Client
@@ -203,7 +250,8 @@ actor TomTomAPIClient {
         if options.spreadResults {
             items.append(URLQueryItem(name: "spreadingMode", value: "auto"))
         }
-        if let minPower = options.minPowerKW {
+        // 0 und nil heißen beide: kein Filter, also den Parameter weglassen.
+        if let minPower = options.minPowerKW, minPower > 0 {
             items.append(URLQueryItem(name: "minPowerKW", value: String(minPower)))
         }
         if !options.connectorTypes.isEmpty {
@@ -224,10 +272,19 @@ actor TomTomAPIClient {
         let data = try await perform(request)
         do {
             let response = try JSONDecoder().decode(AlongRouteSearchResponse.self, from: data)
-            let stations = response.results.map(ChargingStation.init(searchResult:))
+            var stations = response.results.map(ChargingStation.init(searchResult:))
+
             // Ohne Kategoriefilter bringt die Freitextsuche auch Tankstellen und
             // Werkstätten mit. Die fallen hier raus.
-            return options.onlyEVStations ? stations.filter(\.isChargingStation) : stations
+            if options.onlyEVStations {
+                stations = stations.filter(\.isChargingStation)
+            }
+
+            if options.enforceMinPowerLocally, let minPower = options.minPowerKW, minPower > 0 {
+                stations = stations.filter { $0.meetsMinPower(minPower) }
+            }
+
+            return stations
         } catch {
             throw TomTomAPIError.decoding(underlying: error)
         }

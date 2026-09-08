@@ -169,8 +169,9 @@ test('der Kategoriefilter laesst sich abschalten', () => {
 });
 
 test('Filter landen nur dann in der Anfrage, wenn sie gesetzt sind', () => {
+  // Steckertypen sind per Vorgabe offen, die Ladeleistung ist es nicht:
+  // sie steht auf der Langstreckenschwelle.
   const ohne = new URL(ev.buildAlongRouteURL('KEY'));
-  assert.equal(ohne.searchParams.get('minPowerKW'), null);
   assert.equal(ohne.searchParams.get('connectorSet'), null);
 
   const mit = new URL(
@@ -285,6 +286,64 @@ test('die Kategorie-ID lässt sich zum Ausprobieren setzen', () => {
     ev.buildAlongRouteURL('KEY', { useCategoryFilter: true, categoryId: '7313' })
   );
   assert.equal(url.searchParams.get('categorySet'), '7313');
+});
+
+// ---------------------------------------------------------- Ladeleistung
+
+test('auf der Langstrecke gilt ab 50 kW als Vorgabe', () => {
+  assert.equal(ev.DEFAULT_OPTIONS.minPowerKW, 50);
+  const url = new URL(ev.buildAlongRouteURL('KEY'));
+  assert.equal(url.searchParams.get('minPowerKW'), '50');
+});
+
+test('0 schaltet den Leistungsfilter ab, statt 0 zu senden', () => {
+  const url = new URL(ev.buildAlongRouteURL('KEY', { minPowerKW: 0 }));
+  assert.equal(url.searchParams.get('minPowerKW'), null);
+});
+
+test('die Leistungsgrenze wird auch lokal geprüft', () => {
+  const station = (kW) => ({ connectors: kW == null ? [] : [{ ratedPowerKW: kW }] });
+
+  assert.equal(ev.meetsMinPower(station(22), 50), false);
+  assert.equal(ev.meetsMinPower(station(50), 50), true);
+  assert.equal(ev.meetsMinPower(station(150), 150), true);
+  assert.equal(ev.meetsMinPower(station(100), 150), false);
+});
+
+test('ohne Leistungsangabe bleibt eine Station drin', () => {
+  // Fehlende Daten sind kein Beleg fuer eine langsame Saeule. Einen echten
+  // Ladepark wegen einer Luecke im Datensatz zu verwerfen waere schlimmer.
+  const ohneAngabe = { connectors: [] };
+  assert.equal(ev.meetsMinPower(ohneAngabe, 150), true);
+  assert.equal(ev.hasKnownPower(ohneAngabe), false);
+});
+
+test('die 22-kW-Säule fällt bei der Vorgabe heraus', () => {
+  const antwort = {
+    results: [
+      {
+        id: 'ac-22',
+        position: { lat: 51, lon: 7 },
+        poi: { name: 'Parkhaus Innenstadt' },
+        chargingPark: { connectors: [{ connectorType: 'IEC62196Type2Outlet', ratedPowerKW: 22 }] },
+      },
+      {
+        id: 'dc-300',
+        position: { lat: 51.1, lon: 7.1 },
+        poi: { name: 'Ladepark Autobahn' },
+        chargingPark: { connectors: [{ connectorType: 'IEC62196Type2CCS', ratedPowerKW: 300 }] },
+      },
+    ],
+  };
+
+  const mitVorgabe = ev.parseAlongRouteResponse(antwort);
+  assert.deepEqual(mitVorgabe.map((s) => s.id), ['dc-300']);
+
+  const ohneFilter = ev.parseAlongRouteResponse(antwort, { minPowerKW: 0 });
+  assert.equal(ohneFilter.length, 2);
+
+  const nurHPC = ev.parseAlongRouteResponse(antwort, { minPowerKW: ev.POWER_TIERS.hpc });
+  assert.deepEqual(nurHPC.map((s) => s.id), ['dc-300']);
 });
 
 // -------------------------------------------------------------- Zuordnung

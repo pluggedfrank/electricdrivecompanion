@@ -30,6 +30,20 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
         connectors.compactMap(\.ratedPowerKW).max()
     }
 
+    /// Ist die Leistungsangabe überhaupt bekannt?
+    var hasKnownPower: Bool { maxPowerKW != nil }
+
+    /// Erreicht die Station die geforderte Leistung?
+    ///
+    /// Stationen ohne Leistungsangabe bleiben drin. Fehlende Daten sind kein
+    /// Beleg für eine langsame Säule, und einen echten Ladepark wegen einer
+    /// Lücke im Datensatz zu verwerfen wäre der schlimmere Fehler.
+    func meetsMinPower(_ minPowerKW: Double) -> Bool {
+        guard minPowerKW > 0 else { return true }
+        guard let power = maxPowerKW else { return true }
+        return power >= minPowerKW
+    }
+
     var hasDCCharging: Bool {
         connectors.contains { $0.type?.isDC == true || ($0.ratedPowerKW ?? 0) >= 50 }
     }

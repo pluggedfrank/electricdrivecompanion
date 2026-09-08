@@ -63,8 +63,8 @@ cd tools
 node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
-node tomtom-probe.mjs --fast --detour=20
-npm test                            # 43 Tests
+node tomtom-probe.mjs --power=150 --detour=20
+npm test                            # 48 Tests
 ```
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
@@ -141,6 +141,36 @@ Ursachen: klappt der zweite Versuch, war es das Tempolimit. Bleibt es beim
 Fehler, stimmt etwas mit dem Key oder der Produktfreigabe nicht, und genau das
 wird dann gemeldet statt einer irreführenden Vermutung.
 
+## Ladeleistung: 50 kW ist die Untergrenze
+
+Auf der Langstrecke ist alles unter 50 kW ohne Belang. Wer 300 km vor sich hat,
+lädt nicht an einer 22-kW-AC-Säule. Da eine Antwort nur 20 Treffer fasst,
+verdrängen langsame Säulen sonst genau die Ladeparks, um die es geht. Der erste
+Lauf zeigte das exemplarisch: Der einzige Treffer war eine 22-kW-Säule mitten in
+Oberhausen.
+
+Drei Stufen, in App und Werkzeug dieselben:
+
+| Stufe | Grenze | wofür |
+|---|---|---|
+| alle | kein Filter | Stadtverkehr, Vollständigkeit |
+| **ab 50 kW** | 50 kW | **Vorgabe.** Die sinnvolle Untergrenze für lange Fahrten |
+| ab 150 kW | 150 kW | Nur Hochleistungslader. Kurze Stopps, weniger Auswahl |
+
+Gefiltert wird doppelt: serverseitig über `minPowerKW`, weil langsame Säulen
+sonst Plätze in der 20er-Antwort belegen, und danach noch einmal an den Daten.
+Die zweite Prüfung ist keine Paranoia, sondern die Lehre aus `categorySet`: Ein
+Filterparameter, der stillschweigend etwas anderes tut als angenommen, fällt
+sonst nicht auf. `node tomtom-probe.mjs --diagnose` prüft am Ende eigens nach, ob
+der Server `minPowerKW` tatsächlich anwendet.
+
+Stationen **ohne** Leistungsangabe bleiben drin und werden in der Liste als
+„kW unbekannt" gekennzeichnet. Fehlende Daten sind kein Beleg für eine langsame
+Säule, und einen echten Ladepark wegen einer Lücke im Datensatz zu verwerfen
+wäre der schlimmere Fehler.
+
+Im Werkzeug: `--power=0` schaltet den Filter ab, `--power=150` verlangt HPC.
+
 ## Eigene Daten austauschen
 
 Der Bestand liegt in `LadeRoute/Resources/editorial-stations.json`. Die zehn
@@ -164,7 +194,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 43 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 48 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -231,6 +261,6 @@ electricdrivecompanion/
     Resources/                 editorial-stations.json
   tools/
     lib/                       dieselbe Logik in JavaScript
-    test/                      43 Tests gegen Fixtures
+    test/                      48 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
 ```

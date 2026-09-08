@@ -7,6 +7,19 @@ import { downsample, splitIntoSegments } from './geo.mjs';
 export const BASE_URL = 'https://api.tomtom.com';
 export const EV_STATION_CATEGORY = '7309';
 
+/**
+ * Ladeleistungsstufen.
+ *
+ * Auf der Langstrecke ist alles unter 50 kW ohne Belang: Wer 300 km vor sich
+ * hat, laedt nicht an einer 22-kW-AC-Saeule. Da eine Antwort nur 20 Treffer
+ * fasst, verdraengen langsame Saeulen sonst die brauchbaren.
+ */
+export const POWER_TIERS = {
+  alle: 0,
+  schnell: 50,
+  hpc: 150,
+};
+
 // TomTom deckelt die Anfragen pro Sekunde. Wird zu schnell gefeuert, kommt
 // HTTP 401 mit "missing valid authentication credentials" zurueck, obwohl der
 // Key gueltig ist und dieselbe Anfrage eine Sekunde spaeter durchgeht. Deshalb
@@ -60,7 +73,14 @@ export const DEFAULT_OPTIONS = {
   onlyEVStations: true,
   maxDetourSeconds: 600,
   limitPerRequest: 20,
-  minPowerKW: null,
+  // Mindest-Ladeleistung in kW. Vorgabe ist die Langstreckenschwelle: Wer 300 km
+  // vor sich hat, laedt nicht an einer 22-kW-AC-Saeule, und da eine Antwort nur
+  // 20 Treffer fasst, verdraengen langsame Saeulen sonst die brauchbaren.
+  // 0 oder null schaltet den Filter ab.
+  minPowerKW: POWER_TIERS.schnell,
+  // Die Leistung zusaetzlich an den Daten pruefen, statt dem Server zu trauen.
+  // Nach der Erfahrung mit categorySet ist das keine Paranoia.
+  enforceMinPowerLocally: true,
   connectorTypes: [],
   // 50 statt 100 km: ein 100-km-Abschnitt lief im Test ins 20-Treffer-Limit,
   // es blieben also Stationen unsichtbar.
@@ -87,7 +107,8 @@ export function buildAlongRouteURL(apiKey, options = {}) {
   url.searchParams.set('sortBy', 'detourTime');
 
   if (opts.spreadResults) url.searchParams.set('spreadingMode', 'auto');
-  if (opts.minPowerKW != null) url.searchParams.set('minPowerKW', String(opts.minPowerKW));
+  // 0 und null heissen beide: kein Filter, also den Parameter weglassen.
+  if (opts.minPowerKW) url.searchParams.set('minPowerKW', String(opts.minPowerKW));
   if (opts.connectorTypes.length > 0) {
     url.searchParams.set('connectorSet', opts.connectorTypes.join(','));
   }
@@ -152,9 +173,18 @@ export function isChargingStation(station) {
 }
 
 export function parseAlongRouteResponse(json, options = {}) {
-  const stations = (json.results ?? []).map(toChargingStation);
+  let stations = (json.results ?? []).map(toChargingStation);
+
   const onlyEV = options.onlyEVStations ?? DEFAULT_OPTIONS.onlyEVStations;
-  return onlyEV ? stations.filter(isChargingStation) : stations;
+  if (onlyEV) stations = stations.filter(isChargingStation);
+
+  const enforceLocally = options.enforceMinPowerLocally ?? DEFAULT_OPTIONS.enforceMinPowerLocally;
+  const minPower = options.minPowerKW ?? DEFAULT_OPTIONS.minPowerKW;
+  if (enforceLocally && minPower) {
+    stations = stations.filter((station) => meetsMinPower(station, minPower));
+  }
+
+  return stations;
 }
 
 /**
@@ -186,6 +216,25 @@ export function parseAvailability(json) {
 export function maxPowerKW(station) {
   const powers = station.connectors.map((c) => c.ratedPowerKW).filter((p) => p != null);
   return powers.length > 0 ? Math.max(...powers) : null;
+}
+
+/**
+ * Erreicht die Station die geforderte Leistung?
+ *
+ * Stationen ohne Leistungsangabe bleiben drin. Fehlende Daten sind kein Beleg
+ * fuer eine langsame Saeule, und einen echten Ladepark wegen einer Luecke im
+ * Datensatz zu verwerfen waere der schlimmere Fehler. Sie sind ueber
+ * hasKnownPower erkennbar und koennen in der Oberflaeche markiert werden.
+ */
+export function meetsMinPower(station, minPowerKW) {
+  if (!minPowerKW) return true;
+  const power = maxPowerKW(station);
+  if (power == null) return true;
+  return power >= minPowerKW;
+}
+
+export function hasKnownPower(station) {
+  return maxPowerKW(station) != null;
 }
 
 /**

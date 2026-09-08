@@ -72,13 +72,19 @@ struct StationListSheet: View {
 
     private var filterRow: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Toggle(isOn: $trip.onlyFastCharging) {
-                Label("Nur Schnellladen ab 100 kW", systemImage: "bolt.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.ink2)
+            VStack(alignment: .leading, spacing: 6) {
+                Picker("Ladeleistung", selection: $trip.powerTier) {
+                    ForEach(PowerTier.allCases) { tier in
+                        Text(tier.label).tag(tier)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: trip.powerTier) { _, _ in trip.reapplyFilters() }
+
+                Text(trip.powerTier.explanation)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.meta)
             }
-            .tint(Theme.signal)
-            .onChange(of: trip.onlyFastCharging) { _, _ in trip.reapplyFilters() }
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
@@ -133,6 +139,10 @@ struct StationRow: View {
                 HStack(spacing: 6) {
                     if let power = item.station.maxPowerKW {
                         badge(String(format: "%.0f kW", power), color: Theme.ink2)
+                    } else {
+                        // Nicht ausgefiltert, aber sichtbar gemacht: fehlende
+                        // Daten sind kein Beleg für eine langsame Säule.
+                        badge("kW unbekannt", color: Theme.faint)
                     }
                     ForEach(item.station.distinctConnectorTypes.prefix(2), id: \.self) { type in
                         badge(type.shortName, color: Theme.meta)
