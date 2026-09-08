@@ -30,6 +30,10 @@ import * as geo from './lib/geo.mjs';
 import * as bnetza from './lib/bnetza.mjs';
 import * as corridor from './lib/corridor.mjs';
 
+// Ohne --register wird im Download-Ordner gesucht. Ein Dateiname, den man
+// abtippen muss, ist eine Fehlerquelle ohne Gegenwert.
+const DEFAULT_SEARCH_DIR = '~/Downloads';
+
 const DEFAULTS = {
   from: '51.2560,6.6890',
   to: '53.6148,7.1621',
@@ -117,6 +121,43 @@ function findRegisterCandidates(directory) {
     .slice(0, 5);
 }
 
+const DOWNLOAD_HINT =
+  'Ladesaeulenliste als CSV holen (rund 51 MB, CC BY 4.0):\n' +
+  '  https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/' +
+  'E-Mobilitaet/Ladesaeulenkarte/start.html';
+
+/**
+ * Findet die Registerdatei.
+ *
+ * Angegeben werden darf eine Datei, ein Verzeichnis oder gar nichts. Ohne
+ * Angabe wird im Download-Ordner gesucht. Ein Dateiname, den man abtippen
+ * muss, ist eine Fehlerquelle ohne Gegenwert: Der Download heisst je nach
+ * Browser und Ausgabe anders.
+ */
+function resolveRegisterPath(argument) {
+  const given = expandPath(argument ?? DEFAULT_SEARCH_DIR);
+
+  const isDirectory = existsSync(given) && statSync(given).isDirectory();
+  if (!isDirectory) return given;
+
+  const kandidaten = findRegisterCandidates(given).filter((k) => /\.csv$/i.test(k.path));
+  if (kandidaten.length === 0) {
+    console.error(red(`In ${given} liegt keine Registerdatei.`));
+    console.error(dim(DOWNLOAD_HINT));
+    console.error(dim('Danach ohne Argument starten, die Datei wird dann gefunden.'));
+    process.exit(1);
+  }
+
+  // Die groesste passende CSV. Das Register ist mit Abstand die dickste Datei,
+  // die auf das Namensmuster passt.
+  const gewaehlt = kandidaten[0];
+  console.log(dim(`Registerdatei gefunden: ${gewaehlt.path} (${gewaehlt.sizeMB} MB)`));
+  if (kandidaten.length > 1) {
+    console.log(dim(`${kandidaten.length - 1} weitere Kandidaten ignoriert, groesste gewaehlt.`));
+  }
+  return gewaehlt.path;
+}
+
 /** Macht ~ am Anfang eines Pfades auf. */
 function expandPath(path) {
   const text = String(path);
@@ -154,18 +195,7 @@ async function planRoute(apiKey, from, to) {
 async function main() {
   const args = parseArgs(process.argv);
 
-  if (!args.register) {
-    console.error(red('Bitte die Registerdatei angeben: --register=/pfad/zur/datei.csv'));
-    console.error(
-      dim(
-        'Download (CSV, rund 51 MB, CC BY 4.0):\n' +
-          '  bundesnetzagentur.de -> Fachthemen -> E-Mobilitaet -> Ladesaeulenkarte'
-      )
-    );
-    process.exit(1);
-  }
-
-  const registerPath = expandPath(args.register);
+  const registerPath = resolveRegisterPath(args.register);
   if (!existsSync(registerPath)) {
     console.error(red(`Datei nicht gefunden: ${registerPath}`));
 
@@ -179,12 +209,7 @@ async function main() {
         console.error(dim(`  --register=${kandidat.path}   (${kandidat.sizeMB} MB)${hinweis}`));
       }
     } else {
-      console.error(
-        dim(
-          '\nNoch nicht heruntergeladen? bundesnetzagentur.de ->\n' +
-            'Fachthemen -> Elektrizitaet und Gas -> E-Mobilitaet -> Ladesaeulenkarte'
-        )
-      );
+      console.error(dim('\n' + DOWNLOAD_HINT));
     }
     process.exit(1);
   }

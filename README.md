@@ -188,12 +188,18 @@ ist meldepflichtig, das Register ist damit der einzige Datensatz, gegen den
 sich „vollständig" seriös messen lässt. Lizenz CC BY 4.0, Namensnennung
 „Bundesnetzagentur.de".
 
+Die Liste einmal als **CSV** laden, nicht als Excel:
+[Ladesäulenkarte der Bundesnetzagentur](https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/Ladesaeulenkarte/start.html)
+
 ```bash
-# Liste einmal von bundesnetzagentur.de laden (CSV, rund 51 MB)
-node coverage-check.mjs --register=~/Downloads/Ladesaeulenregister.csv
-node coverage-check.mjs --register=... --parse-only     # nur einlesen, ohne Netz
-node coverage-check.mjs --register=... --corridor=3 --power=150
+node coverage-check.mjs --parse-only    # nur einlesen, ohne Netz und ohne Key
+node coverage-check.mjs                 # volle Messung
+node coverage-check.mjs --corridor=3 --power=150
 ```
+
+Ein Dateiname muss nirgends eingetippt werden. Ohne `--register` sucht das
+Werkzeug im Download-Ordner und nimmt die größte passende CSV. `--register`
+akzeptiert wahlweise eine Datei oder ein Verzeichnis.
 
 Das Werkzeug grenzt das Register auf einen Korridor um die Route ein, befragt
 TomTom **zweimal** und stellt beide Ergebnisse gegenüber:
