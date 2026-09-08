@@ -21,9 +21,9 @@
 // die Messung zweimal, einmal mit den Vorgabewerten und einmal betont
 // großzügig. Die Differenz trennt Datenlücke von Suchmechanik.
 
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import * as ev from './lib/evsearch.mjs';
 import * as geo from './lib/geo.mjs';
@@ -88,6 +88,35 @@ function parseCoordinate(text, label) {
   return { lat, lon };
 }
 
+/**
+ * Sucht im Verzeichnis nach Dateien, die das Register sein könnten.
+ *
+ * Der Download heißt je nach Browser und Ausgabe unterschiedlich, mal mit
+ * Datum, mal mit Umlaut, mal als Excel. Raten muss deshalb das Werkzeug.
+ */
+function findRegisterCandidates(directory) {
+  let names;
+  try {
+    names = readdirSync(directory);
+  } catch {
+    return [];
+  }
+
+  return names
+    .filter((name) => /lade|s[äa]ul|charg/i.test(name) && /\.(csv|xlsx?)$/i.test(name))
+    .map((name) => {
+      const path = join(directory, name);
+      try {
+        return { path, sizeMB: (statSync(path).size / 1024 / 1024).toFixed(1) };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => Number(b.sizeMB) - Number(a.sizeMB))
+    .slice(0, 5);
+}
+
 /** Macht ~ am Anfang eines Pfades auf. */
 function expandPath(path) {
   const text = String(path);
@@ -139,6 +168,32 @@ async function main() {
   const registerPath = expandPath(args.register);
   if (!existsSync(registerPath)) {
     console.error(red(`Datei nicht gefunden: ${registerPath}`));
+
+    // Der Download heisst je nach Browser und Ausgabe anders. Statt den Nutzer
+    // raten zu lassen, im selben Verzeichnis nach Kandidaten sehen.
+    const kandidaten = findRegisterCandidates(dirname(registerPath));
+    if (kandidaten.length > 0) {
+      console.error(dim('\nIm selben Verzeichnis liegen diese möglichen Dateien:'));
+      for (const kandidat of kandidaten) {
+        const hinweis = /\.xlsx?$/i.test(kandidat.path) ? '  [Excel, nicht lesbar]' : '';
+        console.error(dim(`  --register=${kandidat.path}   (${kandidat.sizeMB} MB)${hinweis}`));
+      }
+    } else {
+      console.error(
+        dim(
+          '\nNoch nicht heruntergeladen? bundesnetzagentur.de ->\n' +
+            'Fachthemen -> Elektrizitaet und Gas -> E-Mobilitaet -> Ladesaeulenkarte'
+        )
+      );
+    }
+    process.exit(1);
+  }
+
+  if (/\.xlsx?$/i.test(registerPath)) {
+    console.error(red('Das ist die Excel-Fassung. Dieses Werkzeug liest nur CSV.'));
+    console.error(
+      dim('Die Bundesnetzagentur bietet beides an, auf der Ladesaeulenkarte-Seite die CSV waehlen.')
+    );
     process.exit(1);
   }
 
