@@ -34,10 +34,8 @@ const DEFAULTS = {
   // Wie weit darf eine Station seitlich der Route liegen? Ohne diese Grenze
   // schleppt die Umkreissuche Innenstadt-Ladepunkte mit, fuer die niemand von
   // der Autobahn abfaehrt.
-  corridor: '2',
   // 270 Zeilen sind im Terminal unbrauchbar.
   show: '40',
-  segment: '100',
 };
 
 // ------------------------------------------------------------- Argumente
@@ -374,7 +372,10 @@ async function main() {
 
   const options = {
     maxDetourSeconds: Number(args.detour) * 60,
-    segmentLengthMeters: Number(args.segment) * 1000,
+    // Nur setzen, wenn ausdrücklich angegeben. Sonst gilt die Vorgabe der
+    // Bibliothek, und die hat einen Grund: Ein 100-km-Abschnitt lief im Test
+    // ins 20-Treffer-Limit der Antwort, es blieben also Stationen unsichtbar.
+    ...(args.segment ? { segmentLengthMeters: Number(args.segment) * 1000 } : {}),
     ...(args.query ? { query: args.query } : {}),
     ...(args.category ? { useCategoryFilter: true, categoryId: String(args.category) } : {}),
     ...(args.all ? { onlyEVStations: false } : {}),
@@ -412,11 +413,12 @@ async function main() {
     return;
   }
 
-  const segments = geo.splitIntoSegments(route.points, options.segmentLengthMeters);
+  const segmentLength = options.segmentLengthMeters ?? ev.DEFAULT_OPTIONS.segmentLengthMeters;
+  const segments = geo.splitIntoSegments(route.points, segmentLength);
   console.log(
     dim(
-      `wird fuer die Suche in ${segments.length} Abschnitt(e) zu je ${args.segment} km zerlegt, ` +
-        'weil eine Antwort hoechstens 20 Treffer enthaelt'
+      `wird fuer die Suche in ${segments.length} Abschnitt(e) zu je ${segmentLength / 1000} km ` +
+        'zerlegt, weil eine Antwort hoechstens 20 Treffer enthaelt'
     )
   );
 
