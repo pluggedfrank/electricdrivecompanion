@@ -15,6 +15,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { stdin, stdout } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import * as ev from './lib/evsearch.mjs';
@@ -74,6 +75,65 @@ function checkApiKey(key) {
     };
   }
   return null;
+}
+
+/**
+ * Fragt den Schluessel im Terminal ab, ohne ihn anzuzeigen.
+ *
+ * Das raeumt zwei wiederkehrende Fehlerquellen ab: ein export gilt nur fuer das
+ * eine Terminalfenster und ist im naechsten wieder weg, und ein Schluessel auf
+ * der Kommandozeile landet in der Shell-History.
+ *
+ * Der Raw-Mode schaltet das Echo des Terminals ab, die getippten Zeichen werden
+ * bewusst nirgends ausgegeben. Ohne Raw-Mode spiegelt das Terminal die Eingabe
+ * selbst zurueck, dann steht der Schluessel doch wieder sichtbar da.
+ *
+ * Gibt null zurueck, wenn keine Eingabe moeglich ist, etwa in einer Pipeline.
+ */
+function promptForKey() {
+  if (!stdin.isTTY || typeof stdin.setRawMode !== 'function') return Promise.resolve(null);
+
+  stdout.write('TomTom-Key (Eingabe bleibt unsichtbar): ');
+  stdin.setRawMode(true);
+  stdin.resume();
+  stdin.setEncoding('utf8');
+
+  return new Promise((resolve) => {
+    let buffer = '';
+
+    const cleanup = () => {
+      stdin.removeListener('data', onData);
+      stdin.setRawMode(false);
+      stdin.pause();
+      stdout.write('\n');
+    };
+
+    const onData = (chunk) => {
+      for (const character of chunk) {
+        switch (character) {
+          case '\r':
+          case '\n':
+          case '\u0004': // Ctrl+D
+            cleanup();
+            resolve(buffer.trim() || null);
+            return;
+          case '\u0003': // Ctrl+C
+            cleanup();
+            process.exit(130);
+            return;
+          case '\u007f': // Backspace
+          case '\b':
+            buffer = buffer.slice(0, -1);
+            break;
+          default:
+            // Steuerzeichen ignorieren, alles andere sammeln.
+            if (character >= ' ') buffer += character;
+        }
+      }
+    };
+
+    stdin.on('data', onData);
+  });
 }
 
 function parseCoordinate(text, label) {
@@ -311,9 +371,10 @@ async function main() {
     return;
   }
 
-  const apiKey = args.key || process.env.TOMTOM_API_KEY;
+  const apiKey = args.key || process.env.TOMTOM_API_KEY || (await promptForKey());
   if (!apiKey) {
-    console.error(red('Kein Key. --key=... setzen oder TOMTOM_API_KEY exportieren.'));
+    console.error(red('Kein Key.'));
+    console.error(dim('Entweder hier eingeben, --key=... setzen oder TOMTOM_API_KEY exportieren.'));
     console.error(dim('Key anlegen: https://developer.tomtom.com/ -> Dashboard -> API Keys'));
     process.exit(1);
   }

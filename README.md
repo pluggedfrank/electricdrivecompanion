@@ -60,11 +60,23 @@ die ganze Kette gegen die echte API fahren, bevor der Simulator startet.
 
 ```bash
 cd tools
-node tomtom-probe.mjs --dry-run                        # zeigt nur die Anfragen
-node tomtom-probe.mjs --key=DEIN_KEY                   # Meerbusch nach Norddeich
-node tomtom-probe.mjs --key=DEIN_KEY --fast --detour=20
-npm test                                               # 38 Tests
+node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
+node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
+node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
+node tomtom-probe.mjs --fast --detour=20
+npm test                            # 38 Tests
 ```
+
+Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
+ist der empfohlene Weg: Ein `export` gilt nur für das eine Terminalfenster und
+ist im nächsten wieder weg, und ein Schlüssel auf der Kommandozeile landet in
+der Shell-History. `--key=` und `TOMTOM_API_KEY` funktionieren weiterhin, etwa
+für Skripte.
+
+Platzhalter aus Anleitungen werden abgefangen, bevor eine Anfrage rausgeht. Ein
+mitkopiertes `IHR_KEY` ist nicht leer, käme also durch jede
+Vorhandensein-Prüfung und erzeugte sonst ein 401, das nach einem defekten
+Schlüssel aussieht.
 
 Das Werkzeug plant die Route, sucht die Stationen, ordnet die eigenen Daten zu,
 holt die Belegung der ersten fünf Treffer und zählt am Ende auf, wie viele
