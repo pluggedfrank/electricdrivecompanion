@@ -152,8 +152,8 @@ private extension MapCoordinator {
         var options = RouteOptions(coordinates: route.geometry)
         options.routeWidth = 6
         options.outlineWidth = 1
-        // Signalrot aus dem punktlive-CI. Sollte der Compiler hier einen
-        // anderen Typ erwarten, tut es auch die SDK-Vorgabe `.activeRoute`.
+        // Signalrot aus dem Haus-CI. Der Typ ist geprüft, RouteOptions.color
+        // nimmt eine UIColor.
         options.color = UIColor(hex: 0xB8361F)
 
         routeOnMap = try? map.addRoute(options)
