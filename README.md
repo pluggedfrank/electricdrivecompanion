@@ -59,13 +59,18 @@ Unter `tools/` liegt dieselbe Logik noch einmal in JavaScript. Damit lässt sich
 die ganze Kette gegen die echte API fahren, bevor der Simulator startet.
 
 ```bash
-cd tools
+cd ~/electricdrivecompanion/tools
 node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
+node tomtom-probe.mjs --no-wide     # nur Along-Route, wie die TomTom-Pro-App
 node tomtom-probe.mjs --power=150 --detour=20
 npm test                            # 81 Tests
 ```
+
+Der Probe-Lauf nutzt beide Suchverfahren, genau wie die App. `--no-wide`
+schaltet die Umkreissuchen ab und zeigt damit, was eine reine
+Along-Route-Suche liefert.
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
 ist der empfohlene Weg: Ein `export` gilt nur für das eine Terminalfenster und

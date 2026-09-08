@@ -339,7 +339,7 @@ async function diagnose(apiKey, route, baseOptions) {
  * den Stellen, an denen TomTom tatsaechlich Stationen kennt.
  */
 function exportEditorial(stations, targetPath) {
-  const entries = stations.slice(0, 12).map((station, index) => ({
+  const entries = stations.map((station, index) => ({
     id: `ed-${String(index + 1).padStart(3, '0')}`,
     tomtomPoiID: station.id,
     name: station.name,
@@ -418,16 +418,47 @@ async function main() {
   console.log(dim(`Suchbegriff "${options.query ?? ev.DEFAULT_OPTIONS.query}"`));
   const started = Date.now();
   const result = await ev.searchAlongRoute(apiKey, route.points, options);
-  const seconds = ((Date.now() - started) / 1000).toFixed(1);
+  let stationen = result.stations;
+  let anfragen = result.requests.length;
   console.log(
-    `${result.stations.length} Stationen aus ${result.requests.length} Anfragen in ${seconds} s`
+    dim(`Along-Route: ${stationen.length} Stationen aus ${anfragen} Anfragen`)
   );
+
+  // Zweite Runde, sofern nicht abgeschaltet. Am 08.09.2026 gegen das amtliche
+  // Register gemessen: Die Along-Route-Suche allein findet 51 Prozent der
+  // Standorte im Zwei-Kilometer-Korridor, mit den Umkreissuchen 93 Prozent.
+  // Jenseits von einem Kilometer neben der Route findet sie ohne sie nichts.
+  if (!args['no-wide']) {
+    const umkreis = await ev.searchAroundRoute(apiKey, route.points, options);
+    const bekannt = new Set(stationen.map((s) => s.id));
+    const neue = umkreis.stations.filter((s) => !bekannt.has(s.id));
+
+    stationen = [...stationen, ...neue];
+    anfragen += umkreis.requestCount;
+    console.log(
+      dim(
+        `Umkreise:    ${neue.length} weitere aus ${umkreis.requestCount} Anfragen ` +
+          `(${umkreis.coveredCorridorMeters.toFixed(0)} m Korridor)`
+      )
+    );
+    if (umkreis.truncated.length > 0) {
+      console.log(
+        red(`${umkreis.truncated.length} Umkreise stießen ans Antwortlimit.`) +
+          dim(' Dort fehlt vermutlich etwas, --no-wide oder engere Abtastung prüfen.')
+      );
+    }
+  } else {
+    console.log(dim('--no-wide: nur Along-Route, wie in der TomTom-Pro-App'));
+  }
+
+  const seconds = ((Date.now() - started) / 1000).toFixed(1);
+  console.log(`${bold(String(stationen.length))} Stationen aus ${anfragen} Anfragen in ${seconds} s`);
   const grenze = options.minPowerKW ?? ev.DEFAULT_OPTIONS.minPowerKW;
   console.log(
     dim(grenze ? `Leistungsfilter: ab ${grenze} kW` : 'Leistungsfilter aus, alle Saeulen')
   );
 
-  if (result.stations.length < segments.length * 3) {
+  if (stationen.length < segments.length * 3) {
     console.log(
       dim('Auffaellig wenige Treffer. --diagnose zeigt, welcher Suchbegriff besser trifft.')
     );
@@ -438,7 +469,7 @@ async function main() {
   const entries = JSON.parse(
     readFileSync(join(here, '..', 'LadeRoute', 'Resources', 'editorial-stations.json'), 'utf8')
   );
-  const annotated = editorial.annotate(result.stations, entries);
+  const annotated = editorial.annotate(stationen, entries);
   const matched = annotated.filter((a) => a.editorial);
   console.log(
     `${matched.length} von ${annotated.length} Stationen haben einen Redaktionseintrag ` +
@@ -502,7 +533,7 @@ async function main() {
   // 6. Optional: Startbestand schreiben
   if (args['export-editorial']) {
     const target = resolve(String(args['export-editorial']));
-    const count = exportEditorial(result.stations, target);
+    const count = exportEditorial(stationen, target);
     heading('6. Startbestand geschrieben');
     console.log(`${count} Eintraege nach ${target}`);
     console.log(
@@ -510,7 +541,7 @@ async function main() {
     );
   }
 
-  const used = 1 + result.requests.length + Math.min(availabilityCount, annotated.length);
+  const used = 1 + anfragen + Math.min(availabilityCount, annotated.length);
   console.log(`\n${dim('Legende:')} ${red('*')} mit eigenem Test   ${dim('. nur TomTom-Daten')}`);
   console.log(dim(`Verbrauch: ${used} Non-Tile-Anfragen (Freemium: 2.500 pro Tag)`));
 }
