@@ -64,7 +64,7 @@ node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 68 Tests
+npm test                            # 73 Tests
 ```
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
@@ -201,6 +201,14 @@ Ein Dateiname muss nirgends eingetippt werden. Ohne `--register` sucht das
 Werkzeug im Download-Ordner und nimmt die größte passende CSV. `--register`
 akzeptiert wahlweise eine Datei oder ein Verzeichnis.
 
+**Gemessen wird an Standorten, nicht an Ladeeinrichtungen.** Das Register führt
+jede Säule als eigene Zeile, ein Ladepark mit acht Säulen sind acht Zeilen.
+TomTom führt denselben Ladepark als einen POI. Wer beides direkt gegeneinander
+zählt, vergleicht Geräte mit Standorten. Das Werkzeug bündelt die Einträge
+deshalb erst über Nachbarschaft zu Standorten, mit 75 m Radius und transitiver
+Verkettung, damit eine Säulenreihe entlang eines Parkplatzes nicht in mehrere
+Standorte zerfällt.
+
 Das Werkzeug grenzt das Register auf einen Korridor um die Route ein, befragt
 TomTom **zweimal** und stellt beide Ergebnisse gegenüber:
 
@@ -211,6 +219,10 @@ TomTom **zweimal** und stellt beide Ergebnisse gegenüber:
 
 Die Differenz trennt Datenlücke von Suchmechanik. Was auch großzügig nicht
 auftaucht, ist eine echte Lücke; alles davor ist eine Frage der Parameter.
+
+Zusätzlich schlüsselt es die Trefferquote nach Entfernung zur Route auf. Bricht
+sie mit der Entfernung ein, ist es eine Frage des Suchradius und keine
+Datenlücke. Das ist die aussagekräftigste Zahl des ganzen Laufs.
 
 Zwei Dinge, die das Werkzeug bewusst laut macht: Es gibt bei jedem Lauf aus,
 welche Spalte es wie zugeordnet hat, denn die Spaltennamen des Registers
@@ -251,7 +263,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 68 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 73 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -319,7 +331,7 @@ electricdrivecompanion/
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
-    test/                      68 Tests gegen Fixtures
+    test/                      73 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
 ```

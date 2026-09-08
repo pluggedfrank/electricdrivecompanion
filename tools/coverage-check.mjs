@@ -29,6 +29,7 @@ import * as ev from './lib/evsearch.mjs';
 import * as geo from './lib/geo.mjs';
 import * as bnetza from './lib/bnetza.mjs';
 import * as corridor from './lib/corridor.mjs';
+import * as sites from './lib/sites.mjs';
 import { resolveApiKey } from './lib/apikey.mjs';
 
 // Ohne --register wird im Download-Ordner gesucht. Ein Dateiname, den man
@@ -320,16 +321,26 @@ async function main() {
   const imKorridor = corridor.withinCorridor(register.entries, route.points, corridorMeters);
   const relevant = imKorridor.filter((e) => !minPower || (e.powerKW ?? 0) >= minPower);
 
-  console.log(`${imKorridor.length} Einträge im Korridor`);
-  console.log(
-    `${relevant.length} davon mit mindestens ${minPower} kW` +
-      dim('  (das ist der Maßstab)')
-  );
+  console.log(`${imKorridor.length} Ladeeinrichtungen im Korridor`);
+  console.log(`${relevant.length} davon mit mindestens ${minPower} kW`);
 
   if (relevant.length === 0) {
     console.log(red('\nNichts zu vergleichen. Korridor oder Leistungsgrenze anpassen.'));
     return;
   }
+
+  // Das Register führt jede Säule einzeln, TomTom führt Standorte. Ohne dieses
+  // Bündeln vergleicht man Geräte mit Standorten, und die Quote sagt nichts.
+  const standorte = sites.clusterSites(relevant, sites.DEFAULT_SITE_RADIUS_M);
+  console.log(
+    `${bold(String(standorte.length))} Standorte daraus gebündelt` +
+      dim(`  (das ist der Maßstab, Radius ${sites.DEFAULT_SITE_RADIUS_M} m)`)
+  );
+  console.log(
+    dim(
+      `im Schnitt ${(relevant.length / standorte.length).toFixed(1)} Ladeeinrichtungen je Standort`
+    )
+  );
 
   // 4. TomTom zweimal befragen
   heading('4. TomTom befragen');
@@ -360,15 +371,16 @@ async function main() {
   }
 
   // 5. Abgleich
-  heading('5. Abdeckung');
+  heading('5. Abdeckung, gemessen an Standorten');
   for (const ergebnis of ergebnisse) {
-    const { matched } = corridor.matchSources(relevant, ergebnis.stations, 250);
+    const { matched, missing } = corridor.matchSources(standorte, ergebnis.stations, 250);
     ergebnis.matched = matched;
-    const share = matched.length / relevant.length;
+    ergebnis.missing = missing;
+    const share = matched.length / standorte.length;
     const farbe = colorForShare(share);
     console.log(
-      `${bar(share)}  ${farbe(percent(matched.length, relevant.length).toFixed(0).padStart(3) + ' %')}  ` +
-        `${bold(ergebnis.label)}  ${dim(`${matched.length} von ${relevant.length}`)}`
+      `${bar(share)}  ${farbe(percent(matched.length, standorte.length).toFixed(0).padStart(3) + ' %')}  ` +
+        `${bold(ergebnis.label)}  ${dim(`${matched.length} von ${standorte.length} Standorten`)}`
     );
   }
 
@@ -390,18 +402,47 @@ async function main() {
   }
 
   // 6. Was auch großzügig nicht gefunden wird
-  const { missing } = corridor.matchSources(relevant, grosszuegig.stations, 250);
-  heading(`6. Auch großzügig nicht gefunden: ${missing.length}`);
+  const missing = grosszuegig.missing;
+
+  // Die entscheidende Aufschlüsselung: Wenn die Trefferquote mit der Entfernung
+  // zur Route einbricht, ist es eine Frage des Suchradius und keine Datenlücke.
+  heading('6. Trefferquote nach Entfernung zur Route');
+  const stufen = [
+    { label: 'bis 250 m', min: 0, max: 250 },
+    { label: '250 bis 500 m', min: 250, max: 500 },
+    { label: '500 bis 1000 m', min: 500, max: 1000 },
+    { label: 'über 1000 m', min: 1000, max: Infinity },
+  ];
+  const gefundeneIds = new Set(grosszuegig.matched);
+  for (const stufe of stufen) {
+    const inStufe = standorte.filter(
+      (s) =>
+        (s.distanceToRouteMeters ?? 0) >= stufe.min && (s.distanceToRouteMeters ?? 0) < stufe.max
+    );
+    if (inStufe.length === 0) continue;
+    const gefunden = inStufe.filter((s) => gefundeneIds.has(s)).length;
+    const share = gefunden / inStufe.length;
+    console.log(
+      `${bar(share, 20)}  ${colorForShare(share)(percent(gefunden, inStufe.length).toFixed(0).padStart(3) + ' %')}  ` +
+        `${stufe.label.padEnd(16)} ${dim(`${gefunden} von ${inStufe.length}`)}`
+    );
+  }
+
+  heading(`7. Auch großzügig nicht gefunden: ${missing.length} Standorte`);
 
   if (missing.length === 0) {
     console.log(green('Nichts. Die Suche findet alles, was das Register im Korridor führt.'));
   } else {
-    const nachLeistung = [...missing].sort((a, b) => (b.powerKW ?? 0) - (a.powerKW ?? 0));
-    for (const eintrag of nachLeistung.slice(0, Number(args.examples))) {
+    const nachLeistung = [...missing].sort((a, b) => (b.maxPowerKW ?? 0) - (a.maxPowerKW ?? 0));
+    for (const standort of nachLeistung.slice(0, Number(args.examples))) {
+      const geraete = standort.deviceCount > 1 ? `${standort.deviceCount}x ` : '    ';
       console.log(
-        `  ${String(Math.round(eintrag.powerKW ?? 0)).padStart(4)} kW  ` +
-          `${(eintrag.operator || 'Betreiber unbekannt').slice(0, 38).padEnd(38)} ` +
-          dim(`${eintrag.postalCode} ${eintrag.city}, ${Math.round(eintrag.distanceToRouteMeters)} m ab Route`)
+        `  ${String(Math.round(standort.maxPowerKW ?? 0)).padStart(4)} kW  ${geraete}` +
+          `${(standort.operator || 'Betreiber unbekannt').slice(0, 34).padEnd(34)} ` +
+          dim(
+            `${standort.postalCode} ${standort.city}, ` +
+              `${Math.round(standort.distanceToRouteMeters ?? 0)} m ab Route`
+          )
       );
     }
     if (missing.length > Number(args.examples)) {
@@ -409,8 +450,8 @@ async function main() {
     }
 
     const betreiber = new Map();
-    for (const eintrag of missing) {
-      const name = eintrag.operator || 'unbekannt';
+    for (const standort of missing) {
+      const name = standort.operator || 'unbekannt';
       betreiber.set(name, (betreiber.get(name) ?? 0) + 1);
     }
     const top = [...betreiber.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -423,7 +464,7 @@ async function main() {
   }
 
   // 7. Einordnung
-  heading('7. Einordnung');
+  heading('8. Einordnung');
   console.log(
     'Das Register führt jede meldepflichtige Anlage, auch solche, die für eine\n' +
       'Durchgangsfahrt ohne Belang sind: Firmenparkplätze, Hotelstellplätze,\n' +

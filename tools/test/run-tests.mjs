@@ -17,6 +17,7 @@ import * as ev from '../lib/evsearch.mjs';
 import * as editorial from '../lib/editorial.mjs';
 import * as bnetza from '../lib/bnetza.mjs';
 import * as corridor from '../lib/corridor.mjs';
+import * as sites from '../lib/sites.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -705,4 +706,70 @@ test('Registereinträge werden den gefundenen Stationen zugeordnet', () => {
   assert.equal(matched[0].operator, 'A');
   assert.equal(missing.length, 1);
   assert.equal(missing[0].operator, 'B');
+});
+
+
+// ================================================================ Standorte
+
+test('Säulen eines Ladeparks werden zu einem Standort', () => {
+  // Vier Säulen auf einem Parkplatz, jeweils rund 20 m auseinander.
+  const eintraege = [0, 1, 2, 3].map((i) => ({
+    operator: 'EnBW mobility+',
+    lat: 51.5 + i * 0.00018,
+    lon: 6.5,
+    powerKW: i === 0 ? 300 : 150,
+    isFastCharger: true,
+    pointCount: 2,
+    postalCode: '47475',
+    city: 'Kamp-Lintfort',
+  }));
+
+  const standorte = sites.clusterSites(eintraege, 75);
+  assert.equal(standorte.length, 1);
+  assert.equal(standorte[0].deviceCount, 4);
+  assert.equal(standorte[0].pointCount, 8);
+  assert.equal(standorte[0].maxPowerKW, 300, 'die stärkste Säule zählt');
+  assert.equal(standorte[0].operator, 'EnBW mobility+');
+});
+
+test('zwei getrennte Ladeparks bleiben zwei Standorte', () => {
+  const eintraege = [
+    { operator: 'A', lat: 51.5, lon: 6.5, powerKW: 300, isFastCharger: true },
+    { operator: 'A', lat: 51.50018, lon: 6.5, powerKW: 300, isFastCharger: true },
+    // Rund 1 km entfernt.
+    { operator: 'B', lat: 51.509, lon: 6.5, powerKW: 150, isFastCharger: true },
+  ];
+
+  const standorte = sites.clusterSites(eintraege, 75);
+  assert.equal(standorte.length, 2);
+  assert.deepEqual(standorte.map((s) => s.deviceCount).sort(), [1, 2]);
+});
+
+test('eine Reihe von Säulen zerfällt nicht in mehrere Standorte', () => {
+  // Zehn Säulen in 40-m-Abständen: von Ende zu Ende 360 m, also weiter als der
+  // Radius. Über die Nachbarschaft gehören sie trotzdem zusammen.
+  const eintraege = Array.from({ length: 10 }, (_, i) => ({
+    operator: 'Ionity',
+    lat: 51.5 + i * 0.00036,
+    lon: 6.5,
+    powerKW: 350,
+    isFastCharger: true,
+  }));
+
+  const standorte = sites.clusterSites(eintraege, 75);
+  assert.equal(standorte.length, 1, 'die Verkettung muss transitiv sein');
+  assert.equal(standorte[0].deviceCount, 10);
+});
+
+test('der Standort erbt die kürzeste Entfernung zur Route', () => {
+  const eintraege = [
+    { operator: 'A', lat: 51.5, lon: 6.5, powerKW: 300, distanceToRouteMeters: 800 },
+    { operator: 'A', lat: 51.50018, lon: 6.5, powerKW: 300, distanceToRouteMeters: 760 },
+  ];
+  const [standort] = sites.clusterSites(eintraege, 75);
+  assert.equal(standort.distanceToRouteMeters, 760);
+});
+
+test('ohne Einträge gibt es keine Standorte', () => {
+  assert.deepEqual(sites.clusterSites([], 75), []);
 });
