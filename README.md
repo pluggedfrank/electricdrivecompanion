@@ -63,7 +63,7 @@ cd tools
 node tomtom-probe.mjs --dry-run                        # zeigt nur die Anfragen
 node tomtom-probe.mjs --key=DEIN_KEY                   # Meerbusch nach Norddeich
 node tomtom-probe.mjs --key=DEIN_KEY --fast --detour=20
-npm test                                               # 31 Tests
+npm test                                               # 38 Tests
 ```
 
 Das Werkzeug plant die Route, sucht die Stationen, ordnet die eigenen Daten zu,
@@ -100,6 +100,23 @@ das reichlich 250 Routen täglich. Für die Evaluierung ist das weit mehr als
 genug. Deshalb wird die Belegung auch erst beim Antippen geholt und nicht für
 alle Treffer auf einmal: das wäre der teuerste Teil.
 
+## Das Tempolimit, das wie ein kaputter Key aussieht
+
+Neben dem Tageskontingent deckelt TomTom die Anfragen pro Sekunde. Wird zu
+schnell gefeuert, kommt **HTTP 401 mit "missing valid authentication
+credentials"** zurück, obwohl der Key gültig ist und dieselbe Anfrage eine
+Sekunde später anstandslos durchgeht.
+
+Im ersten Diagnoselauf war das deutlich zu sehen: sieben Varianten ohne Pause
+hintereinander, die erste kam durch, die restlichen sechs nicht. Vier Anfragen
+über 2,3 Sekunden im Lauf davor waren dagegen unauffällig.
+
+Beide Fassungen bremsen deshalb clientseitig mit 300 ms zwischen den Anfragen
+und fassen bei 401, 403 oder 429 genau einmal nach. Das trennt zugleich die
+Ursachen: klappt der zweite Versuch, war es das Tempolimit. Bleibt es beim
+Fehler, stimmt etwas mit dem Key oder der Produktfreigabe nicht, und genau das
+wird dann gemeldet statt einer irreführenden Vermutung.
+
 ## Eigene Daten austauschen
 
 Der Bestand liegt in `LadeRoute/Resources/editorial-stations.json`. Die zehn
@@ -123,7 +140,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 31 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 38 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -190,6 +207,6 @@ electricdrivecompanion/
     Resources/                 editorial-stations.json
   tools/
     lib/                       dieselbe Logik in JavaScript
-    test/                      31 Tests gegen Fixtures
+    test/                      38 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
 ```

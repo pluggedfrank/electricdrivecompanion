@@ -25,6 +25,9 @@ const entries = JSON.parse(
 const MEERBUSCH = { lat: 51.2560, lon: 6.6890 };
 const NORDDEICH = { lat: 53.6148, lon: 7.1621 };
 
+/** Tests sollen nicht wirklich warten. */
+const noSleep = async () => {};
+
 /** Synthetische Route mit gleichmäßigen Zwischenpunkten. */
 function syntheticRoute(from, to, points) {
   return Array.from({ length: points }, (_, i) => {
@@ -310,7 +313,7 @@ test('lange Route wird in mehrere Anfragen zerlegt und dedupliziert', async () =
     return { ok: true, json: async () => fixture('alongroute-response.json') };
   };
 
-  const result = await ev.searchAlongRoute('KEY', route, {}, mockFetch);
+  const result = await ev.searchAlongRoute('KEY', route, { sleepImpl: noSleep }, mockFetch);
   assert.equal(calls, result.segmentCount);
   assert.ok(result.segmentCount >= 2, `nur ${result.segmentCount} Abschnitt(e)`);
   assert.equal(result.stations.length, 5, 'Dubletten wurden nicht zusammengeführt');
@@ -318,9 +321,70 @@ test('lange Route wird in mehrere Anfragen zerlegt und dedupliziert', async () =
 
 test('Fehlerantwort wird als Fehler durchgereicht', async () => {
   const route = syntheticRoute(MEERBUSCH, NORDDEICH, 10);
-  const mockFetch = async () => ({ ok: false, status: 403, text: async () => 'Forbidden' });
+  const mockFetch = async () => ({ ok: false, status: 500, text: async () => 'Server Error' });
   await assert.rejects(
-    () => ev.searchAlongRoute('KEY', route, {}, mockFetch),
-    /403/
+    () => ev.searchAlongRoute('KEY', route, { sleepImpl: noSleep }, mockFetch),
+    /500/
   );
+});
+
+// ------------------------------------------------------------ Tempolimit
+
+test('ein gedrosselter 401 wird einmal wiederholt und geht dann durch', async () => {
+  let calls = 0;
+  const mockFetch = async () => {
+    calls++;
+    return calls === 1
+      ? { ok: false, status: 401, text: async () => 'Unauthorized' }
+      : { ok: true, json: async () => fixture('alongroute-response.json') };
+  };
+
+  const response = await ev.requestWithRetry(mockFetch, 'https://example.test', {}, {
+    sleepImpl: noSleep,
+  });
+  assert.equal(calls, 2);
+  assert.equal(response.ok, true);
+  assert.notEqual(response.wasThrottledTwice, true);
+});
+
+test('bleibt der Fehler auch beim zweiten Versuch, wird er als echt markiert', async () => {
+  let calls = 0;
+  const mockFetch = async () => {
+    calls++;
+    return { ok: false, status: 401, text: async () => 'Unauthorized' };
+  };
+
+  const response = await ev.requestWithRetry(mockFetch, 'https://example.test', {}, {
+    sleepImpl: noSleep,
+  });
+  assert.equal(calls, 2, 'genau ein Nachfassversuch, keine Schleife');
+  assert.equal(response.wasThrottledTwice, true);
+});
+
+test('ein Fehler ausserhalb der Drosselungscodes wird nicht wiederholt', async () => {
+  let calls = 0;
+  const mockFetch = async () => {
+    calls++;
+    return { ok: false, status: 500, text: async () => 'Server Error' };
+  };
+
+  await ev.requestWithRetry(mockFetch, 'https://example.test', {}, { sleepImpl: noSleep });
+  assert.equal(calls, 1);
+});
+
+test('zwischen den Abschnitten wird gewartet', async () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 2000);
+  const pauses = [];
+  const mockFetch = async () => ({ ok: true, json: async () => fixture('alongroute-response.json') });
+
+  const result = await ev.searchAlongRoute(
+    'KEY',
+    route,
+    { sleepImpl: async (ms) => pauses.push(ms) },
+    mockFetch
+  );
+
+  // Eine Pause weniger als Abschnitte: vor dem ersten wird nicht gewartet.
+  assert.equal(pauses.length, result.segmentCount - 1);
+  assert.ok(pauses.every((ms) => ms >= ev.MIN_REQUEST_INTERVAL_MS), `Pausen: ${pauses}`);
 });

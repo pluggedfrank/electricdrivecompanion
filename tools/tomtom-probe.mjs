@@ -98,16 +98,18 @@ async function planRoute(apiKey, from, to) {
   };
 }
 
-/** Eine einzelne Along-Route-Anfrage. */
+/** Eine einzelne Along-Route-Anfrage, mit Nachfassversuch bei Drosselung. */
 async function searchSegment(apiKey, points, options) {
-  const response = await fetch(ev.buildAlongRouteURL(apiKey, options), {
+  const response = await ev.requestWithRetry(fetch, ev.buildAlongRouteURL(apiKey, options), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(ev.buildRouteBody(points)),
   });
   if (!response.ok) {
     const body = (await response.text()).slice(0, 160);
-    throw new Error(`HTTP ${response.status}: ${body}`);
+    const error = new Error(`HTTP ${response.status}: ${body}`);
+    error.wasThrottledTwice = response.wasThrottledTwice === true;
+    throw error;
   }
   return ev.parseAlongRouteResponse(await response.json());
 }
@@ -149,7 +151,11 @@ async function diagnose(apiKey, route, baseOptions) {
   console.log('');
 
   const findings = [];
-  for (const variant of VARIANTS) {
+  for (const [index, variant] of VARIANTS.entries()) {
+    // Ohne Pause laufen die Varianten in dieselbe Sekunde und TomTom drosselt.
+    // Die Drosselung meldet sich als HTTP 401, was wie ein kaputter Key aussieht.
+    if (index > 0) await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS * 4);
+
     const options = { ...baseOptions, ...variant };
     try {
       const stations = await searchSegment(apiKey, points, options);
@@ -167,16 +173,32 @@ async function diagnose(apiKey, route, baseOptions) {
         }
       }
     } catch (error) {
-      findings.push({ variant, count: 0, error: error.message });
+      findings.push({ variant, count: 0, error: error.message, throttled: error.wasThrottledTwice });
       console.log(`${red('!! ')}          ${bold(variant.label)}`);
       console.log(dim(`      ${error.message}`));
+      if (!error.wasThrottledTwice) {
+        console.log(dim('      (der Nachfassversuch half, es war also das Tempolimit)'));
+      }
     }
   }
 
   const best = findings.filter((f) => !f.error).sort((a, b) => b.count - a.count)[0];
   heading('Empfehlung');
+  const hardFailures = findings.filter((f) => f.throttled).length;
+  if (hardFailures > 0) {
+    console.log(
+      red(`${hardFailures} Variante(n) scheiterten auch im zweiten Anlauf.`) +
+        ' Das ist dann kein Tempolimit mehr:'
+    );
+    console.log(dim('  401 -> Key ungueltig oder Search API nicht freigeschaltet'));
+    console.log(dim('  403 -> Produkt fehlt in der Key-Konfiguration'));
+    console.log(dim('  429 -> Tageskontingent aufgebraucht'));
+  }
   if (!best || best.count === 0) {
-    console.log(red('Keine Variante liefert Treffer. Ist die Search API fuer den Key frei?'));
+    console.log(red('Keine Variante liefert Treffer.'));
+    if (hardFailures === 0) {
+      console.log(dim('Die Anfragen kamen durch, nur passt kein Suchbegriff. Mit --query=... weiter probieren.'));
+    }
     return;
   }
   console.log(`Beste Variante: ${bold(best.variant.label)} mit ${best.count} Treffern.`);

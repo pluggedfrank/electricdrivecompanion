@@ -28,8 +28,10 @@ enum TomTomAPIError: LocalizedError {
             return "Ohne Route gibt es keine Strecke, an der gesucht werden könnte."
         case let .http(status, body):
             switch status {
+            case 401:
+                return "TomTom lehnt die Anfrage ab (401). Nach einem erfolglosen zweiten Versuch heißt das: Key ungültig oder Search API nicht freigeschaltet."
             case 403:
-                return "TomTom lehnt den Key ab (403). Ist die Search API für diesen Key freigeschaltet?"
+                return "TomTom lehnt den Key ab (403). Fehlt das Produkt in der Key-Konfiguration?"
             case 429:
                 return "Tageskontingent erreicht (429). Das Freemium-Limit greift."
             default:
@@ -67,6 +69,10 @@ struct AlongRouteSearchOptions: Sendable {
     var maxRoutePointsPerRequest: Int = 200
     /// Verteilt Treffer über den Abschnitt, statt sie am Anfang zu häufen.
     var spreadResults: Bool = true
+    /// Pause zwischen zwei Anfragen. TomTom deckelt die Anfragen pro Sekunde
+    /// und meldet die Drosselung als 401 mit dem irreführenden Text
+    /// "missing valid authentication credentials".
+    var requestInterval: Duration = .milliseconds(300)
 
     static let schnellladen = AlongRouteSearchOptions(
         maxDetourSeconds: 900,
@@ -111,8 +117,13 @@ actor TomTomAPIClient {
         var order: [String] = []
 
         // Abschnitte nacheinander, nicht parallel: das Freemium-Kontingent zählt
-        // pro Anfrage, und die Reihenfolge entlang der Route bleibt so erhalten.
-        for segment in segments {
+        // pro Anfrage, die Reihenfolge entlang der Route bleibt erhalten, und
+        // das Tempolimit greift nicht.
+        for (index, segment) in segments.enumerated() {
+            if index > 0 {
+                try? await Task.sleep(for: options.requestInterval)
+            }
+
             let points = GeoUtils.downsample(segment, maxPoints: options.maxRoutePointsPerRequest)
             let stations = try await searchSegment(points: points, options: options)
             for station in stations where merged[station.id] == nil {
@@ -209,16 +220,35 @@ actor TomTomAPIClient {
         }
     }
 
+    /// Statuscodes, hinter denen eine Drosselung stecken kann.
+    private static let throttleStatus: Set<Int> = [401, 403, 429]
+
+    /// Führt die Anfrage aus und fasst bei Drosselung genau einmal nach.
+    ///
+    /// Der Unterschied ist diagnostisch wertvoll: klappt der zweite Versuch,
+    /// war es das Tempolimit. Bleibt es beim Fehler, stimmt etwas mit dem Key
+    /// oder der Produktfreigabe nicht.
     private func perform(_ request: URLRequest) async throws -> Data {
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { return data }
-        guard (200 ..< 300).contains(http.statusCode) else {
-            throw TomTomAPIError.http(
-                status: http.statusCode,
-                body: String(data: data, encoding: .utf8) ?? ""
-            )
+        var lastStatus = 0
+        var lastBody = ""
+
+        for attempt in 0 ... 1 {
+            if attempt > 0 {
+                try? await Task.sleep(for: .seconds(2))
+            }
+
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return data }
+            if (200 ..< 300).contains(http.statusCode) { return data }
+
+            lastStatus = http.statusCode
+            lastBody = String(data: data, encoding: .utf8) ?? ""
+
+            // Alles außerhalb der Drosselungscodes ist sofort endgültig.
+            if !Self.throttleStatus.contains(http.statusCode) { break }
         }
-        return data
+
+        throw TomTomAPIError.http(status: lastStatus, body: lastBody)
     }
 
     /// Request-Body der Along-Route-Suche.
