@@ -29,11 +29,18 @@ Voraussetzung ist ein TomTom-Key vom Developer-Portal. Der Freemium-Key reicht,
 er deckt Maps, Search und Routing ab.
 
 ```bash
-cp Secrets.xcconfig.example Secrets.xcconfig   # Key eintragen
 brew install xcodegen
-xcodegen generate
-open LadeRoute.xcodeproj
+./setup.sh
 ```
+
+`setup.sh` fragt den Schlüssel ab (unsichtbar), legt `Secrets.xcconfig` an,
+erzeugt das Xcode-Projekt und öffnet es. Ist `TOMTOM_API_KEY` gesetzt, wird der
+Wert übernommen. Eine bereits vorhandene Schlüsseldatei bleibt unangetastet.
+
+Von Hand ginge es auch, aber die drei Schritte haben je eine Stolperstelle: Ein
+angehängter `#`-Kommentar wird von interaktivem zsh nicht als Kommentar
+gelesen, sondern als Argument weitergereicht, und `cp` legt dann keine Datei
+an. XcodeGen bricht anschließend ab, weil die Schlüsseldatei fehlt.
 
 `Secrets.xcconfig` steht in `.gitignore`. Der Key landet über die Info.plist in
 der App und wird beim Start an `MapsDisplayService` übergeben.
