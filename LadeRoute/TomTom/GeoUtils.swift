@@ -116,6 +116,51 @@ enum GeoUtils {
         return stride(of: simplified, toAtMost: maxPoints)
     }
 
+    /// Setzt entlang der Route alle `spacingMeters` einen Punkt.
+    ///
+    /// Anders als beim Ausdünnen geht es hier nicht um die Form der Linie,
+    /// sondern um gleichmäßige Abstände: Diese Punkte werden zu Mittelpunkten
+    /// von Umkreissuchen. Anfang und Ende sind immer dabei.
+    static func samplePoints(
+        along coordinates: [CLLocationCoordinate2D],
+        spacingMeters: CLLocationDistance
+    ) -> [CLLocationCoordinate2D] {
+        guard let first = coordinates.first else { return [] }
+        guard coordinates.count > 1, spacingMeters > 0 else { return [first] }
+
+        var samples = [first]
+        var sinceLast: CLLocationDistance = 0
+
+        for i in 1 ..< coordinates.count {
+            sinceLast += distance(coordinates[i - 1], coordinates[i])
+            if sinceLast >= spacingMeters {
+                samples.append(coordinates[i])
+                sinceLast = 0
+            }
+        }
+
+        if let last = coordinates.last, let lastSample = samples.last,
+           last.latitude != lastSample.latitude || last.longitude != lastSample.longitude {
+            samples.append(last)
+        }
+
+        return samples
+    }
+
+    /// Welche Korridorbreite deckt eine Kette von Umkreisen ab?
+    ///
+    /// Zwei benachbarte Kreise mit Radius R im Abstand S erfassen einen Punkt
+    /// im senkrechten Abstand d, solange sqrt((S/2)² + d²) ≤ R gilt. Wird das
+    /// Ergebnis null, klaffen zwischen den Kreisen Lücken.
+    static func coveredCorridorWidth(
+        radiusMeters: CLLocationDistance,
+        spacingMeters: CLLocationDistance
+    ) -> CLLocationDistance {
+        let half = spacingMeters / 2
+        let squared = radiusMeters * radiusMeters - half * half
+        return squared <= 0 ? 0 : sqrt(squared)
+    }
+
     /// Gleichmäßiges Ausdünnen mit garantiertem Erhalt von Anfang und Ende.
     static func stride(
         of coordinates: [CLLocationCoordinate2D],

@@ -122,6 +122,23 @@ struct AlongRouteSearchOptions: Sendable {
     /// "missing valid authentication credentials".
     var requestInterval: Duration = .milliseconds(300)
 
+    // MARK: Umkreissuche
+
+    /// Radius der Umkreissuchen entlang der Route.
+    ///
+    /// Am 08.09.2026 gegen das amtliche Ladesäulenregister gemessen: Die
+    /// Along-Route-Suche deckt bis 500 m neben der Route 95 bis 97 Prozent ab,
+    /// jenseits von 1000 m null. Auch 30 Minuten erlaubter Umweg ändern daran
+    /// nichts, TomTom legt einen festen geometrischen Korridor um die Route.
+    /// Mit ergänzenden Umkreissuchen stieg die Abdeckung von 51 auf 93 Prozent.
+    var nearbyRadiusMeters: Double = 5_000
+    /// Abstand der Umkreise. Hängt geometrisch mit dem Radius zusammen: Der
+    /// abgedeckte Korridor ist sqrt(R² − (Abstand/2)²), bei 5 km Radius alle
+    /// 8 km also 3 km. Größere Abstände reißen Lücken zwischen die Kreise.
+    var nearbySpacingMeters: Double = 8_000
+    /// poiSearch liefert bis zu 100 Treffer, die Along-Route-Suche nur 20.
+    var nearbyLimit: Int = 100
+
 }
 
 // Der Initializer steht bewusst in einer Extension: Ein eigener Initializer im
@@ -183,6 +200,41 @@ actor TomTomAPIClient {
 
             let points = GeoUtils.downsample(segment, maxPoints: options.maxRoutePointsPerRequest)
             let stations = try await searchSegment(points: points, options: options)
+            for station in stations where merged[station.id] == nil {
+                merged[station.id] = station
+                order.append(station.id)
+            }
+        }
+
+        return order.compactMap { merged[$0] }
+    }
+
+    /// Sucht Ladestationen im Umkreis von Punkten entlang der Route.
+    ///
+    /// Ergänzung zur Along-Route-Suche, kein Ersatz: Die kennt den tatsächlichen
+    /// Umweg und sortiert danach. Die Umkreissuche fragt Luftlinie ab und holt
+    /// dafür, was weiter abseits liegt.
+    func chargingStationsAroundRoute(
+        routeGeometry: [CLLocationCoordinate2D],
+        options: AlongRouteSearchOptions = AlongRouteSearchOptions()
+    ) async throws -> [ChargingStation] {
+        guard !apiKey.isEmpty else { throw TomTomAPIError.missingAPIKey }
+        guard routeGeometry.count >= 2 else { throw TomTomAPIError.emptyRoute }
+
+        let points = GeoUtils.samplePoints(
+            along: routeGeometry,
+            spacingMeters: options.nearbySpacingMeters
+        )
+
+        var merged: [String: ChargingStation] = [:]
+        var order: [String] = []
+
+        for (index, point) in points.enumerated() {
+            if index > 0 {
+                try? await Task.sleep(for: options.requestInterval)
+            }
+
+            let stations = try await searchNearby(point: point, options: options)
             for station in stations where merged[station.id] == nil {
                 merged[station.id] = station
                 order.append(station.id)
@@ -298,6 +350,59 @@ actor TomTomAPIClient {
     /// Der Unterschied ist diagnostisch wertvoll: klappt der zweite Versuch,
     /// war es das Tempolimit. Bleibt es beim Fehler, stimmt etwas mit dem Key
     /// oder der Produktfreigabe nicht.
+    /// Eine Umkreissuche über poiSearch.
+    private func searchNearby(
+        point: CLLocationCoordinate2D,
+        options: AlongRouteSearchOptions
+    ) async throws -> [ChargingStation] {
+        let encodedQuery = options.query
+            .addingPercentEncoding(withAllowedCharacters: .alphanumerics)
+            ?? "electric%20vehicle%20station"
+
+        var components = URLComponents(string: "\(Self.baseURL)/search/2/poiSearch/\(encodedQuery).json")
+        var items = [
+            URLQueryItem(name: "key", value: apiKey),
+            URLQueryItem(name: "lat", value: String(point.latitude)),
+            URLQueryItem(name: "lon", value: String(point.longitude)),
+            URLQueryItem(name: "radius", value: String(Int(options.nearbyRadiusMeters))),
+            URLQueryItem(name: "limit", value: String(min(options.nearbyLimit, 100))),
+        ]
+        if options.useCategoryFilter {
+            items.append(URLQueryItem(name: "categorySet", value: options.categoryID))
+        }
+        if let minPower = options.minPowerKW, minPower > 0 {
+            items.append(URLQueryItem(name: "minPowerKW", value: String(minPower)))
+        }
+        if !options.connectorTypes.isEmpty {
+            items.append(URLQueryItem(
+                name: "connectorSet",
+                value: options.connectorTypes.map(\.rawValue).joined(separator: ",")
+            ))
+        }
+        components?.queryItems = items
+        guard let url = components?.url else { throw TomTomAPIError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 20
+
+        let data = try await perform(request)
+        do {
+            let response = try JSONDecoder().decode(AlongRouteSearchResponse.self, from: data)
+            var stations = response.results.map(ChargingStation.init(searchResult:))
+
+            if options.onlyEVStations {
+                stations = stations.filter(\.isChargingStation)
+            }
+            if options.enforceMinPowerLocally, let minPower = options.minPowerKW, minPower > 0 {
+                stations = stations.filter { $0.meetsMinPower(minPower) }
+            }
+            return stations
+        } catch {
+            throw TomTomAPIError.decoding(underlying: error)
+        }
+    }
+
     private func perform(_ request: URLRequest) async throws -> Data {
         var lastStatus = 0
         var lastBody = ""

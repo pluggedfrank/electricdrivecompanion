@@ -61,6 +61,13 @@ struct StationListSheet: View {
                             Text("\(trip.editorialCount) im Test")
                         }
                     }
+                    if trip.isWideningSearch {
+                        Text("·")
+                        HStack(spacing: 4) {
+                            ProgressView().scaleEffect(0.55).frame(width: 10, height: 10)
+                            Text("suche im Umkreis")
+                        }
+                    }
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.meta)

@@ -177,6 +177,7 @@ export async function searchAroundRoute(apiKey, routeGeometry, options = {}, fet
 
   const points = samplePointsAlongRoute(routeGeometry, opts.nearbySpacingMeters);
   const merged = new Map();
+  const truncated = [];
 
   for (const [index, point] of points.entries()) {
     if (index > 0 && opts.requestIntervalMs > 0) await sleepImpl(opts.requestIntervalMs);
@@ -188,7 +189,17 @@ export async function searchAroundRoute(apiKey, routeGeometry, options = {}, fet
       throw new Error(`TomTom antwortet mit ${response.status}: ${text.slice(0, 200)}`);
     }
 
-    for (const station of parseAlongRouteResponse(await response.json(), opts)) {
+    const json = await response.json();
+    // Rohzahl vor jeder Filterung: Nur daran laesst sich erkennen, ob TomTom
+    // abgeschnitten hat. In einem Ballungsraum kann ein 5-km-Umkreis mehr
+    // Ladeparks enthalten, als eine Antwort fasst, und dann fehlt etwas, ohne
+    // dass es sich meldet.
+    const rohe = (json.results ?? []).length;
+    if (rohe >= Math.min(opts.nearbyLimit, 100)) {
+      truncated.push({ point, count: rohe });
+    }
+
+    for (const station of parseAlongRouteResponse(json, opts)) {
       if (!merged.has(station.id)) merged.set(station.id, station);
     }
   }
@@ -197,6 +208,9 @@ export async function searchAroundRoute(apiKey, routeGeometry, options = {}, fet
     stations: [...merged.values()],
     requestCount: points.length,
     coveredCorridorMeters: coveredCorridorWidth(opts.nearbyRadiusMeters, opts.nearbySpacingMeters),
+    // Umkreise, in denen die Antwort ans Limit stiess. Dort fehlt vermutlich
+    // etwas; Abhilfe schafft ein kleinerer Radius bei kleinerem Abstand.
+    truncated,
   };
 }
 

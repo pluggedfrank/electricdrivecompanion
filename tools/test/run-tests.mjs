@@ -844,3 +844,38 @@ test('Treffer aus mehreren Umkreisen werden zusammengeführt', async () => {
   assert.equal(result.stations.length, 5, 'Dubletten wurden nicht zusammengeführt');
   assert.ok(result.coveredCorridorMeters >= 2000);
 });
+
+
+test('eine bis ans Limit gefüllte Antwort wird als abgeschnitten gemeldet', async () => {
+  // In einem Ballungsraum kann ein Umkreis mehr Ladeparks enthalten, als eine
+  // Antwort fasst. TomTom schneidet dann stillschweigend ab. Genau dieser Fall
+  // muss sichtbar werden, sonst fehlen Treffer, ohne dass es auffällt.
+  const volleAntwort = {
+    results: Array.from({ length: 100 }, (_, i) => ({
+      id: `poi-${i}`,
+      position: { lat: 51.5, lon: 6.5 },
+      poi: { name: 'Ladepark' },
+      chargingPark: { connectors: [{ ratedPowerKW: 300 }] },
+    })),
+  };
+
+  const result = await ev.searchAroundRoute(
+    'KEY',
+    syntheticRoute(MEERBUSCH, NORDDEICH, 100),
+    { sleepImpl: noSleep },
+    async () => ({ ok: true, json: async () => volleAntwort })
+  );
+
+  assert.equal(result.truncated.length, result.requestCount, 'jede Antwort war voll');
+  assert.ok(result.truncated[0].count >= 100);
+});
+
+test('eine halbvolle Antwort gilt nicht als abgeschnitten', async () => {
+  const result = await ev.searchAroundRoute(
+    'KEY',
+    syntheticRoute(MEERBUSCH, NORDDEICH, 100),
+    { sleepImpl: noSleep },
+    async () => ({ ok: true, json: async () => fixture('alongroute-response.json') })
+  );
+  assert.equal(result.truncated.length, 0);
+});

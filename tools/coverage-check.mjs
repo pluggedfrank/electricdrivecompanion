@@ -317,6 +317,14 @@ async function main() {
   const corridorMeters = Number(args.corridor) * 1000;
   const minPower = Number(args.power);
 
+  // --nearby=radius,abstand in Metern, für dichte Gebiete.
+  const nearby = args.nearby
+    ? (() => {
+        const [radius, spacing] = String(args.nearby).split(',').map(Number);
+        return { nearbyRadiusMeters: radius, nearbySpacingMeters: spacing ?? radius };
+      })()
+    : {};
+
   heading(`3. Register auf den Korridor eingrenzen (${args.corridor} km)`);
   const imKorridor = corridor.withinCorridor(register.entries, route.points, corridorMeters);
   const relevant = imKorridor.filter((e) => !minPower || (e.powerKW ?? 0) >= minPower);
@@ -369,11 +377,14 @@ async function main() {
     {
       // Der Vorschlag, der sich aus der Entfernungsaufschlüsselung ergibt.
       label: 'Along-Route + Umkreissuchen',
-      note: `Umkreise mit ${ev.DEFAULT_OPTIONS.nearbyRadiusMeters / 1000} km Radius ` +
-        `alle ${ev.DEFAULT_OPTIONS.nearbySpacingMeters / 1000} km`,
+      note: `Umkreise mit ${(nearby.nearbyRadiusMeters ?? ev.DEFAULT_OPTIONS.nearbyRadiusMeters) / 1000} km Radius ` +
+        `alle ${(nearby.nearbySpacingMeters ?? ev.DEFAULT_OPTIONS.nearbySpacingMeters) / 1000} km`,
       run: async () => {
         const entlang = await ev.searchAlongRoute(apiKey, route.points, { minPowerKW: minPower });
-        const umkreis = await ev.searchAroundRoute(apiKey, route.points, { minPowerKW: minPower });
+        const umkreis = await ev.searchAroundRoute(apiKey, route.points, {
+          minPowerKW: minPower,
+          ...nearby,
+        });
 
         const zusammen = new Map();
         for (const station of [...entlang.stations, ...umkreis.stations]) {
@@ -383,6 +394,7 @@ async function main() {
           stations: [...zusammen.values()],
           requests: entlang.requests.length + umkreis.requestCount,
           coveredCorridorMeters: umkreis.coveredCorridorMeters,
+          truncated: umkreis.truncated,
         };
       },
     },
@@ -401,6 +413,15 @@ async function main() {
     if (result.coveredCorridorMeters) {
       console.log(
         dim(`      deckt rechnerisch einen Korridor von ${Math.round(result.coveredCorridorMeters)} m ab`)
+      );
+    }
+    if (result.truncated?.length > 0) {
+      console.log(
+        amber(`      ${result.truncated.length} Umkreise stießen ans Antwortlimit.`) +
+          dim(' Dort fehlt vermutlich etwas.')
+      );
+      console.log(
+        dim('      Abhilfe: kleinerer Radius bei kleinerem Abstand, etwa --nearby=3000,4000')
       );
     }
   }

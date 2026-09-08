@@ -40,6 +40,15 @@ final class TripViewModel: ObservableObject {
     @Published var mapIsReady = false
     @Published var mapBottomInset: CGFloat = 0
 
+    /// Läuft gerade die zweite Suchrunde im Umkreis?
+    ///
+    /// Die Suche läuft zweistufig: Zuerst die Along-Route-Suche, sieben
+    /// Anfragen, in wenigen Sekunden da. Sie liefert alles bis etwa 500 m
+    /// neben der Strecke. Danach die Umkreissuchen, gut vierzig Anfragen, die
+    /// den Rest holen. Der Nutzer sieht so sofort etwas, statt eine halbe
+    /// Minute auf die vollständige Liste zu warten.
+    @Published private(set) var isWideningSearch = false
+
     /// Filter, die direkt in die Suchanfrage wandern.
     ///
     /// Die Vorgabe ist die Langstreckenschwelle: Unter 50 kW lohnt ein Stopp auf
@@ -131,6 +140,7 @@ final class TripViewModel: ObservableObject {
         options.maxDetourSeconds = Int(maxDetourMinutes * 60)
         options.minPowerKW = powerTier.minPowerKW
 
+        // Erste Runde: schnell, deckt den engen Korridor an der Route ab.
         do {
             let found = try await api.chargingStationsAlongRoute(
                 routeGeometry: route.geometry,
@@ -140,6 +150,45 @@ final class TripViewModel: ObservableObject {
             phase = .ready
         } catch {
             phase = .failed(error.localizedDescription)
+            return
+        }
+
+        await widenSearch(route: route, options: options)
+    }
+
+    /// Zweite Runde: Umkreissuchen entlang der Strecke.
+    ///
+    /// Am 08.09.2026 gegen das amtliche Ladesäulenregister gemessen: Die
+    /// Along-Route-Suche allein findet 51 Prozent der Standorte im
+    /// Zwei-Kilometer-Korridor, mit dieser zweiten Runde sind es 93 Prozent.
+    /// Jenseits von einem Kilometer neben der Route findet sie ohne die
+    /// Umkreise gar nichts.
+    private func widenSearch(route: TomTomSDKRoute.Route, options: AlongRouteSearchOptions) async {
+        isWideningSearch = true
+        defer { isWideningSearch = false }
+
+        do {
+            let nearby = try await api.chargingStationsAroundRoute(
+                routeGeometry: route.geometry,
+                options: options
+            )
+
+            // Die Reihenfolge der ersten Runde bleibt erhalten, sie folgt dem
+            // Umweg. Neue Treffer kommen hinten dran.
+            var known = Set(stations.map(\.id))
+            var ergaenzt = stations
+            for station in nearby where !known.contains(station.id) {
+                known.insert(station.id)
+                ergaenzt.append(AnnotatedStation(
+                    station: station,
+                    editorial: editorialStore.match(station)
+                ))
+            }
+            stations = ergaenzt
+        } catch {
+            // Die erste Runde steht bereits. Ein Fehler hier kostet nur die
+            // Ergänzung, nicht das Ergebnis.
+            print("Umkreissuche fehlgeschlagen: \(error.localizedDescription)")
         }
     }
 

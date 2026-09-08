@@ -64,7 +64,7 @@ node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 79 Tests
+npm test                            # 81 Tests
 ```
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
@@ -250,10 +250,27 @@ einem Kilometer liefert `searchAlongRoute` nichts, und daran ändert auch eine
 Umwegschwelle von 30 Minuten nichts. TomTom legt offenbar einen festen
 geometrischen Korridor um die Route, unabhängig vom erlaubten Umweg.
 
-Daraus folgt der Bauplan: Die Along-Route-Suche bleibt, weil sie den Umweg
-kennt und danach sortiert. Für alles, was weiter abseits liegt, kommen
-Umkreissuchen dazu. Die fragen Luftlinie statt Umweg ab und liefern bis zu 100
-Treffer statt 20.
+Mit ergänzenden Umkreissuchen im selben Lauf:
+
+| Verfahren | Standorte gefunden | Anfragen |
+|---|---|---|
+| Along-Route, Vorgabe | 55 von 108 (51 %) | 7 |
+| Along-Route, großzügig | 53 von 108 (49 %) | 17 |
+| **+ Umkreissuchen** | **100 von 108 (93 %)** | 49 |
+
+Was dann noch fehlt, sind acht Standorte: ein Sportwagenzentrum, eine
+Musikakademie, zwei Verwaltungsgesellschaften, kommunale Anlagen. Sieben davon
+unter 150 kW. Genau die Kategorie, die das Register führt und die für eine
+Durchgangsfahrt ohne Belang ist.
+
+**Damit ist auch die Quellenfrage beantwortet: Für Deutschland genügt TomTom.**
+Eine zweite Datenquelle würde nichts hinzufügen, was auf einer Langstrecke
+zählt.
+
+Die App sucht deshalb zweistufig. Zuerst Along-Route, sieben Anfragen, in
+Sekunden da, und die Liste steht. Danach laufen die Umkreissuchen nach und
+ergänzen sie. Der Nutzer sieht sofort etwas, statt eine halbe Minute auf die
+vollständige Liste zu warten.
 
 ### Eine zweite Live-Quelle
 
@@ -287,7 +304,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 79 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 81 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -355,7 +372,7 @@ electricdrivecompanion/
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
-    test/                      79 Tests gegen Fixtures
+    test/                      81 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
 ```
