@@ -44,16 +44,27 @@ export const DEFAULT_OPTIONS = {
   // Der Suchbegriff steht im Pfad und ist Pflicht. Er wirkt als Freitextsuche
   // ueber POI-Namen und Kategorien. "charging station" trifft deshalb nur
   // Betreiber, die das Wort im Namen fuehren, und laesst Ionity, EnBW oder
-  // Aral pulse liegen. Der offizielle Kategoriename zu 7309 trifft dagegen die
-  // Kategorie selbst.
+  // Aral pulse liegen. "electric vehicle station" ist im Test der einzige
+  // Begriff, der die Kategorie selbst trifft.
   query: 'electric vehicle station',
-  // Zusaetzlich hart auf die EV-Kategorie filtern.
-  useCategoryFilter: true,
+  // Kategoriefilter aus. Empirisch am 08.09. gegen die echte API geprueft:
+  // categorySet=7309 liefert auf einem 100-km-Abschnitt der A31 null Treffer,
+  // dieselbe Anfrage ohne den Parameter liefert 20. Das gilt fuer jeden
+  // getesteten Suchbegriff. Der Parameter filtert nicht, er loescht das
+  // Ergebnis. Statt ihm wird unten an den Daten selbst geprueft.
+  useCategoryFilter: false,
+  // Kategorie-ID, falls der Filter doch benutzt wird. Ueber --category
+  // ueberschreibbar, um andere IDs durchzuprobieren.
+  categoryId: EV_STATION_CATEGORY,
+  // Treffer ohne Ladeinfrastruktur verwerfen. Ersetzt den Kategoriefilter.
+  onlyEVStations: true,
   maxDetourSeconds: 600,
   limitPerRequest: 20,
   minPowerKW: null,
   connectorTypes: [],
-  segmentLengthMeters: 100000,
+  // 50 statt 100 km: ein 100-km-Abschnitt lief im Test ins 20-Treffer-Limit,
+  // es blieben also Stationen unsichtbar.
+  segmentLengthMeters: 50000,
   maxRoutePointsPerRequest: 200,
   spreadResults: true,
   // Pause zwischen zwei Anfragen, damit das Tempolimit nicht greift.
@@ -72,7 +83,7 @@ export function buildAlongRouteURL(apiKey, options = {}) {
   url.searchParams.set('key', apiKey);
   url.searchParams.set('maxDetourTime', String(Math.min(opts.maxDetourSeconds, 3600)));
   url.searchParams.set('limit', String(Math.min(opts.limitPerRequest, 20)));
-  if (opts.useCategoryFilter) url.searchParams.set('categorySet', EV_STATION_CATEGORY);
+  if (opts.useCategoryFilter) url.searchParams.set('categorySet', opts.categoryId ?? EV_STATION_CATEGORY);
   url.searchParams.set('sortBy', 'detourTime');
 
   if (opts.spreadResults) url.searchParams.set('spreadingMode', 'auto');
@@ -115,6 +126,7 @@ export function toChargingStation(result) {
       ratedPowerKW: c.ratedPowerKW ?? null,
       currentType: c.currentType ?? null,
     })),
+    categories: result.poi?.categories ?? [],
     availabilityID: result.dataSources?.chargingAvailability?.id ?? null,
     detourSeconds: result.detourTime ?? null,
     detourMeters: result.detourDistance ?? null,
@@ -123,8 +135,26 @@ export function toChargingStation(result) {
   };
 }
 
-export function parseAlongRouteResponse(json) {
-  return (json.results ?? []).map(toChargingStation);
+/**
+ * Ist dieser Treffer wirklich eine Ladestation?
+ *
+ * Der Kategoriefilter der API ist unbrauchbar (siehe useCategoryFilter), also
+ * wird am Datensatz selbst entschieden. Ein Ladepark bringt seine Anschluesse
+ * mit; das ist ein harter Beleg und kein Namensraten. Fehlen die Anschluesse,
+ * entscheidet ersatzweise die Kategorieangabe des POI.
+ */
+export function isChargingStation(station) {
+  if (station.connectors.length > 0) return true;
+
+  return (station.categories ?? []).some((category) =>
+    /electric vehicle|charging|ladestation|ladesäule|ladesaeule/i.test(category)
+  );
+}
+
+export function parseAlongRouteResponse(json, options = {}) {
+  const stations = (json.results ?? []).map(toChargingStation);
+  const onlyEV = options.onlyEVStations ?? DEFAULT_OPTIONS.onlyEVStations;
+  return onlyEV ? stations.filter(isChargingStation) : stations;
 }
 
 /**
@@ -199,7 +229,7 @@ export async function searchAlongRoute(apiKey, routeGeometry, options = {}, fetc
       throw new Error(`TomTom antwortet mit ${response.status}: ${text.slice(0, 200)}.${hint}`);
     }
 
-    for (const station of parseAlongRouteResponse(await response.json())) {
+    for (const station of parseAlongRouteResponse(await response.json(), opts)) {
       if (!merged.has(station.id)) merged.set(station.id, station);
     }
   }

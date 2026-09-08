@@ -12,6 +12,8 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     let latitude: Double
     let longitude: Double
     let connectors: [Connector]
+    /// Kategorieangaben des POI, wie TomTom sie liefert.
+    let categories: [String]
     /// ID für die Live-Belegungsabfrage. Fehlt bei Stationen ohne Live-Anbindung.
     let availabilityID: String?
     let detourSeconds: Double?
@@ -30,6 +32,23 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
 
     var hasDCCharging: Bool {
         connectors.contains { $0.type?.isDC == true || ($0.ratedPowerKW ?? 0) >= 50 }
+    }
+
+    /// Ist das wirklich eine Ladestation?
+    ///
+    /// Der Kategoriefilter der Search API ist unbrauchbar: `categorySet=7309`
+    /// liefert null Treffer, dieselbe Anfrage ohne den Parameter liefert 20.
+    /// Deshalb entscheidet der Datensatz selbst. Ein Ladepark bringt seine
+    /// Anschlüsse mit, das ist ein harter Beleg. Fehlen sie, entscheidet
+    /// ersatzweise die Kategorieangabe.
+    var isChargingStation: Bool {
+        if !connectors.isEmpty { return true }
+
+        let hints = ["electric vehicle", "charging", "ladestation", "ladesäule", "ladesaeule"]
+        return categories.contains { category in
+            let lowered = category.lowercased()
+            return hints.contains { lowered.contains($0) }
+        }
     }
 
     /// Steckertypen ohne Dubletten, in stabiler Reihenfolge.
@@ -66,6 +85,7 @@ extension ChargingStation {
                 currentType: $0.currentType
             )
         }
+        categories = result.poi?.categories ?? []
         availabilityID = result.dataSources?.chargingAvailability?.id
         detourSeconds = result.detourTime
         detourMeters = result.detourDistance

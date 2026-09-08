@@ -212,7 +212,11 @@ async function searchSegment(apiKey, points, options) {
     error.wasThrottledTwice = response.wasThrottledTwice === true;
     throw error;
   }
-  return ev.parseAlongRouteResponse(await response.json());
+  const json = await response.json();
+  return {
+    raw: ev.parseAlongRouteResponse(json, { onlyEVStations: false }),
+    stations: ev.parseAlongRouteResponse(json, options),
+  };
 }
 
 // ------------------------------------------------------------ Diagnose
@@ -222,18 +226,18 @@ async function searchSegment(apiKey, points, options) {
 // über Erfolg und Misserfolg der ganzen Suche. Diese Varianten klären das mit
 // wenigen Anfragen auf einem einzigen Routenabschnitt.
 const VARIANTS = [
-  { label: 'charging station + Kategorie', query: 'charging station', useCategoryFilter: true },
-  { label: 'electric vehicle station + Kategorie', query: 'electric vehicle station', useCategoryFilter: true },
-  { label: 'electric vehicle station ohne Kategorie', query: 'electric vehicle station', useCategoryFilter: false },
-  { label: 'ev charging station + Kategorie', query: 'ev charging station', useCategoryFilter: true },
-  { label: 'Ladestation + Kategorie', query: 'Ladestation', useCategoryFilter: true },
-  { label: 'petrol station + Kategorie (Gegenprobe)', query: 'petrol station', useCategoryFilter: true },
+  { label: 'electric vehicle station, ohne Kategorie', query: 'electric vehicle station', useCategoryFilter: false },
+  { label: 'electric vehicle station + categorySet 7309', query: 'electric vehicle station', useCategoryFilter: true, categoryId: '7309' },
+  { label: 'Ladestation, ohne Kategorie', query: 'Ladestation', useCategoryFilter: false },
+  { label: 'charging, ohne Kategorie', query: 'charging', useCategoryFilter: false },
+  { label: 'ev charging station, ohne Kategorie', query: 'ev charging station', useCategoryFilter: false },
   {
     label: 'electric vehicle station, ohne spreadingMode',
     query: 'electric vehicle station',
-    useCategoryFilter: true,
+    useCategoryFilter: false,
     spreadResults: false,
   },
+  { label: 'petrol station, ohne Kategorie (Gegenprobe)', query: 'petrol station', useCategoryFilter: false },
 ];
 
 async function diagnose(apiKey, route, baseOptions) {
@@ -259,12 +263,18 @@ async function diagnose(apiKey, route, baseOptions) {
 
     const options = { ...baseOptions, ...variant };
     try {
-      const stations = await searchSegment(apiKey, points, options);
+      const { raw, stations } = await searchSegment(apiKey, points, options);
       const powers = stations.map(ev.maxPowerKW).filter((p) => p != null);
-      findings.push({ variant, count: stations.length, stations });
+      findings.push({ variant, count: stations.length, rawCount: raw.length, stations });
 
       const marker = stations.length >= 10 ? green('OK ') : stations.length > 0 ? '   ' : red('-- ');
-      console.log(`${marker}${String(stations.length).padStart(2)} Treffer  ${bold(variant.label)}`);
+      const verworfen = raw.length - stations.length;
+      console.log(
+        `${marker}${String(stations.length).padStart(2)} Ladestationen  ${bold(variant.label)}`
+      );
+      console.log(
+        dim(`      ${raw.length} Treffer roh, davon ${verworfen} ohne Ladeinfrastruktur verworfen`)
+      );
       if (stations.length > 0) {
         console.log(dim(`      ${stations.slice(0, 3).map((s) => s.name).join(' | ')}`));
         if (powers.length > 0) {
@@ -302,16 +312,37 @@ async function diagnose(apiKey, route, baseOptions) {
     }
     return;
   }
-  console.log(`Beste Variante: ${bold(best.variant.label)} mit ${best.count} Treffern.`);
+  console.log(`Beste Variante: ${bold(best.variant.label)} mit ${best.count} Ladestationen.`);
   console.log(
     dim(
       `In lib/evsearch.mjs DEFAULT_OPTIONS setzen: query = "${best.variant.query}", ` +
         `useCategoryFilter = ${best.variant.useCategoryFilter}`
     )
   );
-  if (best.count >= 19) {
+  if (best.rawCount >= 20) {
     console.log(
-      dim('Der Abschnitt stoesst ans 20er-Limit. Mit --segment=50 kommen mehr Stationen zusammen.')
+      dim(
+        'Der Abschnitt stoesst ans 20-Treffer-Limit der API, es bleiben also Stationen\n' +
+          'unsichtbar. Kuerzere Abschnitte helfen: --segment=25'
+      )
+    );
+  }
+
+  const gegenprobe = findings.find((f) => f.variant.query === 'petrol station');
+  if (gegenprobe && !gegenprobe.error) {
+    const verworfen = gegenprobe.rawCount - gegenprobe.count;
+    console.log(
+      dim(
+        `\nGegenprobe "petrol station": ${gegenprobe.rawCount} Treffer roh, ` +
+          `${verworfen} davon als Nicht-Ladestation verworfen, ${gegenprobe.count} blieben uebrig.`
+      )
+    );
+    console.log(
+      dim(
+        gegenprobe.count === 0
+          ? 'Der Filter an den Daten greift also sauber.'
+          : 'Die uebrigen sind Tankstellen MIT Ladepark, das ist korrekt so.'
+      )
     );
   }
 }
@@ -356,7 +387,8 @@ async function main() {
     maxDetourSeconds: Number(args.detour) * 60,
     segmentLengthMeters: Number(args.segment) * 1000,
     ...(args.query ? { query: args.query } : {}),
-    ...(args['no-category'] ? { useCategoryFilter: false } : {}),
+    ...(args.category ? { useCategoryFilter: true, categoryId: String(args.category) } : {}),
+    ...(args.all ? { onlyEVStations: false } : {}),
     ...(args.fast
       ? { minPowerKW: 100, connectorTypes: ['IEC62196Type2CCS', 'Chademo', 'Tesla'] }
       : {}),

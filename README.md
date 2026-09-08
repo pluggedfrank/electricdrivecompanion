@@ -64,7 +64,7 @@ node tomtom-probe.mjs --dry-run     # zeigt nur die Anfragen, ohne Netz
 node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach Norddeich
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --fast --detour=20
-npm test                            # 38 Tests
+npm test                            # 43 Tests
 ```
 
 Ohne `--key` fragt das Werkzeug den Schlüssel im Terminal ab, unsichtbar. Das
@@ -85,6 +85,18 @@ in Sekunden statt nach einer halben Stunde Xcode.
 
 ## Zwei Entscheidungen, die Erklärung brauchen
 
+**Der Kategoriefilter der Search API ist unbrauchbar.** `categorySet=7309`
+liefert auf einem 100-km-Abschnitt der A31 null Treffer. Dieselbe Anfrage ohne
+den Parameter liefert 20, mit echten Betreibern von 22 bis 400 kW. Das gilt für
+jeden getesteten Suchbegriff, auch für den, der ohne Filter funktioniert. Der
+Parameter filtert nicht, er löscht das Ergebnis.
+
+Statt seiner wird am Datensatz selbst entschieden: Ein Ladepark bringt seine
+Anschlüsse mit, das ist ein harter Beleg und kein Namensraten. Fehlen sie,
+entscheidet ersatzweise die Kategorieangabe des POI. Die Freitextsuche bringt
+sonst auch Tankstellen und Werkstätten mit, die fallen so raus. Wer andere
+Kategorie-IDs durchprobieren will: `--category=7313`.
+
 **Die Suche läuft über REST, nicht über das Search-SDK.** Die Antwortstruktur ist
 dokumentiert und stabil, Filter und Paginierung bleiben in eigener Hand, und die
 Schicht ist ohne Simulator testbar. Karte und Routing laufen weiterhin über das
@@ -93,7 +105,7 @@ SDK, weil die Kartendarstellung sich nicht sinnvoll nachbauen lässt.
 **Die Route wird in Abschnitte zerlegt.** Eine Along-Route-Antwort enthält
 höchstens 20 Treffer. Auf einer 330-km-Strecke wären das 20 Stationen für die
 gesamte Länge. Deshalb zerlegt `splitIntoSegments` die Route in Abschnitte von
-etwa 100 km und stellt pro Abschnitt eine Anfrage. Die Geometrie wird vorher per
+50 km und stellt pro Abschnitt eine Anfrage. Die Geometrie wird vorher per
 Douglas-Peucker auf höchstens 200 Stützpunkte gedünnt, sonst wandern mehrere
 tausend Koordinaten in jeden Request-Body.
 
@@ -104,11 +116,11 @@ Ein kompletter Durchlauf Meerbusch nach Norddeich, rund 330 km:
 | Schritt | Anfragen |
 |---|---|
 | Route planen | 1 |
-| Ladestationen suchen, 4 Abschnitte | 4 |
+| Ladestationen suchen, 7 Abschnitte | 7 |
 | Live-Belegung, nur bei Antippen | 1 pro Station |
 
-Also etwa 5 bis 10 Non-Tile-Anfragen pro geplanter Fahrt. Bei 2.500 pro Tag sind
-das reichlich 250 Routen täglich. Für die Evaluierung ist das weit mehr als
+Also etwa 8 bis 15 Non-Tile-Anfragen pro geplanter Fahrt. Bei 2.500 pro Tag sind
+das immer noch über 150 Routen täglich. Für die Evaluierung ist das weit mehr als
 genug. Deshalb wird die Belegung auch erst beim Antippen geholt und nicht für
 alle Treffer auf einmal: das wäre der teuerste Teil.
 
@@ -152,7 +164,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 38 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 43 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -219,6 +231,6 @@ electricdrivecompanion/
     Resources/                 editorial-stations.json
   tools/
     lib/                       dieselbe Logik in JavaScript
-    test/                      38 Tests gegen Fixtures
+    test/                      43 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
 ```

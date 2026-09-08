@@ -49,11 +49,19 @@ struct AlongRouteSearchOptions: Sendable {
     /// Der Suchbegriff steht bei searchAlongRoute im Pfad und ist Pflicht. Er
     /// wirkt als Freitextsuche über POI-Namen und Kategorien. "charging station"
     /// trifft deshalb nur Betreiber, die das Wort im Namen führen, und lässt
-    /// Ionity, EnBW oder Aral pulse liegen. Der offizielle Kategoriename zu 7309
-    /// trifft dagegen die Kategorie selbst.
+    /// Ionity, EnBW oder Aral pulse liegen. "electric vehicle station" ist im
+    /// Test der einzige Begriff, der die Kategorie selbst trifft.
     var query: String = "electric vehicle station"
-    /// Zusätzlich hart auf die EV-Kategorie filtern.
-    var useCategoryFilter: Bool = true
+    /// Kategoriefilter der API. Aus, weil er am 08.09. gegen die echte API
+    /// widerlegt wurde: `categorySet=7309` liefert auf einem 100-km-Abschnitt
+    /// der A31 null Treffer, dieselbe Anfrage ohne den Parameter liefert 20,
+    /// und das für jeden getesteten Suchbegriff. Der Parameter filtert nicht,
+    /// er löscht das Ergebnis.
+    var useCategoryFilter: Bool = false
+    /// Kategorie-ID, falls der Filter doch benutzt wird.
+    var categoryID: String = TomTomAPIClient.evStationCategory
+    /// Treffer ohne Ladeinfrastruktur verwerfen. Ersetzt den Kategoriefilter.
+    var onlyEVStations: Bool = true
     /// Maximal zulässiger Umweg. TomTom deckelt bei 3600 s.
     var maxDetourSeconds: Int = 600
     /// Treffer pro Anfrage. Die Along-Route-Suche liefert höchstens 20.
@@ -64,7 +72,9 @@ struct AlongRouteSearchOptions: Sendable {
     var connectorTypes: [ConnectorType] = []
     /// Länge eines Routenabschnitts in Metern. Pro Abschnitt läuft eine Anfrage,
     /// weil TomTom pro Antwort nur 20 Treffer zurückgibt.
-    var segmentLengthMeters: Double = 100_000
+    /// 50 statt 100 km: ein 100-km-Abschnitt lief im Test ins 20-Treffer-Limit,
+    /// es blieben also Stationen unsichtbar.
+    var segmentLengthMeters: Double = 50_000
     /// Obergrenze für Stützpunkte pro Anfrage-Body.
     var maxRoutePointsPerRequest: Int = 200
     /// Verteilt Treffer über den Abschnitt, statt sie am Anfang zu häufen.
@@ -188,7 +198,7 @@ actor TomTomAPIClient {
             URLQueryItem(name: "sortBy", value: "detourTime"),
         ]
         if options.useCategoryFilter {
-            items.append(URLQueryItem(name: "categorySet", value: Self.evStationCategory))
+            items.append(URLQueryItem(name: "categorySet", value: options.categoryID))
         }
         if options.spreadResults {
             items.append(URLQueryItem(name: "spreadingMode", value: "auto"))
@@ -214,7 +224,10 @@ actor TomTomAPIClient {
         let data = try await perform(request)
         do {
             let response = try JSONDecoder().decode(AlongRouteSearchResponse.self, from: data)
-            return response.results.map(ChargingStation.init(searchResult:))
+            let stations = response.results.map(ChargingStation.init(searchResult:))
+            // Ohne Kategoriefilter bringt die Freitextsuche auch Tankstellen und
+            // Werkstätten mit. Die fallen hier raus.
+            return options.onlyEVStations ? stations.filter(\.isChargingStation) : stations
         } catch {
             throw TomTomAPIError.decoding(underlying: error)
         }

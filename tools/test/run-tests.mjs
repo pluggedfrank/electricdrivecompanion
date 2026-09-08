@@ -143,9 +143,8 @@ test('limit wird bei 20 gekappt, dem Maximum der Along-Route-Suche', () => {
   assert.equal(url.searchParams.get('limit'), '20');
 });
 
-test('Kategorie und Sortierung stehen immer in der Anfrage', () => {
+test('Schlüssel und Sortierung stehen immer in der Anfrage', () => {
   const url = new URL(ev.buildAlongRouteURL('KEY'));
-  assert.equal(url.searchParams.get('categorySet'), '7309');
   assert.equal(url.searchParams.get('sortBy'), 'detourTime');
   assert.equal(url.searchParams.get('key'), 'KEY');
 });
@@ -193,7 +192,7 @@ test('Request-Body hat die von TomTom erwartete Form', () => {
 
 test('Suchtreffer werden vollständig übersetzt', () => {
   const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
-  assert.equal(stations.length, 5);
+  assert.equal(stations.length, 5, 'die Tankstelle muss herausgefallen sein');
 
   const first = stations[0];
   assert.equal(first.id, 'poi-1');
@@ -233,6 +232,59 @@ test('fehlt total, wird es aus den Zählern rekonstruiert', () => {
     connectors: [{ availability: { current: { available: 2, occupied: 1 } } }],
   });
   assert.equal(a.total, 3);
+});
+
+// ------------------------------------------------- Ladestation oder nicht
+
+test('ohne Kategoriefilter kommt Fremdes mit und wird aussortiert', () => {
+  const roh = ev.parseAlongRouteResponse(fixture('alongroute-response.json'), {
+    onlyEVStations: false,
+  });
+  const gefiltert = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+
+  assert.equal(roh.length, 6);
+  assert.equal(gefiltert.length, 5);
+  assert.ok(
+    roh.some((s) => s.id === 'poi-6'),
+    'die Tankstelle steckt in der Rohantwort'
+  );
+  assert.ok(
+    !gefiltert.some((s) => s.id === 'poi-6'),
+    'die Tankstelle darf nach dem Filter nicht mehr drin sein'
+  );
+});
+
+test('vorhandene Anschlüsse belegen eine Ladestation', () => {
+  assert.equal(
+    ev.isChargingStation({ connectors: [{ ratedPowerKW: 300 }], categories: [] }),
+    true
+  );
+});
+
+test('ohne Anschlüsse entscheidet die Kategorieangabe', () => {
+  assert.equal(
+    ev.isChargingStation({ connectors: [], categories: ['electric vehicle station'] }),
+    true
+  );
+  assert.equal(
+    ev.isChargingStation({ connectors: [], categories: ['petrol station'] }),
+    false
+  );
+  assert.equal(ev.isChargingStation({ connectors: [], categories: [] }), false);
+});
+
+test('der Kategoriefilter der API ist per Vorgabe aus', () => {
+  // Empirisch belegt: categorySet=7309 liefert null Treffer, ohne den
+  // Parameter kommen dieselben Anfragen mit 20 Treffern zurueck.
+  const url = new URL(ev.buildAlongRouteURL('KEY'));
+  assert.equal(url.searchParams.get('categorySet'), null);
+});
+
+test('die Kategorie-ID lässt sich zum Ausprobieren setzen', () => {
+  const url = new URL(
+    ev.buildAlongRouteURL('KEY', { useCategoryFilter: true, categoryId: '7313' })
+  );
+  assert.equal(url.searchParams.get('categorySet'), '7313');
 });
 
 // -------------------------------------------------------------- Zuordnung

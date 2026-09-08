@@ -1,5 +1,9 @@
 {
-  "summary": { "query": "charging station", "numResults": 5, "totalResults": 5 },
+  "summary": {
+    "query": "charging station",
+    "numResults": 6,
+    "totalResults": 6
+  },
   "results": [
     {
       "type": "POI",
@@ -10,18 +14,46 @@
       "detourDistance": 610,
       "poi": {
         "name": "EnBW Ladepark Kamp-Lintfort",
-        "brands": [{ "name": "EnBW" }],
-        "categories": ["electric vehicle station"]
-      },
-      "address": { "freeformAddress": "Autohofstr. 2, 47475 Kamp-Lintfort", "countryCode": "DE" },
-      "position": { "lat": 51.50310, "lon": 6.54490 },
-      "chargingPark": {
-        "connectors": [
-          { "connectorType": "IEC62196Type2CCS", "ratedPowerKW": 300.0, "voltageV": 920, "currentA": 500, "currentType": "DC" },
-          { "connectorType": "IEC62196Type2Outlet", "ratedPowerKW": 22.0, "voltageV": 400, "currentA": 32, "currentType": "AC3" }
+        "brands": [
+          {
+            "name": "EnBW"
+          }
+        ],
+        "categories": [
+          "electric vehicle station"
         ]
       },
-      "dataSources": { "chargingAvailability": { "id": "avail-kamp-lintfort" } }
+      "address": {
+        "freeformAddress": "Autohofstr. 2, 47475 Kamp-Lintfort",
+        "countryCode": "DE"
+      },
+      "position": {
+        "lat": 51.5031,
+        "lon": 6.5449
+      },
+      "chargingPark": {
+        "connectors": [
+          {
+            "connectorType": "IEC62196Type2CCS",
+            "ratedPowerKW": 300.0,
+            "voltageV": 920,
+            "currentA": 500,
+            "currentType": "DC"
+          },
+          {
+            "connectorType": "IEC62196Type2Outlet",
+            "ratedPowerKW": 22.0,
+            "voltageV": 400,
+            "currentA": 32,
+            "currentType": "AC3"
+          }
+        ]
+      },
+      "dataSources": {
+        "chargingAvailability": {
+          "id": "avail-kamp-lintfort"
+        }
+      }
     },
     {
       "type": "POI",
@@ -30,15 +62,36 @@
       "dist": 18.0,
       "detourTime": 60,
       "detourDistance": 300,
-      "poi": { "name": "Aral pulse Gescher", "brands": [{ "name": "Aral pulse" }] },
-      "address": { "freeformAddress": "Borkener Damm 14, 48712 Gescher", "countryCode": "DE" },
-      "position": { "lat": 51.95485, "lon": 7.00515 },
-      "chargingPark": {
-        "connectors": [
-          { "connectorType": "IEC62196Type2CCS", "ratedPowerKW": 300.0, "currentType": "DC" }
+      "poi": {
+        "name": "Aral pulse Gescher",
+        "brands": [
+          {
+            "name": "Aral pulse"
+          }
         ]
       },
-      "dataSources": { "chargingAvailability": { "id": "avail-gescher" } }
+      "address": {
+        "freeformAddress": "Borkener Damm 14, 48712 Gescher",
+        "countryCode": "DE"
+      },
+      "position": {
+        "lat": 51.95485,
+        "lon": 7.00515
+      },
+      "chargingPark": {
+        "connectors": [
+          {
+            "connectorType": "IEC62196Type2CCS",
+            "ratedPowerKW": 300.0,
+            "currentType": "DC"
+          }
+        ]
+      },
+      "dataSources": {
+        "chargingAvailability": {
+          "id": "avail-gescher"
+        }
+      }
     },
     {
       "type": "POI",
@@ -46,13 +99,36 @@
       "score": 3.1,
       "dist": 210.0,
       "detourTime": 320,
-      "poi": { "name": "Shell Recharge Dortmund Nord", "brands": [{ "name": "Shell Recharge" }] },
-      "address": { "freeformAddress": "Bornstr. 200, 44145 Dortmund", "countryCode": "DE" },
-      "position": { "lat": 51.51000, "lon": 7.46000 },
-      "chargingPark": {
-        "connectors": [{ "connectorType": "Chademo", "ratedPowerKW": 50.0, "currentType": "DC" }]
+      "poi": {
+        "name": "Shell Recharge Dortmund Nord",
+        "brands": [
+          {
+            "name": "Shell Recharge"
+          }
+        ]
       },
-      "dataSources": { "chargingAvailability": { "id": "avail-dortmund" } }
+      "address": {
+        "freeformAddress": "Bornstr. 200, 44145 Dortmund",
+        "countryCode": "DE"
+      },
+      "position": {
+        "lat": 51.51,
+        "lon": 7.46
+      },
+      "chargingPark": {
+        "connectors": [
+          {
+            "connectorType": "Chademo",
+            "ratedPowerKW": 50.0,
+            "currentType": "DC"
+          }
+        ]
+      },
+      "dataSources": {
+        "chargingAvailability": {
+          "id": "avail-dortmund"
+        }
+      }
     },
     {
       "type": "POI",
@@ -60,13 +136,36 @@
       "score": 2.9,
       "dist": 300.0,
       "detourTime": 240,
-      "poi": { "name": "Rastplatz Schermbeck Ost", "brands": [{ "name": "Autobahn Tank & Rast" }] },
-      "address": { "freeformAddress": "A31, 46514 Schermbeck", "countryCode": "DE" },
-      "position": { "lat": 51.69280, "lon": 6.87530 },
-      "chargingPark": {
-        "connectors": [{ "connectorType": "IEC62196Type2CCS", "ratedPowerKW": 150.0, "currentType": "DC" }]
+      "poi": {
+        "name": "Rastplatz Schermbeck Ost",
+        "brands": [
+          {
+            "name": "Autobahn Tank & Rast"
+          }
+        ]
       },
-      "dataSources": { "chargingAvailability": { "id": "avail-schermbeck" } }
+      "address": {
+        "freeformAddress": "A31, 46514 Schermbeck",
+        "countryCode": "DE"
+      },
+      "position": {
+        "lat": 51.6928,
+        "lon": 6.8753
+      },
+      "chargingPark": {
+        "connectors": [
+          {
+            "connectorType": "IEC62196Type2CCS",
+            "ratedPowerKW": 150.0,
+            "currentType": "DC"
+          }
+        ]
+      },
+      "dataSources": {
+        "chargingAvailability": {
+          "id": "avail-schermbeck"
+        }
+      }
     },
     {
       "type": "POI",
@@ -74,9 +173,50 @@
       "score": 2.4,
       "dist": 67.0,
       "detourTime": 180,
-      "poi": { "name": "Autohaus Mueller Wallbox", "brands": [{ "name": "Mennekes" }] },
-      "position": { "lat": 52.52350, "lon": 7.32050 },
-      "chargingPark": { "connectors": [] }
+      "poi": {
+        "name": "Autohaus Mueller Wallbox",
+        "brands": [
+          {
+            "name": "Mennekes"
+          }
+        ],
+        "categories": [
+          "electric vehicle station"
+        ]
+      },
+      "position": {
+        "lat": 52.5235,
+        "lon": 7.3205
+      },
+      "chargingPark": {
+        "connectors": []
+      }
+    },
+    {
+      "type": "POI",
+      "id": "poi-6",
+      "score": 2.0,
+      "dist": 90.0,
+      "detourTime": 120,
+      "poi": {
+        "name": "Aral Tankstelle Emsland",
+        "brands": [
+          {
+            "name": "Aral"
+          }
+        ],
+        "categories": [
+          "petrol station"
+        ]
+      },
+      "address": {
+        "freeformAddress": "A31, 49716 Meppen",
+        "countryCode": "DE"
+      },
+      "position": {
+        "lat": 52.7,
+        "lon": 7.295
+      }
     }
   ]
 }
