@@ -1,0 +1,26 @@
+{
+  "chargingAvailability": "avail-kamp-lintfort",
+  "connectors": [
+    {
+      "type": "IEC62196Type2CCS",
+      "total": 6,
+      "availability": {
+        "current": { "available": 4, "occupied": 1, "reserved": 0, "unknown": 0, "outOfService": 1 }
+      },
+      "perPowerLevel": [
+        {
+          "powerKW": 300.0,
+          "total": 6,
+          "availability": { "current": { "available": 4, "occupied": 1, "outOfService": 1 } }
+        }
+      ]
+    },
+    {
+      "type": "IEC62196Type2Outlet",
+      "total": 2,
+      "availability": {
+        "current": { "available": 2, "occupied": 0, "reserved": 0, "unknown": 0, "outOfService": 0 }
+      }
+    }
+  ]
+}

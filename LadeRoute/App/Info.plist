@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>de_DE</string>
+	<key>CFBundleDisplayName</key>
+	<string>LadeRoute</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string></string>
+	</dict>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Der Startpunkt der Route und die Suche nach Ladestationen in der Nähe brauchen deinen Standort.</string>
+	<key>TomTomAPIKey</key>
+	<string>$(TOMTOM_API_KEY)</string>
+</dict>
+</plist>

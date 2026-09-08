@@ -1,0 +1,15 @@
+# Der API-Key gehört nicht ins Repository.
+Secrets.xcconfig
+
+# Von XcodeGen erzeugt.
+LadeRoute.xcodeproj/
+*.xcworkspace/
+
+# Xcode
+xcuserdata/
+DerivedData/
+.DS_Store
+
+# Node-Werkzeuge
+tools/node_modules/
+tools/.probe-cache/

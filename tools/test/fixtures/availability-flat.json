@@ -1,0 +1,10 @@
+{
+  "chargingAvailability": "avail-gescher",
+  "connectors": [
+    {
+      "type": "IEC62196Type2CCS",
+      "total": 4,
+      "availability": { "available": 1, "occupied": 3, "reserved": 0, "unknown": 0, "outOfService": 0 }
+    }
+  ]
+}

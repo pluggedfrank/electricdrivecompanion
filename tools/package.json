@@ -1,0 +1,13 @@
+{
+  "name": "laderoute-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Werkzeuge zum Prototypen LadeRoute: Datenkette gegen die TomTom-API pruefen, geteilte Logik testen.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/run-tests.mjs",
+    "probe": "node tomtom-probe.mjs",
+    "probe:dry": "node tomtom-probe.mjs --dry-run"
+  }
+}
