@@ -147,6 +147,12 @@ struct StationListSheet: View {
         }
     }
 
+    private func abstandText(_ meters: Double) -> String {
+        meters < 1000
+            ? "\(Int(meters)) m"
+            : String(format: "%.1f km", meters / 1000)
+    }
+
     private func planHeadline(_ plan: ChargingPlan) -> String {
         guard plan.isFeasible else { return "Mit diesem Filter geht die Strecke nicht auf" }
         if plan.stops.isEmpty { return "Ohne Ladestopp zu schaffen" }
@@ -218,6 +224,27 @@ struct StationListSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
+                    Text("Abstand von der Route")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.ink2)
+                    Spacer()
+                    Text(abstandText(trip.maxDistanceFromRouteMeters))
+                        .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Theme.ink)
+                }
+                Slider(value: $trip.maxDistanceFromRouteMeters, in: 200 ... 5000, step: 100) { editing in
+                    if !editing { trip.reapplyFilters() }
+                }
+                .tint(Theme.signal)
+
+                Text("Luftlinie zur Strecke. Gilt für jede Station.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.faint)
+                    .textCase(nil)
+            }
+
+            Section {
+                HStack {
                     Text("Umweg höchstens")
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.ink2)
@@ -230,6 +257,19 @@ struct StationListSheet: View {
                     if !editing { trip.reapplyFilters() }
                 }
                 .tint(Theme.signal)
+
+                // Ohne diesen Satz wirkt der Regler kaputt: Man stellt zwei
+                // Minuten ein und bekommt weiter hundert Stationen.
+                Text(
+                    "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, aber nur für "
+                        + "\(trip.detourKnownCount) von \(trip.stations.count) Stationen bekannt. "
+                        + "Die Umkreissuche liefert keinen Umweg mit; wo keiner bekannt ist, "
+                        + "greift der Regler nicht."
+                )
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.faint)
+                .textCase(nil)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.vertical, 4)
@@ -302,8 +342,11 @@ struct StationRow: View {
                         badge("+\(Int((detour / 60).rounded())) min", color: Theme.river)
                     } else if let abstand = item.station.distanceFromRouteMeters {
                         // Treffer aus der Umkreissuche bringen keinen Umweg mit.
-                        // Der seitliche Abstand ist der beste Ersatz.
-                        badge("\(Int(abstand.rounded())) m ab Route", color: Theme.river)
+                        // Die Luftlinie ist der beste Ersatz, und sie heißt hier
+                        // auch so: Ein Umweg in Minuten und eine Luftlinie in
+                        // Metern sind zwei verschiedene Dinge, und wer sie gleich
+                        // beschriftet, lädt zum Vergleich von Unvergleichbarem ein.
+                        badge("\(Int(abstand.rounded())) m Luftlinie", color: Theme.meta)
                     }
                 }
 

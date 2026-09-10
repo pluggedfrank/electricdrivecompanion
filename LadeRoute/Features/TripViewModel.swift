@@ -146,6 +146,14 @@ final class TripViewModel: ObservableObject {
 
     var editorialCount: Int { stations.filter(\.hasEditorialContent).count }
 
+    /// Für wie viele Stationen kennt TomTom den Umweg?
+    ///
+    /// Nur die Along-Route-Suche liefert ihn mit. Die Umkreissuche, die den
+    /// größeren Teil der Treffer bringt, liefert ihn nicht, und ohne Wert kann
+    /// der Umwegregler nichts ausschließen. Die Zahl gehört deshalb sichtbar
+    /// neben den Regler, sonst wirkt er wirkungslos.
+    var detourKnownCount: Int { stations.filter { $0.station.detourSeconds != nil }.count }
+
     /// Stationen, deren Ladeleistung TomTom nicht kennt. Sie bleiben in der
     /// Liste, werden aber gekennzeichnet, damit niemand einen Stopp darauf plant.
     var unknownPowerCount: Int { stations.filter { !$0.station.hasKnownPower }.count }
