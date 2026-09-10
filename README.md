@@ -3,12 +3,16 @@
 **Arbeitstitel der App: LadeRoute.** Der Xcode-Target heißt so; wenn ein
 anderer Name feststeht, wird er in `project.yml` und `LadeRoute/` geändert.
 
-Eine iOS-App, die eine Route auf einer TomTom-Karte zeigt, Ladestationen entlang
-der Strecke sucht und die Treffer mit eigenen Redaktionsdaten anreichert.
+Eine eigenständige Navigations-App für die Langstrecke im E-Auto. Der
+Unterschied zu jedem anderen Navi ist die Liste der Schnelllader entlang der
+Route: Entfernung, Ladeleistung, Anbieter, Belegung.
 
-Der Prototyp beantwortet genau eine Frage: **Trägt die Kombination aus fremden
-Kartendaten und eigenem Ladestations-Wissen?** Alles, was diese Frage nicht
-berührt, fehlt bewusst.
+**Wozu die App da ist, steht in [`docs/PROJEKT.md`](docs/PROJEKT.md).** Bei
+Widersprüchen zwischen diesem README und jenem Text gilt jener.
+
+Was hier beschrieben ist, ist der Stand des Prototyps. Er beantwortet bisher
+eine Frage: **Trägt die Kombination aus fremden Kartendaten und eigenem
+Ladestations-Wissen?** Die Ansage, ohne die es kein Navi ist, fehlt noch.
 
 ## Was drin ist
 
@@ -21,7 +25,11 @@ berührt, fehlt bewusst.
 | Bewertung, Testurteil, Preis, Tags | eigene Daten, lokale JSON | kostenlos |
 
 Das Navigation SDK mit Turn-by-Turn ist **nicht** eingebunden. Es wird separat
-lizenziert und ist für die Kernfrage nicht nötig.
+lizenziert; im frei zugänglichen Paket `tomtom-sdk-spm-core` 0.73.2 stehen 36
+Module, darunter keines für Navigation, Guidance, Sprachausgabe oder
+Neuberechnung. Für den Prototypen wird die Ansage deshalb selbst gebaut, aus
+den Manöverdaten der Routing-API und der Sprachausgabe von iOS. Der Plan dazu
+steht in [`docs/PROJEKT.md`](docs/PROJEKT.md).
 
 ## Einrichtung
 
