@@ -1534,7 +1534,7 @@ test('die Bloecke bleiben unter der Zellengrenze', () => {
     stuetzIndex: Math.floor((i * 3000) / 50_000),
   }));
 
-  const teile = matrix.bloecke(zuordnungen);
+  const teile = matrix.bloecke(zuordnungen, (z) => z.stuetzIndex);
 
   const summe = teile.reduce((n, t) => n + t.eintraege.length, 0);
   assert.equal(summe, 150, 'keine Station darf verlorengehen');
@@ -1546,6 +1546,23 @@ test('die Bloecke bleiben unter der Zellengrenze', () => {
 
   // Und es sollen wenige Anfragen sein, sonst lohnt der ganze Aufwand nicht.
   assert.ok(teile.length <= 6, `${teile.length} Anfragen für 150 Stationen`);
+});
+
+test('die Bloecke enthalten die Originale, keine Kopien', () => {
+  // Genau daran ist die erste Fassung gescheitert: Der Aufrufer legte mit einer
+  // Kopie ein Feld an, die Bloecke enthielten die Kopien, und was er nach der
+  // Anfrage hineinschrieb, landete im Nichts. Vier Anfragen liefen durch und
+  // lieferten null Umwege.
+  const eintraege = [{ id: 'a' }, { id: 'b' }];
+  const teile = matrix.bloecke(eintraege, () => 0);
+
+  const flach = teile.flatMap((t) => t.eintraege);
+  assert.equal(flach.length, 2);
+  assert.ok(flach[0] === eintraege[0], 'dasselbe Objekt, nicht ein gleiches');
+  assert.ok(flach[1] === eintraege[1]);
+
+  flach[0].ergebnis = 42;
+  assert.equal(eintraege[0].ergebnis, 42, 'Schreiben muss beim Original ankommen');
 });
 
 test('der Umweg ist die Differenz zur ohnehin gefahrenen Strecke', () => {

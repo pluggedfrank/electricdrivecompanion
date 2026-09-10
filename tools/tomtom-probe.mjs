@@ -410,9 +410,8 @@ async function berechneUmwege(apiKey, route, stationen, nurFehlende) {
 
   /** Fuehrt eine Richtung aus und schreibt die Sekunden in das Feld. */
   async function richtung(feld, stuetzIndexFeld, stuetzeIstStart) {
-    const teile = matrix.bloecke(
-      zuordnungen.map((z) => ({ ...z, stuetzIndex: z[stuetzIndexFeld] }))
-    );
+    // Die Zuordnungen selbst, keine Kopien: In sie wird gleich geschrieben.
+    const teile = matrix.bloecke(zuordnungen, (z) => z[stuetzIndexFeld]);
 
     for (const teil of teile) {
       const stuetzListe = teil.stuetzen;

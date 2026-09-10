@@ -123,20 +123,29 @@ export function klammer(stuetzen, progressMeters) {
  * verschiedenen Stuetzpunkten und Blockgroesse unter der Grenze bleibt. Weil
  * die Stationen entlang der Route sortiert sind, teilen sich benachbarte
  * Stationen ihre Stuetzpunkte, und die Bloecke werden von selbst gross.
+ *
+ * `stuetzeVon` sagt, welcher Stuetzpunkt zu einem Eintrag gehoert. Als Funktion
+ * und nicht als Feldname, und das hat einen Grund: Vorher erwartete diese
+ * Funktion ein Feld `stuetzIndex`, der Aufrufer legte es mit einer Kopie an,
+ * und die Bloecke enthielten Kopien statt der Originale. Was er hineinschrieb,
+ * landete im Nichts. Vier Anfragen liefen durch und lieferten null Umwege.
+ *
+ * Die Bloecke enthalten die uebergebenen Objekte selbst. Wer etwas
+ * hineinschreibt, schreibt in das Original.
  */
-export function bloecke(zuordnungen, maxZellen = MAX_ZELLEN) {
+export function bloecke(eintraege, stuetzeVon, maxZellen = MAX_ZELLEN) {
   const ergebnis = [];
   let block = [];
   let stuetzenImBlock = new Set();
 
-  for (const zuordnung of zuordnungen) {
+  for (const zuordnung of eintraege) {
     const naechste = new Set(stuetzenImBlock);
-    naechste.add(zuordnung.stuetzIndex);
+    naechste.add(stuetzeVon(zuordnung));
 
     if (block.length > 0 && naechste.size * (block.length + 1) > maxZellen) {
       ergebnis.push({ eintraege: block, stuetzen: [...stuetzenImBlock] });
       block = [];
-      stuetzenImBlock = new Set([zuordnung.stuetzIndex]);
+      stuetzenImBlock = new Set([stuetzeVon(zuordnung)]);
     } else {
       stuetzenImBlock = naechste;
     }
