@@ -171,6 +171,17 @@ Der lange Druck auf die Karte bleibt als zweiter Weg für Orte ohne Namen. Als
 einziger Weg war er nie brauchbar: Die Karte zoomt auf den eigenen Standort, ein
 Ziel dreihundert Kilometer weiter liegt außerhalb des Bildes.
 
+**Der Startpunkt ist der eigene Standort, und nur der.** Ein Feld für einen
+anderen Start war gebaut und ist wieder herausgeflogen: In einer App, mit der
+losgefahren wird, ist es Ballast. Für Versuche setzt man den Ort im Simulator
+unter Features, Location. Anders läge der Fall bei einem Planer für zu Hause,
+mit dem man die Fahrt am Vorabend vorbereitet; das ist eine andere App.
+
+**Das Zielfeld bleibt auch nach der Planung sichtbar.** Das ist zunächst
+verwirrend, denn ein Ziel steht ja schon. Es bleibt trotzdem stehen, weil daraus
+die Eingabe von Zwischenzielen wird: Wer unterwegs einen Halt einschieben will,
+sucht ihn dort. Bis dahin ist die Doppeldeutigkeit in Kauf genommen.
+
 ## Was der Schlüssel darf
 
 Stand 10.09.2026, aus dem Selbstbedienungskatalog des Dashboards.
@@ -335,6 +346,9 @@ Stelle, das Matching bleibt unberührt.
 - [ ] Namensnennung: Das Register steht unter CC BY 4.0. Wo die Daten auf
       plugged.de sichtbar werden, gehört "Bundesnetzagentur.de" sichtbar dazu.
       Der Erfassungsbogen trägt den Hinweis in seinen Kopfdaten mit.
+- [ ] Zwischenziele: Das Zielfeld bleibt nach der Planung stehen und soll
+      später Halte auf der Strecke aufnehmen. Bis dahin sieht es aus wie eine
+      Wiederholung.
 - [ ] Fotos aus Einsendungen: Speicherort, Rechte, Haftung. Ein Foto von einer
       fremden Person ist rechtlich etwas anderes als eines von einer Ladesäule.
 - [ ] Mehrfachabgaben trotz Sichtung: Ein Sichter, der hundert gleichlautende
