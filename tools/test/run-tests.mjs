@@ -1010,6 +1010,28 @@ test('ein vorhandenes Urteil ueberlebt jeden weiteren Import', () => {
   assert.equal(statistik.getestet, 1);
 });
 
+test('die Anschrift kommt mit und macht gleichnamige Eintraege unterscheidbar', () => {
+  const { entries } = redaktion.fuehreZusammen(
+    [],
+    export_(
+      { tomtomPoiID: 'poi-a', name: 'EnBW', address: 'Moerser Str. 1, Kamp-Lintfort' },
+      { tomtomPoiID: 'poi-b', name: 'EnBW', address: 'Hauptstr. 40, Gescher' }
+    )
+  );
+  assert.deepEqual(entries.map((e) => e.address), [
+    'Moerser Str. 1, Kamp-Lintfort',
+    'Hauptstr. 40, Gescher',
+  ]);
+});
+
+test('ein Bestand ohne Anschrift bekommt sie beim naechsten Import', () => {
+  const alt = export_({ verdict: 'Getestet.' });
+  delete alt[0].address;
+  const { entries } = redaktion.fuehreZusammen(alt, export_({ address: 'Am Hafen 3, Emden' }));
+  assert.equal(entries[0].address, 'Am Hafen 3, Emden');
+  assert.equal(entries[0].verdict, 'Getestet.');
+});
+
 test('Standortdaten kommen dagegen aus dem Import', () => {
   const bestand = export_({ verdict: 'Gut.', latitude: 51.5, longitude: 6.5, name: 'Alter Name' });
   const { entries } = redaktion.fuehreZusammen(

@@ -378,6 +378,10 @@ function exportEditorial(stations, targetPath) {
     tomtomPoiID: station.id,
     name: station.name,
     operatorName: station.operatorName,
+    // Die Anschrift steht hier fuer den Menschen, der die Liste ausfuellt. Bei
+    // Ladestationen ist der POI-Name meist der Betreiber; vierzehn Eintraege
+    // heissen dann "EnBW" und sind ohne Anschrift nicht auseinanderzuhalten.
+    address: station.address || null,
     latitude: station.lat,
     longitude: station.lon,
     rating: null,

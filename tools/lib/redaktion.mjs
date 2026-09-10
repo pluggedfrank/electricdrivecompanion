@@ -80,6 +80,7 @@ function normalisiere(entry) {
     tomtomPoiID: entry.tomtomPoiID ?? null,
     name: entry.name,
     operatorName: entry.operatorName ?? null,
+    address: entry.address ?? null,
     latitude: entry.latitude,
     longitude: entry.longitude,
     rating: entry.rating ?? null,
@@ -157,6 +158,7 @@ export function fuehreZusammen(bestand, importiert) {
       tomtomPoiID: eingang.tomtomPoiID ?? alt.tomtomPoiID,
       name: eingang.name || alt.name,
       operatorName: eingang.operatorName ?? alt.operatorName,
+      address: eingang.address ?? alt.address,
       latitude: eingang.latitude,
       longitude: eingang.longitude,
     };

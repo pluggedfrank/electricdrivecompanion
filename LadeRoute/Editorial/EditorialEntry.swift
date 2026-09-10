@@ -12,6 +12,9 @@ struct EditorialEntry: Identifiable, Hashable, Codable, Sendable {
     let tomtomPoiID: String?
     let name: String
     let operatorName: String?
+    /// Anschrift aus dem Import. Die App zeigt zur Laufzeit die von TomTom,
+    /// hier steht sie, damit der Bestand von Hand lesbar bleibt.
+    let address: String?
     let latitude: Double
     let longitude: Double
     /// Redaktionsnote von 1 (sehr gut) bis 5, analog Schulnote.
