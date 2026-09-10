@@ -408,15 +408,22 @@ async function berechneUmwege(apiKey, route, stationen, nurFehlende) {
   let anfragen = 0;
   let zellen = 0;
 
-  /** Fuehrt eine Richtung aus und schreibt die Sekunden in das Feld. */
-  async function richtung(feld, stuetzIndexFeld, stuetzeIstStart) {
-    // Die Zuordnungen selbst, keine Kopien: In sie wird gleich geschrieben.
-    const teile = matrix.bloecke(zuordnungen, (z) => z[stuetzIndexFeld]);
+  /**
+   * Fuehrt eine Richtung aus und schreibt die Sekunden in das Feld.
+   *
+   * `punktVon` sagt, wo das andere Ende liegt: bei den Stationen die Station,
+   * bei den Abschnitten der naechste Stuetzpunkt. Dadurch rechnen beide mit
+   * demselben Code und derselben API, und das ist der Punkt: Eine Differenz aus
+   * zwei verschiedenen Quellen misst vor allem den Unterschied der Quellen.
+   */
+  async function richtung(eintraege, feld, stuetzIndexFeld, stuetzeIstStart, punktVon) {
+    // Die Eintraege selbst, keine Kopien: In sie wird gleich geschrieben.
+    const teile = matrix.bloecke(eintraege, (z) => z[stuetzIndexFeld]);
 
     for (const teil of teile) {
       const stuetzListe = teil.stuetzen;
       const punkte = stuetzListe.map((i) => stuetzen[i]);
-      const ziele = teil.eintraege.map((e) => ({ lat: e.station.lat, lon: e.station.lon }));
+      const ziele = teil.eintraege.map(punktVon);
 
       const body = stuetzeIstStart
         ? matrix.buildMatrixBody(punkte, ziele)
@@ -450,11 +457,26 @@ async function berechneUmwege(apiKey, route, stationen, nurFehlende) {
     }
   }
 
-  await richtung('hinSekunden', 'davor', true);
-  await richtung('zurueckSekunden', 'dahinter', false);
+  const zurStation = (e) => ({ lat: e.station.lat, lon: e.station.lon });
+  await richtung(zuordnungen, 'hinSekunden', 'davor', true, zurStation);
+  await richtung(zuordnungen, 'zurueckSekunden', 'dahinter', false, zurStation);
+
+  // Die Zeit, die man ohnehin gefahren waere, aus derselben Matrix.
+  const teilstrecken = matrix.abschnitte(zuordnungen);
+  await richtung(teilstrecken, 'zeit', 'davor', true, (a) => stuetzen[a.dahinter]);
+
+  const abschnittsZeit = new Map(
+    teilstrecken.map((a) => [matrix.abschnittSchluessel(a.davor, a.dahinter), a.zeit])
+  );
 
   for (const eintrag of zuordnungen) {
+    const gemessen = abschnittsZeit.get(
+      matrix.abschnittSchluessel(eintrag.davor, eintrag.dahinter)
+    );
+    // Der Notnagel, falls die Matrix fuer den Abschnitt nichts liefert: die
+    // anteilige Zeit aus der Route. Ungenau, aber besser als kein Wert.
     const entlang =
+      gemessen ??
       stuetzen[eintrag.dahinter].timeSeconds - stuetzen[eintrag.davor].timeSeconds;
     eintrag.umweg = matrix.umwegSekunden(
       eintrag.hinSekunden,
@@ -788,6 +810,12 @@ async function main() {
         `Umweg für ${bold(String(gerechnet.length))} von ${stationen.length} Stationen`
       );
 
+      // Erst vergleichen, dann schreiben. Andersherum stand der gerechnete
+      // Wert schon in der Station, wenn TomTom keinen geliefert hatte, und der
+      // Abgleich hielt die Rechnung gegen sich selbst: 104 Paare, davon 43 mit
+      // Abweichung null, und ein Mittelwert, der nichts mehr aussagte.
+      const vergleich = vergleiche(ergebnis.zuordnungen);
+
       // Die gerechneten Werte in die Liste schreiben, damit die Ausgabe
       // darunter sie zeigt.
       for (const z of ergebnis.zuordnungen) {
@@ -796,8 +824,6 @@ async function main() {
           z.station.detourGerechnet = true;
         }
       }
-
-      const vergleich = vergleiche(ergebnis.zuordnungen);
       if (vergleich) {
         console.log('');
         console.log(bold(`Abgleich mit TomTom, ${vergleich.anzahl} Stationen mit beiden Werten`));

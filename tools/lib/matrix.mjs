@@ -18,8 +18,18 @@
 //   2. Fuer jede Station den Stuetzpunkt davor und den dahinter bestimmen.
 //   3. Zwei Matrizen rechnen: Stuetzpunkt davor zur Station, Station zum
 //      Stuetzpunkt dahinter.
-//   4. Umweg = Hinfahrt + Rueckfahrt minus der Strecke, die man ohnehin
-//      gefahren waere. Die letzte Zeit steckt schon in der Route.
+//   4. Die Zeit von Stuetzpunkt zu Stuetzpunkt ebenfalls aus der Matrix holen.
+//   5. Umweg = Hinfahrt + Rueckfahrt minus der Strecke, die man ohnehin
+//      gefahren waere.
+//
+// Schritt 4 sah anfangs anders aus: Die Zeit bis zu einem Stuetzpunkt wurde
+// anteilig aus der Gesamtfahrzeit gerechnet, in der Annahme, der Fehler hebe
+// sich bei Hin- und Rueckweg auf. Er hebt sich nicht auf. Auf einer Route von
+// 321 km in 182 min sind das rechnerisch 106 km/h ueberall, auch auf den ersten
+// 50 km durch Duesseldorf. Der Abschnitt geriet um zwoelf Minuten zu kurz, und
+// genau die zwoelf Minuten standen dann als Umweg an jeder Station darin. Die
+// Abschnittszeit muss aus derselben Quelle kommen wie Hin- und Rueckfahrt,
+// sonst vergleicht man zwei verschiedene Rechnungen miteinander.
 
 import { distance } from './geo.mjs';
 
@@ -71,9 +81,9 @@ export function parseMatrix(json, originCount, destinationCount) {
 /**
  * Setzt Stuetzpunkte auf die Route und merkt sich Weg und Zeit bis dahin.
  *
- * Die Zeit wird anteilig aus der Gesamtfahrzeit gerechnet. Genauer waere, sie
- * je Abschnitt aus der Route zu nehmen; fuer die Differenzbildung reicht der
- * Anteil, weil sich der Fehler bei Hin- und Rueckweg weitgehend aufhebt.
+ * Die Zeit ist anteilig aus der Gesamtfahrzeit gerechnet und taugt nur als
+ * Notnagel, falls die Matrix fuer einen Abschnitt nichts liefert. Gerechnet
+ * wird mit den gemessenen Abschnittszeiten, siehe oben.
  */
 export function stuetzpunkte(routePoints, routeDurationSeconds, abstandMeter = STUETZPUNKT_ABSTAND_M) {
   if (routePoints.length === 0) return [];
@@ -156,6 +166,30 @@ export function bloecke(eintraege, stuetzeVon, maxZellen = MAX_ZELLEN) {
     ergebnis.push({ eintraege: block, stuetzen: [...stuetzenImBlock] });
   }
   return ergebnis;
+}
+
+/**
+ * Die Abschnitte, zwischen deren Stuetzpunkten Stationen liegen.
+ *
+ * Meist ist das schlicht jeder Abschnitt der Route, aber nicht immer: Wo auf
+ * hundert Kilometern keine Station steht, muss auch keine Zeit gemessen werden.
+ * Der Schluessel ist das Paar, damit jeder Abschnitt nur einmal in der Anfrage
+ * landet.
+ */
+export function abschnitte(zuordnungen) {
+  const gesehen = new Map();
+  for (const z of zuordnungen) {
+    if (z.davor === z.dahinter) continue;
+    const schluessel = abschnittSchluessel(z.davor, z.dahinter);
+    if (!gesehen.has(schluessel)) {
+      gesehen.set(schluessel, { davor: z.davor, dahinter: z.dahinter });
+    }
+  }
+  return [...gesehen.values()];
+}
+
+export function abschnittSchluessel(davor, dahinter) {
+  return `${davor}->${dahinter}`;
 }
 
 /**

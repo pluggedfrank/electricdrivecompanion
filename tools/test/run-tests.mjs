@@ -1565,6 +1565,42 @@ test('die Bloecke enthalten die Originale, keine Kopien', () => {
   assert.equal(eintraege[0].ergebnis, 42, 'Schreiben muss beim Original ankommen');
 });
 
+test('abschnitte nennt jedes Stuetzpunktpaar genau einmal', () => {
+  const zuordnungen = [
+    { davor: 0, dahinter: 1 },
+    { davor: 0, dahinter: 1 },
+    { davor: 1, dahinter: 2 },
+    { davor: 4, dahinter: 5 },
+  ];
+  const teile = matrix.abschnitte(zuordnungen);
+  assert.deepEqual(teile, [
+    { davor: 0, dahinter: 1 },
+    { davor: 1, dahinter: 2 },
+    { davor: 4, dahinter: 5 },
+  ]);
+});
+
+test('abschnitte laesst den Abschnitt der Laenge null weg', () => {
+  // Eine Station hinter dem letzten Stuetzpunkt klammert auf sich selbst. Da
+  // gibt es nichts zu messen, und eine Anfrage von einem Punkt zu demselben
+  // Punkt waere eine verschenkte Zelle.
+  assert.deepEqual(matrix.abschnitte([{ davor: 3, dahinter: 3 }]), []);
+});
+
+test('die gemessene Abschnittszeit statt der anteiligen', () => {
+  // Der Grund fuer den ganzen Umbau: Auf einer Route mit 106 km/h im Mittel
+  // dauern die ersten 50 km durch die Stadt nicht 28, sondern 40 Minuten. Die
+  // anteilige Rechnung machte daraus zwoelf Minuten Umweg fuer jede Station in
+  // diesem Abschnitt, obwohl keine einzige daneben lag.
+  const anteilig = 28 * 60;
+  const gemessen = 40 * 60;
+  const hin = 20 * 60;
+  const zurueck = 21 * 60;
+
+  assert.equal(matrix.umwegSekunden(hin, zurueck, anteilig), 13 * 60);
+  assert.equal(matrix.umwegSekunden(hin, zurueck, gemessen), 60);
+});
+
 test('der Umweg ist die Differenz zur ohnehin gefahrenen Strecke', () => {
   // Fünf Minuten hin, fünf zurück, vier hätte man ohnehin gebraucht.
   assert.equal(matrix.umwegSekunden(300, 300, 240), 360);
