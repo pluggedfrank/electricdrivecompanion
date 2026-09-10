@@ -207,15 +207,20 @@ async function main() {
     console.log(`\n${bold('Grösse der Anfrage')}`);
     console.log(dim('   Wie viele Zellen nimmt die API an?'));
 
-    for (const [starts, ziele] of [[10, 20], [25, 40], [50, 100]]) {
+    // Zwischen 200 und 1000 liegt die Grenze, das hat der erste Lauf gezeigt.
+    // Enger eingekreist, und diesmal mit der vollstaendigen Fehlerantwort:
+    // TomTom nennt die Obergrenze erfahrungsgemaess beim Namen.
+    for (const [starts, ziele] of [[10, 20], [10, 30], [10, 40], [10, 50], [10, 70], [10, 100]]) {
       await new Promise((r) => setTimeout(r, ev.MIN_REQUEST_INTERVAL_MS));
 
       // Punkte auf einem Raster ueber Nordwestdeutschland, nur zum Zaehlen.
+      // Jeder Punkt anders, damit die Grenze wirklich an der Zellenzahl haengt
+      // und nicht an doppelten Koordinaten.
       const raster = (anzahl, versatz) =>
         Array.from({ length: anzahl }, (_, i) => ({
           point: {
-            latitude: 51.5 + (i % 20) * 0.05 + versatz,
-            longitude: 6.6 + Math.floor(i / 20) * 0.05,
+            latitude: 51.5 + i * 0.004 + versatz,
+            longitude: 6.6 + i * 0.003 + versatz,
           },
         }));
 
@@ -230,10 +235,8 @@ async function main() {
         if (status >= 200 && status < 300) {
           console.log(green(`  ${starts} x ${ziele} = ${zellen} Zellen: angenommen`));
         } else {
-          const meldung =
-            json?.error?.description ?? json?.detailedError?.message ?? text.slice(0, 200);
           console.log(red(`  ${starts} x ${ziele} = ${zellen} Zellen: HTTP ${status}`));
-          console.log(`    ${meldung}`);
+          console.log(dim('    ' + text.slice(0, 500)));
         }
       } catch (fehler) {
         console.log(red(`  ${starts} x ${ziele}: ${fehler.message}`));

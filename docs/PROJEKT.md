@@ -269,9 +269,44 @@ Zellen, um 200 Werte zu bekommen. Der Ausweg ist ein grobes Raster:
 Zwei Anfragen statt zweihundert. Wo TomTom den Umweg schon mitgeliefert hat,
 bleibt sein Wert stehen; gerechnet wird nur, was fehlt.
 
-**Erst messen, dann bauen.** `tools/matrix-probe.mjs` prüft die Bauform der
-Anfrage und wie viele Zellen die API annimmt. Das Format der v2-Fassung ist von
-hier aus nicht nachzulesen, beide Domains der Dokumentation sind gesperrt.
+**Das Format steht, gemessen am 10.09.2026.** Beide Domains der Dokumentation
+sind von der Entwicklungsumgebung aus gesperrt; `tools/matrix-probe.mjs` hat es
+stattdessen an der API selbst abgefragt.
+
+```
+POST https://api.tomtom.com/routing/matrix/2?key=…
+{ "origins":      [ { "point": { "latitude": 51.5, "longitude": 6.5 } } ],
+  "destinations": [ { "point": { "latitude": 51.6, "longitude": 6.6 } } ] }
+```
+
+Die Antwort:
+
+```
+{ "data": [ { "originIndex": 0, "destinationIndex": 0,
+              "routeSummary": { "lengthInMeters": 1761,
+                                "travelTimeInSeconds": 249,
+                                "trafficDelayInSeconds": 0 } } ],
+  "statistics": … }
+```
+
+Was der Probelauf sonst noch ergab:
+
+- Der Punkt muss in `point` stehen. Koordinaten direkt daneben werden
+  namentlich zurückgewiesen: *Required key [point] not found*.
+- Die Reihenfolge der beiden Schlüssel ist gleichgültig.
+- `options` ist freiwillig. Mit `departAt: "now"` kommen Abfahrts- und
+  Ankunftszeit dazu, und die Fahrzeit fällt anders aus, weil dann die
+  Verkehrslage zählt: 221 statt 249 Sekunden auf derselben Strecke.
+- Es gibt eine asynchrone Fassung unter `/routing/matrix/2/async`. Sie nimmt
+  die Anfrage mit HTTP 202 und einer `jobId` an; abgeholt wird später.
+- **200 Zellen gehen durch, 1.000 nicht.** Die genaue Grenze dazwischen
+  entscheidet, ob die Anfragen synchron in Stücken laufen oder asynchron am
+  Stück.
+- Die Orbis-Fassung des Pfades gibt es nicht.
+
+Damit werden aus 35 Stützpunkten und 150 Stationen nicht zwei Anfragen, sondern
+Blöcke von etwa zwanzig Stationen mit ihren bracketing Stützpunkten, jeder gut
+unter der Grenze. Rund sechzehn Anfragen, gegen zweihundert Einzelrouten.
 
 ## Der Weg zur Ansage
 
