@@ -9,7 +9,9 @@
 name: LadeRoute
 
 options:
-  bundleIdPrefix: live.punkt
+  # Umgekehrter Domainname des Hauses. Die Kennung stand anfangs auf
+  # live.punkt, das war ein Ueberbleibsel aus einem anderen Projekt.
+  bundleIdPrefix: de.plugged
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -35,12 +37,17 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: LadeRoute/App/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: live.punkt.laderoute
+        PRODUCT_BUNDLE_IDENTIFIER: de.plugged.laderoute
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ENABLE_USER_SCRIPT_SANDBOXING: NO
+        # Fuer den Simulator unnoetig, fuer das eigene iPhone Pflicht. Die
+        # Team-Kennung selbst steht in Secrets.xcconfig und nicht hier: Xcode
+        # schriebe sie sonst in die .xcodeproj, und die wird bei jedem
+        # xcodegen generate neu erzeugt. Die Auswahl waere jedes Mal weg.
+        CODE_SIGN_STYLE: Automatic
     dependencies:
       - package: TomTomCore
         product: TomTomSDKMapDisplay
