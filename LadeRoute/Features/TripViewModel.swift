@@ -129,7 +129,7 @@ final class TripViewModel: ObservableObject {
 
     func setDestination(_ coordinate: CLLocationCoordinate2D) {
         destination = coordinate
-        Task { await planAndSearch() }
+        starteSuche()
     }
 
     /// Übernimmt ein Suchergebnis als Ziel.
@@ -155,6 +155,12 @@ final class TripViewModel: ObservableObject {
     }
 
     func clearTrip() {
+        // Erst abbrechen, dann leeren. Sonst schreibt ein laufender Suchlauf
+        // gleich wieder Stationen in ein Modell, das nichts mehr anzeigen soll.
+        suchlauf?.cancel()
+        suchlauf = nil
+        streckenNummer += 1
+
         route = nil
         stations = []
         fetchedStations = []
@@ -179,7 +185,7 @@ final class TripViewModel: ObservableObject {
         guard route != nil else { return }
 
         if powerTier.rawValue < Self.fetchTier.rawValue, fetchedTier != powerTier {
-            Task { await searchStations() }
+            starteSuche(nurStationen: true)
             return
         }
         applyLocalFilters()
@@ -187,7 +193,7 @@ final class TripViewModel: ObservableObject {
 
     // MARK: Ablauf
 
-    private func planAndSearch() async {
+    private func planAndSearch(nummer: Int) async {
         guard let destination else { return }
         guard let origin = currentLocation else {
             // Die Quelle weiß, woran es liegt: keine Freigabe, oder Freigabe
@@ -202,14 +208,19 @@ final class TripViewModel: ObservableObject {
         selectedStationID = nil
 
         do {
-            route = try await routePlanner.planRoute(from: origin, to: destination)
+            let geplant = try await routePlanner.planRoute(from: origin, to: destination)
+            guard gilt(nummer) else { return }
+            route = geplant
         } catch {
+            // Auch der Fehlschlag muss noch zur aktuellen Strecke gehören,
+            // sonst löscht eine abgebrochene Planung die neue Route.
+            guard gilt(nummer) else { return }
             route = nil
             phase = .failed(error.localizedDescription)
             return
         }
 
-        await searchStations()
+        await searchStations(nummer: nummer)
     }
 
     /// Mit dieser Untergrenze wird gesucht, unabhängig vom gewählten Filter.
@@ -222,7 +233,7 @@ final class TripViewModel: ObservableObject {
     /// So weit seitlich wird aufgehoben. Der Anzeigefilter ist enger.
     private static let keepDistanceMeters: Double = 10_000
 
-    private func searchStations() async {
+    private func searchStations(nummer: Int) async {
         guard let route else { return }
 
         phase = .searchingStations
@@ -240,6 +251,7 @@ final class TripViewModel: ObservableObject {
                 routeGeometry: route.geometry,
                 options: options
             )
+            guard gilt(nummer) else { return }
             let sortiert = GeoUtils.orderAlongRoute(
                 found,
                 routeGeometry: route.geometry,
@@ -249,11 +261,12 @@ final class TripViewModel: ObservableObject {
             applyLocalFilters()
             phase = .ready
         } catch {
+            guard gilt(nummer) else { return }
             phase = .failed(error.localizedDescription)
             return
         }
 
-        await widenSearch(route: route, options: options)
+        await widenSearch(route: route, options: options, nummer: nummer)
     }
 
     /// Zweite Runde: Umkreissuchen entlang der Strecke.
@@ -263,7 +276,11 @@ final class TripViewModel: ObservableObject {
     /// Zwei-Kilometer-Korridor, mit dieser zweiten Runde sind es 93 Prozent.
     /// Jenseits von einem Kilometer neben der Route findet sie ohne die
     /// Umkreise gar nichts.
-    private func widenSearch(route: TomTomSDKRoute.Route, options: AlongRouteSearchOptions) async {
+    private func widenSearch(
+        route: TomTomSDKRoute.Route,
+        options: AlongRouteSearchOptions,
+        nummer: Int
+    ) async {
         isWideningSearch = true
         defer { isWideningSearch = false }
 
@@ -272,6 +289,7 @@ final class TripViewModel: ObservableObject {
                 routeGeometry: route.geometry,
                 options: options
             )
+            guard gilt(nummer) else { return }
 
             // Beide Runden zusammen sortieren, nicht die zweite hinten anhängen.
             // Die Umkreissuche liefert keinen Umweg mit, ihre Treffer ließen
@@ -340,6 +358,38 @@ final class TripViewModel: ObservableObject {
 
     // MARK: Private
 
+    /// Startet Planung und Suche und bricht ab, was noch läuft.
+    ///
+    /// Der Abbruch ist der Kern. Wer ein zweites Ziel setzt, während die erste
+    /// Suche noch läuft, bekam bisher deren Ergebnis nachgereicht: Die
+    /// Umkreissuche braucht knapp dreißig Sekunden, sie lief unbeirrt weiter
+    /// und schrieb am Ende die Stationen der alten Strecke ins Modell. Auf der
+    /// Karte standen dann Nadeln, die zu keiner sichtbaren Route gehörten.
+    ///
+    /// Abbrechen allein genügt nicht: Zwischen einem `await` und dem Schreiben
+    /// liegt immer ein Moment, in dem der Abbruch schon erfolgt sein kann. Jede
+    /// Strecke bekommt deshalb eine Nummer, und geschrieben wird nur, solange
+    /// die eigene noch die aktuelle ist.
+    private func starteSuche(nurStationen: Bool = false) {
+        suchlauf?.cancel()
+        streckenNummer += 1
+        let nummer = streckenNummer
+
+        suchlauf = Task { [weak self] in
+            guard let self else { return }
+            if nurStationen {
+                await searchStations(nummer: nummer)
+            } else {
+                await planAndSearch(nummer: nummer)
+            }
+        }
+    }
+
+    /// Gilt das Ergebnis noch, oder ist längst eine andere Strecke gefragt?
+    private func gilt(_ nummer: Int) -> Bool {
+        nummer == streckenNummer && !Task.isCancelled
+    }
+
     /// Wendet Leistung, Umweg und seitlichen Abstand auf das Gefundene an.
     ///
     /// Kostet keine Anfrage. Alle drei Regler sind damit sofort wirksam, und
@@ -401,6 +451,10 @@ final class TripViewModel: ObservableObject {
     }
 
     /// Alles, was die Suche gefunden hat. `stations` ist die gefilterte Sicht.
+    /// Laufender Suchlauf, damit ein neues Ziel ihn abbrechen kann.
+    private var suchlauf: Task<Void, Never>?
+    /// Zählt die Strecken. Ergebnisse einer älteren zählen nicht mehr.
+    private var streckenNummer = 0
     private var fetchedStations: [AnnotatedStation] = []
     /// Mit welcher Untergrenze zuletzt gesucht wurde.
     private var fetchedTier: PowerTier?

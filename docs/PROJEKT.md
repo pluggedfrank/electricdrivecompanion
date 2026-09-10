@@ -283,6 +283,11 @@ Stelle, das Matching bleibt unberührt.
 - [ ] Trägt die selbst gebaute Ansage im Alltag? Das entscheidet eine Fahrt,
       keine Überlegung. Größter technischer Brocken von v1.
 - [ ] Was kostet das Navigation SDK, und was geht über die Presseschiene?
+- [ ] **Long Distance EV Routing ist für den Schlüssel gesperrt.** Alle vier
+      Bauformen des Probelaufs bekommen HTTP 403, "You are not allowed to
+      access this endpoint". Im Dashboard unter Products nachtragen; bleibt es
+      dabei, planen wir die Ladestopps selbst aus Fahrzeugprofil und
+      Stationsliste. Die Daten dafür liegen alle vor.
 - [ ] Deckt das Freemium-Kontingent eine Fahrt mit Neuberechnungen? Non-Tile
       liegt bei 2.500 Anfragen am Tag, eine Fahrt braucht davon wenige Dutzend.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
