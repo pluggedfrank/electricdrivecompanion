@@ -38,18 +38,24 @@ Verwaltungsgesellschaften, sieben von acht unter 150 kW.
 **Primär, und das ist die App:** navigieren mit Ansage, dabei durchgehend die
 Schnelllader entlang der Route im Blick.
 
-**Sekundär, und das kommt später:** State of Charge. Die Zuschauerschaft des
+**Sekundär, aber nicht später:** State of Charge. Die Zuschauerschaft des
 YouTube-Kanals erfasst und bewertet die Schnellladepunkte in Deutschland
-systematisch. Die App ist dafür ein Zugang, nicht der einzige.
+systematisch. Das beginnt im Web und wartet nicht auf die App, denn eine
+Installation vor der ersten Bewertung kostet die meisten Teilnehmer, und die
+App hat noch kein Fertigstellungsdatum. Die App wird der zweite Zugang, und für
+Vielfahrer der bessere.
+
+Die beiden Zwecke sind damit zwei Arbeitsstränge, die sich eine Datenbasis
+teilen, aber einander nicht blockieren.
 
 ## Nutzer und Rollen
 
 | Rolle | Zugang | Hauptaktion |
 |---|---|---|
 | Fahrer, v1 nur Redaktion | TestFlight | Ziel eingeben, fahren, Ladestopps sehen |
-| Zuschauer, State of Charge | Web, ohne Installation | einen Ladepunkt bewerten |
-| Zuschauer, Vielfahrer | App | bewerten mit Standort und Ladevorgang im Rücken |
-| Redaktion | App und Backend | eigene Testurteile hinterlegen, Datenbestand pflegen |
+| Zuschauer, Gelegenheitsbewerter | Web, ohne Installation | einen Ladepunkt bewerten, sehen was schon erfasst ist |
+| Zuschauer, Tester | App, Haken gesetzt | unterwegs erfassen, Lücken gezielt anfahren |
+| Redaktion | App und Backend | eigene Testurteile hinterlegen, Einsendungen sichten |
 
 v1 geht nicht in den App Store. TestFlight für die Redaktion spart Review,
 Datenschutzerklärung und Supportlast, solange noch offen ist, wie gut die
@@ -68,6 +74,42 @@ eigene Ansage im Alltag trägt.
 **Ausdrücklich nicht in v1:** App Store, Nutzerkonten, Bezahlfunktion,
 Ladekarten-Tarife, Routen über mehrere Tage, Anhängerbetrieb,
 Fahrzeugdatenanbindung, Android.
+
+## State of Charge
+
+**Grundgesamtheit.** Die Schnelllader aus dem Ladesäulenregister der
+Bundesnetzagentur, zu Standorten zusammengefasst. Das ist der Erfassungsbogen,
+und daran misst sich der Fortschritt: erfasst gegen bekannt. Ein Routen-Export
+kann das nicht leisten, er ist immer nur ein Ausschnitt einer Strecke.
+
+**Im Web zuerst.** Eine Seite auf einer eigenen Domain, aus einem Video heraus
+mit einem Klick erreichbar. Sie zeigt die Karte mit dem Stand der Erfassung,
+also welche Standorte schon bewertet sind und welche nicht, und nimmt neue
+Bewertungen entgegen. Das Zeigen ist nicht Beiwerk: Wer sieht, dass in seiner
+Ecke noch nichts steht, hat einen Grund mitzumachen.
+
+**Zwei Tiefen, nicht eine.** Ein Bogen, der alles fragt, was ein Magazintest
+braucht, schreckt Gelegenheitsteilnehmer ab. Ein Bogen, der nur die Note
+abfragt, ergibt keine Geschichte. Deshalb:
+
+*Kurz, unter einer Minute:* Standort, Gesamtnote, hat es funktioniert,
+Preis je kWh, ein Foto.
+
+*Voll, für Tester:* dazu Zufahrt und Beschilderung, Zahl der Ladepunkte und
+davon defekte, tatsächliche Spitzenleistung mit Ladestand und Außentemperatur,
+ob die Leistung geteilt wurde, Zeit bis die Ladung lief, welche Bezahlart
+funktionierte, Kabellänge und Anordnung, Dach, Beleuchtung, WC, Essen,
+Sicherheitsgefühl bei Nacht, Barrierefreiheit.
+
+Die Kurzform ist die Voreinstellung, die Vollform hängt hinter einem Aufklapper
+und an dem Haken, den ein Tester in der App setzt.
+
+**In der App.** Wer sich als Bewerter beteiligt, setzt einen Haken. Danach
+tragen die Ladestationen entlang der Route einen zusätzlichen Marker: schon
+bewertet, oder noch offen. Ein offener Standort in erreichbarer Nähe ist dann
+kein Umweg mehr, sondern ein Grund. Technisch ist das ein kleiner Abruf des
+Erfassungsstands, POI-Kennung mit Anzahl und Durchschnitt, und der vorhandene
+Zuordnungsmechanismus.
 
 ## Der Weg zur Ansage
 
@@ -126,15 +168,17 @@ Meter, Mindestpunktzahl 0,45.
 | Ansage | selbst gebaut, siehe oben | offen |
 | Ladestopps in der Route | Long Distance EV Routing API | offen |
 | Verteilung v1 | TestFlight | offen |
-| Backend | nötig, sobald State of Charge beginnt | offen |
+| Backend | Voraussetzung, nicht Option, siehe unten | offen |
+| Web-Erfassung | Seite mit Karte und Formular | offen |
 | Geteilte Logik prüfen | Node-Werkzeuge unter `tools/`, 99 Tests | steht |
 | Build | GitHub Actions, macOS-Läufer | steht |
 
-Zum Backend: Die Antwort *beides von Anfang an*, Web und App, macht einen
-gemeinsamen Datenspeicher zur Voraussetzung, nicht zur Option. Eine im
-App-Bundle mitgelieferte JSON-Datei kann das nicht leisten. Sie bleibt, bis
-State of Charge beginnt, und wird dann ersetzt; `EditorialStore.loadBundled()`
-ist genau dafür die einzige auszutauschende Stelle.
+Zum Backend: Web und App zusammen machen einen gemeinsamen Datenspeicher zur
+Voraussetzung, nicht zur Option. Und weil die Erfassung zeitnah beginnen soll,
+steht diese Entscheidung jetzt an und nicht am Ende. Eine im App-Bundle
+mitgelieferte JSON-Datei kann das nicht leisten; sie bleibt bis dahin und wird
+dann ersetzt. `EditorialStore.loadBundled()` ist dafür die einzige
+auszutauschende Stelle, das Matching bleibt unberührt.
 
 ## Offene Fragen und Risiken
 
@@ -146,12 +190,22 @@ ist genau dafür die einzige auszutauschende Stelle.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
 - [ ] Woher kommen Verbrauch und Ladekurve des Fahrzeugs? Ohne beides plant die
       EV-Route falsch. Für v1 reicht ein Profil von Hand.
+- [ ] Auf welcher Domain läuft die Erfassungsseite, und auf welcher Technik?
+      Eine bestehende Redaktionsseite oder etwas Eigenes entscheidet über den
+      halben Aufwand.
 - [ ] Missbrauch bei State of Charge: Offene Bewertungen aus dem Web ohne Konto
-      laden zu Mehrfachabgaben ein.
+      laden zu Mehrfachabgaben ein. Anmeldung schreckt ab, keine Anmeldung
+      kostet Verlässlichkeit. Eine Sichtung vor Veröffentlichung ist
+      wahrscheinlich ohnehin nötig, sobald daraus ein Artikel wird.
+- [ ] Fotos aus Einsendungen: Speicherort, Rechte, Haftung.
 - [ ] Belegungsabfrage kostet eine Anfrage je Standort. Bei 125 Standorten
       entlang einer Route ist das zu viel für einen Rutsch.
 
 ## Nächste Schritte
+
+Zwei Stränge, die parallel laufen können.
+
+**Navi**
 
 1. Presseanfrage an TomTom entwerfen, Ziel: Konditionen und Versuchskontingent
    für das Navigation SDK.
@@ -160,4 +214,15 @@ ist genau dafür die einzige auszutauschende Stelle.
 3. Ansage bauen: Manöverliste, Entfernung zum nächsten Manöver, Sprachausgabe,
    Abweichungserkennung.
 4. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
-5. Erst danach State of Charge und damit die Backend-Entscheidung.
+
+**State of Charge**
+
+1. Domain und Technik der Erfassungsseite festlegen.
+2. Grundgesamtheit erzeugen: Schnelllader aus dem Register, zu Standorten
+   zusammengefasst, mit TomTom-POI-IDs verknüpft. Der Leser, das Clustering und
+   die Zuordnung stehen bereits.
+3. Datenspeicher aufsetzen: Standorte, Bewertungen, Fotos, Sichtungsstand.
+4. Erfassungsseite bauen: Karte mit Stand der Erfassung, Kurzformular,
+   Vollformular für Tester.
+5. In der App: Haken für Beteiligung, zusätzlicher Marker für den
+   Erfassungsstand.
