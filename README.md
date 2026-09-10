@@ -40,9 +40,13 @@ Einmal einrichten:
 ```
 
 Danach genügt im Terminal das Wort `lade`. Es holt den neuen Stand und erzeugt
-das Xcode-Projekt neu, falls Dateien der App dazugekommen sind. Ohne diesen
-zweiten Schritt kennt Xcode neue Dateien nicht, und der Fehler sieht dann aus
-wie ein Compilerproblem.
+das Xcode-Projekt neu, wenn eine Quelldatei jünger ist als das Projekt. Ohne
+diesen zweiten Schritt kennt Xcode neue Dateien nicht, und der Fehler sieht dann
+aus wie ein Compilerproblem.
+
+Entschieden wird über die Zeitstempel und nicht darüber, was der Abgleich gerade
+geholt hat. Das heilt sich selbst: Fiel eine Erzeugung einmal aus, weil gerade
+gebaut wurde, holt der nächste Lauf sie nach.
 
 Dieselbe Einrichtung legt einen Hintergrunddienst an, der alle zehn Minuten
 nachsieht und sich meldet, wenn etwas Neues da war. Läuft gerade ein Build, wird

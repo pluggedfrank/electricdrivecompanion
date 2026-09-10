@@ -96,21 +96,39 @@ fi
 
 NACHHER=$(git rev-parse HEAD)
 
+NICHTS_GEHOLT=0
 if [ "$VORHER" = "$NACHHER" ]; then
+  NICHTS_GEHOLT=1
   sage "Schon aktuell."
-  exit 0
 fi
 
 ANZAHL=$(git rev-list --count "$VORHER..$NACHHER")
-GEAENDERT=$(git diff --name-only "$VORHER" "$NACHHER")
 
-sage "$ANZAHL neue Commit(s):"
-[ "$STILL" -eq 1 ] || git log --oneline "$VORHER..$NACHHER" | sed 's/^/  /'
+if [ "$NICHTS_GEHOLT" -eq 0 ]; then
+  sage "$ANZAHL neue Commit(s):"
+  [ "$STILL" -eq 1 ] || git log --oneline "$VORHER..$NACHHER" | sed 's/^/  /'
+fi
 
 # --- Projekt nachziehen ------------------------------------------------
 
+# Ob das Projekt neu erzeugt werden muss, entscheidet der Zustand auf der
+# Platte und nicht dieser eine Abgleich.
+#
+# Die erste Fassung sah nur nach, was gerade geholt wurde. Das ging schief,
+# sobald eine Erzeugung einmal ausfiel, etwa weil gerade gebaut wurde: Beim
+# naechsten Mal standen im Abgleich andere Dateien, die Information war weg, und
+# das Projekt blieb veraltet zurueck. Xcode kannte die neuen Dateien nicht, und
+# der Fehler sah aus wie ein Compilerproblem.
+#
+# Der Vergleich der Zeitstempel heilt das von selbst: Was aelter ist als die
+# letzte Erzeugung, steckt drin; was neuer ist, fehlt.
 BRAUCHT_XCODEGEN=0
-echo "$GEAENDERT" | grep -qE '^(LadeRoute/|project\.yml)' && BRAUCHT_XCODEGEN=1
+
+if [ ! -d "LadeRoute.xcodeproj" ]; then
+  BRAUCHT_XCODEGEN=1
+elif [ -n "$(find LadeRoute project.yml -newer LadeRoute.xcodeproj/project.pbxproj 2>/dev/null | head -1)" ]; then
+  BRAUCHT_XCODEGEN=1
+fi
 
 if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
   # Nicht waehrend gebaut wird. xcodegen schreibt die .xcodeproj neu, und das
@@ -143,6 +161,6 @@ if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
   fi
 fi
 
-if [ "$STILL" -eq 1 ]; then
+if [ "$STILL" -eq 1 ] && [ "$NICHTS_GEHOLT" -eq 0 ]; then
   osascript -e "display notification \"$ANZAHL neue Commits geholt.\" with title \"LadeRoute\"" 2>/dev/null || true
 fi
