@@ -150,6 +150,49 @@ kein Umweg mehr, sondern ein Grund. Technisch ist das ein kleiner Abruf des
 Erfassungsstands, POI-Kennung mit Anzahl und Durchschnitt, und der vorhandene
 Zuordnungsmechanismus.
 
+## Die Fahransicht
+
+So soll es laufen: Ziel in ein Suchfeld eingeben, Treffer wählen, Navigation
+startet. Danach zeigt der Bildrand kleine Kärtchen mit den nächsten Ladepunkten,
+die dem gewählten Filter entsprechen:
+
+```
+50 km   EnBW          
+90 km   Fastned      +4 min
+140 km  IONITY        
+```
+
+Die Entfernung ist die entlang der Route ab der aktuellen Position, nicht die
+Luftlinie und nicht der seitliche Abstand. Die kleine Zahl daneben ist der
+Umweg in Minuten, und sie steht nur dort, wo die Station wirklich abseits liegt.
+Wer fährt, will nicht rechnen.
+
+Der lange Druck auf die Karte bleibt als zweiter Weg für Orte ohne Namen. Als
+einziger Weg war er nie brauchbar: Die Karte zoomt auf den eigenen Standort, ein
+Ziel dreihundert Kilometer weiter liegt außerhalb des Bildes.
+
+## Wie die Ladestopps in die Route kommen
+
+Der Prototyp sucht die Ladestationen für die ganze Strecke auf einmal: 49
+Anfragen und 27 Sekunden für 332 Kilometer. Das ist für eine Messung richtig
+gewesen und für ein Navi falsch.
+
+Der naheliegende Schluss wäre, kürzere Abschnitte zu suchen, etwa nur bis zur
+Reichweite des Fahrzeugs. Der bessere ist, die Stopps gar nicht zu suchen: Die
+**Long Distance EV Routing API** plant sie in einem einzigen Aufruf in die
+Route hinein, samt Ladezeit und Ladestand je Etappe, auf Grundlage von Verbrauch
+und Ladekurve. Eine Anfrage statt neunundvierzig.
+
+Die vorhandene Suche bleibt, aber als zweite Schicht mit anderer Aufgabe: Was
+gibt es sonst noch in der Nähe, wenn der geplante Stopp belegt ist oder nicht
+gefällt. Diese Schicht darf sich auf den nächsten Abschnitt beschränken, denn
+weiter vorauszuplanen ist ohnehin Spekulation; bis dahin hat der Verkehr die
+Route geändert.
+
+Voraussetzung für beides ist ein **Fahrzeugprofil**: Akkukapazität, Verbrauch,
+aktueller Ladestand. Ohne das plant die EV-Route falsch, und ohne das lässt sich
+auch keine Reichweite bestimmen. Für v1 genügt ein von Hand gepflegtes Profil.
+
 ## Der Weg zur Ansage
 
 Das Navigation SDK von TomTom ist im frei zugänglichen Paket nicht enthalten.
@@ -243,8 +286,9 @@ Stelle, das Matching bleibt unberührt.
 - [ ] Deckt das Freemium-Kontingent eine Fahrt mit Neuberechnungen? Non-Tile
       liegt bei 2.500 Anfragen am Tag, eine Fahrt braucht davon wenige Dutzend.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
-- [ ] Woher kommen Verbrauch und Ladekurve des Fahrzeugs? Ohne beides plant die
-      EV-Route falsch. Für v1 reicht ein Profil von Hand.
+- [ ] Welches Fahrzeug ist das Standardprofil? Akkukapazität, Verbrauch und
+      Ladekurve müssen von irgendwo kommen. Für v1 reicht ein Profil von Hand,
+      aber es braucht eines.
 - [ ] Namensnennung: Das Register steht unter CC BY 4.0. Wo die Daten auf
       plugged.de sichtbar werden, gehört "Bundesnetzagentur.de" sichtbar dazu.
       Der Erfassungsbogen trägt den Hinweis in seinen Kopfdaten mit.
@@ -267,11 +311,16 @@ Zwei Stränge, die parallel laufen können.
 
 1. Presseanfrage an TomTom entwerfen, Ziel: Konditionen und Versuchskontingent
    für das Navigation SDK.
-2. Long Distance EV Routing anbinden und gegen die bisherige Routenplanung
-   stellen. Ergebnis: Ladestopps stecken in der Route statt daneben.
-3. Ansage bauen: Manöverliste, Entfernung zum nächsten Manöver, Sprachausgabe,
+2. Fahrzeugprofil anlegen: Kapazität, Verbrauch, Ladestand. Voraussetzung für
+   alles Weitere.
+3. Long Distance EV Routing anbinden und gegen die bisherige Routenplanung
+   stellen. Ergebnis: Ladestopps stecken in der Route statt daneben, und die
+   Suche schrumpft von neunundvierzig Anfragen auf eine.
+4. Fahransicht bauen: Kärtchen am Bildrand mit Entfernung entlang der Route und
+   Umweg in Minuten.
+5. Ansage bauen: Manöverliste, Entfernung zum nächsten Manöver, Sprachausgabe,
    Abweichungserkennung.
-4. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
+6. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
 
 **State of Charge**
 
