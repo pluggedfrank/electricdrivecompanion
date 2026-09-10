@@ -59,6 +59,21 @@ final class TripViewModel: ObservableObject {
     @Published var destinationQuery = ""
     @Published private(set) var placeResults: [Place] = []
     @Published private(set) var isSearchingPlaces = false
+    /// Was die Oberfläche der Karte auftragen kann.
+    ///
+    /// Als Befehl und nicht als Zustand: Zweimal hintereinander hineinzoomen
+    /// sind zwei Ereignisse, ein @Published-Wert würde beim zweiten Mal nichts
+    /// melden, weil er sich nicht geändert hat.
+    enum MapCommand {
+        case zoomIn
+        case zoomOut
+        /// Ganze Route ins Bild.
+        case fitRoute
+        case centerOnUser
+    }
+
+    let mapCommands = PassthroughSubject<MapCommand, Never>()
+
     /// Name des zuletzt gewählten Ziels, für die Kopfzeile. Beim Ziel per
     /// langem Druck gibt es keinen.
     @Published private(set) var chosenPlaceName: String?

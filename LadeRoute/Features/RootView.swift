@@ -19,6 +19,8 @@ struct RootView: View {
             TomTomMapView(trip: trip)
                 .ignoresSafeArea()
 
+            mapControls
+
             VStack(spacing: 10) {
                 header
                 searchField
@@ -51,6 +53,65 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled()
         }
+    }
+
+    // MARK: Kartenbedienung
+
+    /// Zoom und Ausschnitt, rechts am Rand.
+    ///
+    /// Ohne diese Knöpfe bleibt nur die Zwei-Finger-Geste. Auf dem Gerät geht
+    /// die, im Simulator muss man dafür die Wahltaste kennen, und beim Fahren
+    /// will niemand zwei Finger benutzen.
+    private var mapControls: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            VStack(spacing: 1) {
+                controlButton(icon: "plus", label: "Hineinzoomen") {
+                    trip.mapCommands.send(.zoomIn)
+                }
+                Divider().frame(width: 30)
+                controlButton(icon: "minus", label: "Herauszoomen") {
+                    trip.mapCommands.send(.zoomOut)
+                }
+                if trip.route != nil {
+                    Divider().frame(width: 30)
+                    controlButton(icon: "arrow.up.left.and.arrow.down.right", label: "Ganze Route zeigen") {
+                        trip.mapCommands.send(.fitRoute)
+                    }
+                }
+                if trip.currentLocation != nil {
+                    Divider().frame(width: 30)
+                    controlButton(icon: "location", label: "Zum eigenen Standort") {
+                        trip.mapCommands.send(.centerOnUser)
+                    }
+                }
+            }
+            .background(Theme.paper.opacity(0.96), in: RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.trailing, 14)
+        // Über dem Blatt bleiben, sonst liegen die Knöpfe darunter.
+        .padding(.bottom, trip.mapBottomInset)
+    }
+
+    private func controlButton(
+        icon: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Theme.ink2)
+                .frame(width: 42, height: 40)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     // MARK: Zielsuche

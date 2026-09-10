@@ -134,6 +134,13 @@ private extension MapCoordinator {
             }
             .store(in: &cancellables)
 
+        trip.mapCommands
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] command in
+                MainActor.assumeIsolated { self?.perform(command) }
+            }
+            .store(in: &cancellables)
+
         trip.$stations
             .combineLatest(trip.$selectedStationID)
             .receive(on: DispatchQueue.main)
@@ -141,6 +148,37 @@ private extension MapCoordinator {
                 MainActor.assumeIsolated { self?.redrawMarkers() }
             }
             .store(in: &cancellables)
+    }
+
+    /// Führt einen Kartenbefehl der Oberfläche aus.
+    ///
+    /// `CameraUpdate` hat zwei Bauformen: eine mit fester Position, Zoomstufe
+    /// und Neigung, und eine mit relativen Änderungen. Für die Knöpfe ist die
+    /// zweite die richtige, sonst müsste die Oberfläche die aktuelle Zoomstufe
+    /// kennen und mitzählen.
+    func perform(_ command: TripViewModel.MapCommand) {
+        guard let map else { return }
+
+        switch command {
+        case .zoomIn:
+            map.applyCamera(CameraUpdate(zoomIn: true), animationDuration: 0.25)
+        case .zoomOut:
+            map.applyCamera(CameraUpdate(zoomOut: true), animationDuration: 0.25)
+        case .fitRoute:
+            map.zoomToRoutes(padding: 48)
+        case .centerOnUser:
+            guard let position = trip.currentLocation else { return }
+            map.applyCamera(
+                CameraUpdate(
+                    position: position,
+                    zoom: 12,
+                    tilt: 0,
+                    rotation: 0,
+                    positionMarkerVerticalOffset: 0
+                ),
+                animationDuration: 0.6
+            )
+        }
     }
 
     func redrawRoute(_ route: TomTomSDKRoute.Route?) {
