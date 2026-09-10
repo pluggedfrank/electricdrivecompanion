@@ -23,6 +23,7 @@ final class TripViewModel: ObservableObject {
         self.editorialStore = editorialStore
         self.vehicleStore = vehicleStore ?? VehicleProfileStore()
         api = TomTomAPIClient(apiKey: apiKey)
+        detourCalculator = DetourCalculator(api: api)
         routePlanner = RoutePlannerService(apiKey: apiKey)
 
         // Ohne receive(on:): Die Quelle ist selbst @MainActor und veröffentlicht
@@ -115,6 +116,14 @@ final class TripViewModel: ObservableObject {
     /// Minute auf die vollständige Liste zu warten.
     @Published private(set) var isWideningSearch = false
 
+    /// Läuft gerade die dritte Runde, die Umwege über die Matrix-API?
+    ///
+    /// Nach der Umkreissuche haben drei Viertel der Treffer keinen Umweg,
+    /// nur die Luftlinie. Drei Matrizen, ein Dutzend Anfragen, und jede
+    /// Station hat einen. Solange das läuft, greift der Umwegregler erst
+    /// auf einen Teil der Liste.
+    @Published private(set) var isComputingDetours = false
+
     /// Wie weit darf eine Station seitlich der Route liegen?
     ///
     /// Ohne diese Grenze schleppt die Umkreissuche Innenstadt-Ladepunkte mit,
@@ -146,13 +155,17 @@ final class TripViewModel: ObservableObject {
 
     var editorialCount: Int { stations.filter(\.hasEditorialContent).count }
 
-    /// Für wie viele Stationen kennt TomTom den Umweg?
+    /// Für wie viele Stationen ist der Umweg bekannt?
     ///
     /// Nur die Along-Route-Suche liefert ihn mit. Die Umkreissuche, die den
-    /// größeren Teil der Treffer bringt, liefert ihn nicht, und ohne Wert kann
-    /// der Umwegregler nichts ausschließen. Die Zahl gehört deshalb sichtbar
-    /// neben den Regler, sonst wirkt er wirkungslos.
+    /// größeren Teil der Treffer bringt, liefert ihn nicht; für die rechnet
+    /// die dritte Runde ihn nach. Bis sie durch ist, kann der Umwegregler nur
+    /// einen Teil ausschließen, und die Zahl gehört deshalb sichtbar neben
+    /// den Regler, sonst wirkt er wirkungslos.
     var detourKnownCount: Int { stations.filter { $0.station.detourSeconds != nil }.count }
+
+    /// Wie viele davon aus der eigenen Rechnung stammen.
+    var detourComputedCount: Int { stations.filter(\.station.detourIsComputed).count }
 
     /// Stationen, deren Ladeleistung TomTom nicht kennt. Sie bleiben in der
     /// Liste, werden aber gekennzeichnet, damit niemand einen Stopp darauf plant.
@@ -301,6 +314,8 @@ final class TripViewModel: ObservableObject {
         }
 
         await widenSearch(route: route, options: options, nummer: nummer)
+        guard gilt(nummer) else { return }
+        await computeDetours(route: route, nummer: nummer)
     }
 
     /// Zweite Runde: Umkreissuchen entlang der Strecke.
@@ -358,6 +373,49 @@ final class TripViewModel: ObservableObject {
             print("Umkreissuche fehlgeschlagen: \(error.localizedDescription)")
         }
     }
+
+    /// Dritte Runde: Umwege für alles, was noch keinen hat.
+    ///
+    /// Nur für Stationen, die der Abstandsregler überhaupt zeigen kann. Was
+    /// weiter als sein Anschlag entfernt liegt, bleibt im Bestand, bekommt aber
+    /// keine Anfrage: Bei zehn Kilometern Korridor wären das dreimal so viele
+    /// Stationen für Werte, die nie jemand sieht.
+    private func computeDetours(route: TomTomSDKRoute.Route, nummer: Int) async {
+        let kandidaten = fetchedStations
+            .map(\.station)
+            .filter { $0.detourSeconds == nil }
+            .filter { ($0.distanceFromRouteMeters ?? .infinity) <= Self.detourDistanceMeters }
+        guard !kandidaten.isEmpty else { return }
+
+        isComputingDetours = true
+        defer { isComputingDetours = false }
+
+        do {
+            let ergebnis = try await detourCalculator.detours(
+                for: kandidaten,
+                routeGeometry: route.geometry,
+                routeDurationSeconds: route.summary.travelTime.converted(to: .seconds).value
+            )
+            guard gilt(nummer) else { return }
+
+            for index in fetchedStations.indices
+            where fetchedStations[index].station.detourSeconds == nil {
+                guard let umweg = ergebnis.detourSeconds[fetchedStations[index].id] else { continue }
+                fetchedStations[index].station.detourSeconds = umweg
+                fetchedStations[index].station.detourIsComputed = true
+            }
+            applyLocalFilters()
+            print("Umwege: \(ergebnis.detourSeconds.count) von \(kandidaten.count) in \(ergebnis.requestCount) Anfragen, \(ergebnis.cellCount) Zellen")
+        } catch {
+            // Die Liste steht bereits. Ohne diese Runde fehlt nur der Umweg an
+            // den Umkreistreffern, und dort steht dann weiter die Luftlinie.
+            print("Umwege nicht berechnet: \(error.localizedDescription)")
+        }
+    }
+
+    /// Bis zu diesem Abstand werden Umwege gerechnet: der Anschlag des
+    /// Abstandsreglers in der Liste.
+    private static let detourDistanceMeters: Double = 5_000
 
     /// Live-Belegung erst beim Antippen holen, nicht für alle Treffer auf einmal.
     /// Das spart im Freemium-Kontingent den Löwenanteil der Anfragen.
@@ -517,6 +575,7 @@ final class TripViewModel: ObservableObject {
     private let locationSource = UserLocationSource()
     private let apiKey: String
     private let api: TomTomAPIClient
+    private let detourCalculator: DetourCalculator
     private let routePlanner: RoutePlannerService
     private let editorialStore: EditorialStore
 }

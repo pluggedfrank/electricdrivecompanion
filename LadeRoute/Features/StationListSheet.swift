@@ -84,7 +84,7 @@ struct StationListSheet: View {
             // eine Lücke darin ist womöglich gar keine. Ein rotes "geht nicht"
             // wäre dann schlicht falsch: Genau das ist im Simulator passiert,
             // bei 46 von 94 Stationen.
-            let vorläufig = trip.isWideningSearch && !plan.isFeasible
+            let vorläufig = (trip.isWideningSearch || trip.isComputingDetours) && !plan.isFeasible
 
             HStack(alignment: .top, spacing: 7) {
                 Image(systemName: symbol(for: plan, vorläufig: vorläufig))
@@ -187,11 +187,11 @@ struct StationListSheet: View {
                             Text("\(trip.editorialCount) im Test")
                         }
                     }
-                    if trip.isWideningSearch {
+                    if trip.isWideningSearch || trip.isComputingDetours {
                         Text("·")
                         HStack(spacing: 4) {
                             ProgressView().scaleEffect(0.55).frame(width: 10, height: 10)
-                            Text("suche im Umkreis")
+                            Text(trip.isWideningSearch ? "suche im Umkreis" : "rechne Umwege")
                         }
                     }
                 }
@@ -259,13 +259,9 @@ struct StationListSheet: View {
                 .tint(Theme.signal)
 
                 // Ohne diesen Satz wirkt der Regler kaputt: Man stellt zwei
-                // Minuten ein und bekommt weiter hundert Stationen.
-                Text(
-                    "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, aber nur für "
-                        + "\(trip.detourKnownCount) von \(trip.stations.count) Stationen bekannt. "
-                        + "Die Umkreissuche liefert keinen Umweg mit; wo keiner bekannt ist, "
-                        + "greift der Regler nicht."
-                )
+                // Minuten ein und bekommt weiter hundert Stationen, solange die
+                // Umwege noch nicht gerechnet sind.
+                Text(umwegHinweis)
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.faint)
                 .textCase(nil)
@@ -273,6 +269,25 @@ struct StationListSheet: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Was der Umwegregler gerade kann.
+    private var umwegHinweis: String {
+        let bekannt = trip.detourKnownCount
+        let gesamt = trip.stations.count
+        if trip.isComputingDetours {
+            return "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, bisher für "
+                + "\(bekannt) von \(gesamt) Stationen. Der Rest wird gerade gerechnet; "
+                + "bis dahin greift der Regler dort nicht."
+        }
+        if bekannt < gesamt {
+            return "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, aber nur für "
+                + "\(bekannt) von \(gesamt) Stationen bekannt. Wo keiner bekannt ist, "
+                + "greift der Regler nicht."
+        }
+        return "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, für alle "
+            + "\(gesamt) Stationen. \(trip.detourComputedCount) davon über Matrix-Routing "
+            + "gerechnet, der Rest von TomTom mitgeliefert."
     }
 
     private func formattedDuration(minutes: Double) -> String {

@@ -16,8 +16,14 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     let categories: [String]
     /// ID für die Live-Belegungsabfrage. Fehlt bei Stationen ohne Live-Anbindung.
     let availabilityID: String?
-    let detourSeconds: Double?
+    /// Fahrzeit vom Verlassen der Route bis zum Wiederauffahren.
+    ///
+    /// Von der Along-Route-Suche mitgeliefert, oder, wo sie fehlt, über die
+    /// Matrix-API nachgerechnet. Deshalb beschreibbar.
+    var detourSeconds: Double?
     let detourMeters: Double?
+    /// Kommt der Umweg aus der eigenen Rechnung statt von TomTom?
+    var detourIsComputed = false
     /// Seitlicher Abstand zur Route. Aus der Antwort, sofern vorhanden, sonst
     /// aus der eigenen Projektion.
     var distanceFromRouteMeters: Double?

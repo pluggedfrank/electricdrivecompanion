@@ -147,7 +147,8 @@ extension EditorialStore {
 // MARK: - Zusammengeführter Datensatz
 
 struct AnnotatedStation: Identifiable, Hashable, Sendable {
-    let station: ChargingStation
+    /// Beschreibbar, weil der Umweg nachträglich hineinkommt.
+    var station: ChargingStation
     var editorial: EditorialEntry? = nil
     var availability: StationAvailability? = nil
 

@@ -17,6 +17,7 @@ enum TomTomAPIError: LocalizedError {
     case emptyRoute
     case http(status: Int, body: String)
     case decoding(underlying: Error)
+    case matrixTooLarge(cells: Int)
 
     var errorDescription: String? {
         switch self {
@@ -39,6 +40,8 @@ enum TomTomAPIError: LocalizedError {
             }
         case let .decoding(underlying):
             return "Antwort nicht lesbar: \(underlying.localizedDescription)"
+        case let .matrixTooLarge(cells):
+            return "Matrix mit \(cells) Zellen, erlaubt sind \(DetourMatrix.maxCells). Vorher aufteilen."
         }
     }
 }
@@ -318,6 +321,44 @@ actor TomTomAPIClient {
         let data = try await perform(URLRequest(url: url))
         let response = try JSONDecoder().decode(AlongRouteSearchResponse.self, from: data)
         return response.results.compactMap(Place.init(result:))
+    }
+
+    /// Fahrzeiten von jedem Start zu jedem Ziel, als Tabelle [start][ziel].
+    ///
+    /// Die Matrix-API rechnet das Kreuzprodukt und nimmt höchstens 200 Zellen
+    /// je Anfrage. Wer mehr braucht, teilt vorher auf; siehe DetourMatrix.
+    /// Ohne departAt: Dann rechnet die Matrix ohne Verkehrslage, und alle
+    /// drei Zeiten, aus denen der Umweg entsteht, kommen aus derselben
+    /// Rechnung.
+    func travelTimeMatrix(
+        origins: [CLLocationCoordinate2D],
+        destinations: [CLLocationCoordinate2D]
+    ) async throws -> [[Double?]] {
+        guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
+        guard !origins.isEmpty, !destinations.isEmpty else { return [] }
+        guard origins.count * destinations.count <= DetourMatrix.maxCells else {
+            throw TomTomAPIError.matrixTooLarge(cells: origins.count * destinations.count)
+        }
+
+        var components = URLComponents(string: "\(Self.baseURL)/routing/matrix/2")
+        components?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
+        guard let url = components?.url else { throw TomTomAPIError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+        request.httpBody = try JSONEncoder().encode(
+            MatrixRoutingRequest(origins: origins, destinations: destinations)
+        )
+
+        let data = try await perform(request)
+        do {
+            let response = try JSONDecoder().decode(MatrixRoutingResponse.self, from: data)
+            return response.travelTimes(originCount: origins.count, destinationCount: destinations.count)
+        } catch {
+            throw TomTomAPIError.decoding(underlying: error)
+        }
     }
 
     // MARK: Private
