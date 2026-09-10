@@ -557,4 +557,5 @@ electricdrivecompanion/
     register-schnelllader.mjs  Schnellladestandorte in Deutschland zaehlen
     ev-route-probe.mjs         EV-Routenplanung und Reichweite ausprobieren
     matrix-probe.mjs           Matrix-Routing ausprobieren, fuer die Umwege
+    lib/matrix.mjs             Umwege aus Stuetzpunkten und zwei Matrizen
 ```

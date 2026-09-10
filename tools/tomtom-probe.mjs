@@ -10,6 +10,8 @@
 //   node tomtom-probe.mjs --key=DEIN_KEY --export-editorial=neu.json
 //   node tomtom-probe.mjs --dry-run
 //   node tomtom-probe.mjs --verkehr
+//   node tomtom-probe.mjs --umwege        Umwege nachrechnen, wo keiner vorliegt
+//   node tomtom-probe.mjs --umwege=alle   alle nachrechnen, zum Abgleich
 //
 // Statt --key=... kann TOMTOM_API_KEY gesetzt sein. Das ist der bessere Weg,
 // weil der Schlüssel sonst in der Shell-History landet.
@@ -22,6 +24,7 @@ import * as ev from './lib/evsearch.mjs';
 import * as geo from './lib/geo.mjs';
 import * as corridor from './lib/corridor.mjs';
 import * as editorial from './lib/editorial.mjs';
+import * as matrix from './lib/matrix.mjs';
 import { istGetestet, urteil } from './lib/redaktion.mjs';
 import { resolveApiKey } from './lib/apikey.mjs';
 
@@ -376,6 +379,122 @@ async function diagnose(apiKey, route, baseOptions) {
   }
 }
 
+// ------------------------------------------------------------- Umwege
+
+/**
+ * Rechnet die Umwege ueber die Matrix-Routing-API.
+ *
+ * Der Umweg ist die Fahrzeit vom Verlassen der Route bis zum Wiederauffahren.
+ * Die Along-Route-Suche liefert ihn mit, die Umkreissuche nicht, und die bringt
+ * den groesseren Teil der Treffer.
+ *
+ * Gerechnet wird gegen Stuetzpunkte auf der Route: Umweg gleich Hinfahrt zum
+ * Stuetzpunkt davor plus Rueckfahrt zum Stuetzpunkt dahinter minus der Strecke,
+ * die man ohnehin gefahren waere.
+ */
+async function berechneUmwege(apiKey, route, stationen, nurFehlende) {
+  const stuetzen = matrix.stuetzpunkte(route.points, route.durationMin * 60);
+  const url = matrix.buildMatrixURL(apiKey);
+
+  const zuArbeiten = stationen.filter(
+    (s) => Number.isFinite(s.progressMeters) && (!nurFehlende || s.detourSeconds == null)
+  );
+
+  const zuordnungen = zuArbeiten.map((station) => {
+    const { davor, dahinter } = matrix.klammer(stuetzen, station.progressMeters);
+    return { station, davor, dahinter };
+  });
+
+  let anfragen = 0;
+  let zellen = 0;
+
+  /** Fuehrt eine Richtung aus und schreibt die Sekunden in das Feld. */
+  async function richtung(feld, stuetzIndexFeld, stuetzeIstStart) {
+    const teile = matrix.bloecke(
+      zuordnungen.map((z) => ({ ...z, stuetzIndex: z[stuetzIndexFeld] }))
+    );
+
+    for (const teil of teile) {
+      const stuetzListe = teil.stuetzen;
+      const punkte = stuetzListe.map((i) => stuetzen[i]);
+      const ziele = teil.eintraege.map((e) => ({ lat: e.station.lat, lon: e.station.lon }));
+
+      const body = stuetzeIstStart
+        ? matrix.buildMatrixBody(punkte, ziele)
+        : matrix.buildMatrixBody(ziele, punkte);
+
+      await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS);
+      anfragen++;
+      zellen += punkte.length * ziele.length;
+
+      const antwort = await ev.requestWithRetry(fetch, url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!antwort.ok) {
+        const text = (await antwort.text()).slice(0, 300);
+        throw new Error(`Matrix antwortet mit ${antwort.status}: ${text}`);
+      }
+
+      const json = await antwort.json();
+      const tabelle = stuetzeIstStart
+        ? matrix.parseMatrix(json, punkte.length, ziele.length)
+        : matrix.parseMatrix(json, ziele.length, punkte.length);
+
+      teil.eintraege.forEach((eintrag, jIndex) => {
+        const iIndex = stuetzListe.indexOf(eintrag[stuetzIndexFeld]);
+        if (iIndex < 0) return;
+        eintrag[feld] = stuetzeIstStart ? tabelle[iIndex][jIndex] : tabelle[jIndex][iIndex];
+      });
+    }
+  }
+
+  await richtung('hinSekunden', 'davor', true);
+  await richtung('zurueckSekunden', 'dahinter', false);
+
+  for (const eintrag of zuordnungen) {
+    const entlang =
+      stuetzen[eintrag.dahinter].timeSeconds - stuetzen[eintrag.davor].timeSeconds;
+    eintrag.umweg = matrix.umwegSekunden(
+      eintrag.hinSekunden,
+      eintrag.zurueckSekunden,
+      entlang
+    );
+  }
+
+  return { zuordnungen, anfragen, zellen, stuetzpunkte: stuetzen.length };
+}
+
+/**
+ * Haelt die gerechneten Umwege gegen die von TomTom.
+ *
+ * Wo beide Werte vorliegen, laesst sich die eigene Rechnung pruefen, ohne
+ * jemanden zu fragen. Das ist der eigentliche Grund, die Umwege auch fuer
+ * Stationen zu rechnen, die schon einen haben.
+ */
+function vergleiche(zuordnungen) {
+  const paare = zuordnungen
+    .filter((z) => z.umweg != null && z.station.detourSeconds != null)
+    .map((z) => ({
+      name: z.station.name,
+      tomtom: z.station.detourSeconds,
+      gerechnet: z.umweg,
+      abweichung: Math.abs(z.umweg - z.station.detourSeconds),
+    }));
+
+  if (paare.length === 0) return null;
+
+  const summe = paare.reduce((n, p) => n + p.abweichung, 0);
+  return {
+    anzahl: paare.length,
+    mittel: summe / paare.length,
+    groesste: paare.reduce((a, b) => (b.abweichung > a.abweichung ? b : a)),
+    paare,
+  };
+}
+
 // ------------------------------------------------- Redaktionsdaten erzeugen
 
 /**
@@ -619,7 +738,12 @@ async function main() {
       // Seitlicher Abstand gilt fuer alle Treffer, der Umweg nur fuer die aus
       // der Along-Route-Suche.
       `${Math.round(s.distanceFromRouteMeters)} m ab Route`,
-      s.detourSeconds != null ? `+${Math.round(s.detourSeconds / 60)} min Umweg` : null,
+      s.detourSeconds != null
+        ? `+${Math.round(s.detourSeconds / 60)} min Umweg` +
+          // Die eigene Rechnung wird als solche gekennzeichnet. Wer sie mit
+          // TomToms Wert verwechselt, prueft sie nie nach.
+          (s.detourGerechnet ? ' (gerechnet)' : '')
+        : null,
       item.availability ? `${item.availability.available}/${item.availability.total} frei` : null,
     ].filter(Boolean);
 
@@ -643,6 +767,69 @@ async function main() {
     console.log(dim(`\n... und ${annotated.length - sichtbar.length} weitere. --all-results zeigt alle.`));
   }
 
+  // 5b. Optional: Umwege ueber die Matrix
+  let matrixAnfragen = 0;
+  if (args.umwege) {
+    heading('Umwege über Matrix-Routing');
+
+    const nurFehlende = args.umwege !== 'alle';
+    const begonnen = Date.now();
+
+    try {
+      const ergebnis = await berechneUmwege(apiKey, route, stationen, nurFehlende);
+      matrixAnfragen = ergebnis.anfragen;
+      const sekunden = ((Date.now() - begonnen) / 1000).toFixed(1);
+
+      const gerechnet = ergebnis.zuordnungen.filter((z) => z.umweg != null);
+      console.log(
+        `${ergebnis.anfragen} Anfragen, ${ergebnis.zellen} Zellen, ` +
+          `${ergebnis.stuetzpunkte} Stuetzpunkte, ${sekunden} s`
+      );
+      console.log(
+        `Umweg für ${bold(String(gerechnet.length))} von ${stationen.length} Stationen`
+      );
+
+      // Die gerechneten Werte in die Liste schreiben, damit die Ausgabe
+      // darunter sie zeigt.
+      for (const z of ergebnis.zuordnungen) {
+        if (z.umweg != null && z.station.detourSeconds == null) {
+          z.station.detourSeconds = z.umweg;
+          z.station.detourGerechnet = true;
+        }
+      }
+
+      const vergleich = vergleiche(ergebnis.zuordnungen);
+      if (vergleich) {
+        console.log('');
+        console.log(bold(`Abgleich mit TomTom, ${vergleich.anzahl} Stationen mit beiden Werten`));
+        console.log(
+          `Abweichung im Mittel ${Math.round(vergleich.mittel)} s, ` +
+            `höchstens ${Math.round(vergleich.groesste.abweichung)} s ` +
+            dim(`(${vergleich.groesste.name})`)
+        );
+        console.log('');
+        for (const paar of vergleich.paare.slice(0, 10)) {
+          console.log(
+            '  ' +
+              paar.name.slice(0, 34).padEnd(36) +
+              `TomTom ${String(Math.round(paar.tomtom)).padStart(4)} s   ` +
+              `gerechnet ${String(Math.round(paar.gerechnet)).padStart(4)} s`
+          );
+        }
+        if (vergleich.paare.length > 10) {
+          console.log(dim(`  ... und ${vergleich.paare.length - 10} weitere`));
+        }
+      } else if (nurFehlende) {
+        console.log(
+          dim('--umwege=alle rechnet auch die Stationen, die schon einen Umweg haben.\n' +
+            'Nur dann laesst sich die eigene Rechnung gegen TomTom pruefen.')
+        );
+      }
+    } catch (fehler) {
+      console.log(red(`Fehlgeschlagen: ${fehler.message}`));
+    }
+  }
+
   // 6. Optional: Startbestand schreiben
   if (args['export-editorial']) {
     const target = resolve(String(args['export-editorial']));
@@ -654,7 +841,7 @@ async function main() {
     );
   }
 
-  const used = 1 + anfragen + Math.min(availabilityCount, annotated.length);
+  const used = 1 + anfragen + matrixAnfragen + Math.min(availabilityCount, annotated.length);
   console.log(
     `\n${dim('Legende:')} ${red('*')} mit eigenem Test   ${green('o')} erfasst   ` +
       `${dim('. nur TomTom-Daten')}`
