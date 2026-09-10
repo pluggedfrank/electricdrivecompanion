@@ -9,6 +9,7 @@
 //   node tomtom-probe.mjs --key=DEIN_KEY --diagnose
 //   node tomtom-probe.mjs --key=DEIN_KEY --export-editorial=neu.json
 //   node tomtom-probe.mjs --dry-run
+//   node tomtom-probe.mjs --verkehr
 //
 // Statt --key=... kann TOMTOM_API_KEY gesetzt sein. Das ist der bessere Weg,
 // weil der Schlüssel sonst in der Shell-History landet.
@@ -102,14 +103,26 @@ function heading(text) {
 
 // ------------------------------------------------------------- Routing
 
-/** Plant eine Route über die Routing-API und gibt die Geometrie zurück. */
-async function planRoute(apiKey, from, to) {
+/**
+ * Plant eine Route ueber die Routing-API und gibt die Geometrie zurueck.
+ *
+ * Ohne Verkehrslage, und das ist Absicht. Der Probelauf baut eine Arbeitsliste,
+ * und eine Arbeitsliste muss zweimal dieselbe sein. Mit Verkehrslage entscheidet
+ * die Uhrzeit ueber die Strecke: Am 08.09. lief die Route 321 km ueber
+ * Duesseldorf, am 10.09. 332 km ueber Krefeld und Moers. Von 129 gefundenen
+ * Stationen tauchten 39 im zweiten Lauf nicht mehr auf, alle im ersten
+ * Streckendrittel, weil dieses Drittel gar nicht mehr befahren wurde.
+ *
+ * Die Verkehrslage gehoert dorthin, wo tatsaechlich gefahren wird: in die App.
+ * --verkehr schaltet sie fuer einen Vergleichslauf wieder zu.
+ */
+async function planRoute(apiKey, from, to, mitVerkehr = false) {
   const url = new URL(
     `${ev.BASE_URL}/routing/1/calculateRoute/${from.lat},${from.lon}:${to.lat},${to.lon}/json`
   );
   url.searchParams.set('key', apiKey);
   url.searchParams.set('routeType', 'fastest');
-  url.searchParams.set('traffic', 'true');
+  url.searchParams.set('traffic', mitVerkehr ? 'true' : 'false');
   url.searchParams.set('travelMode', 'car');
 
   const response = await ev.requestWithRetry(fetch, url, {});
@@ -449,10 +462,15 @@ async function main() {
 
   // 1. Route
   heading('1. Route planen');
-  const route = await planRoute(apiKey, from, to);
+  const route = await planRoute(apiKey, from, to, Boolean(args.verkehr));
   console.log(
     `${route.lengthKm.toFixed(0)} km, ${Math.round(route.durationMin)} min, ` +
       `${route.points.length} Stuetzpunkte in der Geometrie`
+  );
+  console.log(
+    args.verkehr
+      ? dim('mit Verkehrslage: dieselbe Anfrage kann morgen eine andere Strecke liefern')
+      : dim('ohne Verkehrslage, damit derselbe Aufruf dieselbe Strecke liefert')
   );
 
   if (args.diagnose) {

@@ -1088,6 +1088,17 @@ test('unbrauchbare Datensaetze brechen den Import ab', () => {
   }
 });
 
+test('was der Import nicht kennt, wird gezaehlt statt still mitgeschleppt', () => {
+  const bestand = export_({ tomtomPoiID: 'poi-a' }, { tomtomPoiID: 'poi-b' });
+  const { entries, statistik } = redaktion.fuehreZusammen(
+    bestand,
+    export_({ tomtomPoiID: 'poi-a' }, { tomtomPoiID: 'poi-c' })
+  );
+  assert.equal(statistik.unberuehrt, 1, 'poi-b stand im Bestand und kam nicht vor');
+  assert.equal(statistik.neu, 1);
+  assert.equal(entries.length, 3, 'verworfen wird nichts');
+});
+
 test('ein doppelter POI im Bestand faellt auf', () => {
   const bestand = [...export_({ id: 'ed-001' }), ...export_({ id: 'ed-002' })];
   bestand[1].tomtomPoiID = bestand[0].tomtomPoiID;

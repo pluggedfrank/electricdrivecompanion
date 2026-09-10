@@ -140,11 +140,13 @@ export function fuehreZusammen(bestand, importiert) {
 
   const naechsteKennung = kennungsgeber(bestand);
   const statistik = { bestand: bestand.length, neu: 0, ergaenzt: 0, unveraendert: 0 };
+  const beruehrt = new Set();
 
   for (const roh of importiert) {
     const eingang = normalisiere(roh);
     const key = schluessel(eingang);
     const alt = nachSchluessel.get(key);
+    beruehrt.add(key);
 
     if (!alt) {
       nachSchluessel.set(key, { ...eingang, id: naechsteKennung() });
@@ -180,6 +182,12 @@ export function fuehreZusammen(bestand, importiert) {
 
     nachSchluessel.set(key, zusammengefuehrt);
   }
+
+  // Was im Bestand steht, der Import aber nicht kennt. Das ist kein Fehler,
+  // sondern die Frage, ob der Bestand waechst, ohne dass jemand es merkt: eine
+  // andere Strecke bringt andere Stationen mit, und eine mit Verkehrslage
+  // geplante Strecke bringt bei jedem Lauf andere.
+  statistik.unberuehrt = [...nachSchluessel.keys()].filter((key) => !beruehrt.has(key)).length;
 
   const entries = [...nachSchluessel.values()].sort((a, b) => a.id.localeCompare(b.id));
   statistik.gesamt = entries.length;

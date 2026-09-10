@@ -96,6 +96,12 @@ function main() {
   console.log(`  neu       ${statistik.neu}`);
   console.log(`  ergaenzt  ${statistik.ergaenzt}`);
   console.log(dim(`  gleich    ${statistik.unveraendert}`));
+  if (statistik.unberuehrt > 0) {
+    console.log(
+      `  ${bold(String(statistik.unberuehrt))} Eintraege kennt dieser Import nicht ` +
+        dim('(andere Strecke, oder die Strecke hat sich geaendert)')
+    );
+  }
   console.log('');
   console.log(
     `  ${bold(String(statistik.gesamt))} Eintraege, davon ` +

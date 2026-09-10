@@ -89,7 +89,7 @@ node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach No
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --no-wide     # nur Along-Route, wie die TomTom-Pro-App
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 98 Tests
+npm test                            # 99 Tests
 ```
 
 Der Probe-Lauf nutzt beide Suchverfahren, genau wie die App. `--no-wide`
@@ -350,6 +350,19 @@ dem Import, denn das ist TomToms Aufgabe. Das Urteil bleibt beim Bestand, denn
 das ist unseres. `--trocken` zeigt nur, was passieren würde, `--commit` schreibt
 und schiebt gleich hoch.
 
+Der Probelauf plant seine Route **ohne Verkehrslage**. Das kam aus einem
+Fehler: Die ersten beiden Importe liefen mit `traffic=true`, und weil zwischen
+ihnen zwei Tage lagen, wählte TomTom zweimal eine andere Strecke, 321 km über
+Düsseldorf und 332 km über Krefeld und Moers. Von 129 Stationen des ersten Laufs
+tauchten 39 im zweiten nicht mehr auf, alle im ersten Streckendrittel, weil
+dieses Drittel gar nicht mehr befahren wurde. Der Bestand wuchs dadurch auf 164,
+ohne dass eine einzige Station dazugekommen wäre, die es vorher nicht gab.
+
+Eine Arbeitsliste muss zweimal dieselbe sein. Die Verkehrslage gehört dorthin,
+wo tatsächlich gefahren wird, in die App; `--verkehr` schaltet sie für einen
+Vergleichslauf wieder zu. Und der Import zählt seither mit, wie viele Einträge
+er nicht kennt, damit ein wachsender Bestand auffällt statt sich anzusammeln.
+
 Die Anschrift steht im Bestand nicht für die App, die kennt zur Laufzeit die von
 TomTom, sondern für den Menschen, der die Liste ausfüllt. Bei Ladestationen ist
 der POI-Name meist der Betreibername; im ersten echten Import hießen vierzehn
@@ -383,7 +396,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 98 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 99 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -487,7 +500,7 @@ electricdrivecompanion/
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
-    test/                      98 Tests gegen Fixtures
+    test/                      99 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
     redaktion-einbauen.mjs     Export der Treffer in den Bestand der App
