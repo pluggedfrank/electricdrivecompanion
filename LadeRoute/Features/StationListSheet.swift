@@ -51,6 +51,27 @@ struct StationListSheet: View {
         }
     }
 
+    /// Womit gerechnet wurde.
+    ///
+    /// Steht hier, weil ein Ladeplan ohne die Fahrzeugwerte nicht zu beurteilen
+    /// ist. Fünf Stopps können richtig oder unsinnig sein, je nachdem, ob der
+    /// Akku 40 oder 100 kWh hat und mit welchem Stand es losging. Auf einem
+    /// Bildschirmfoto fehlte diese Angabe, und die Frage, ob die Planung stimmt,
+    /// war ohne Rückfrage nicht zu beantworten.
+    @ViewBuilder
+    private var vehicleLine: some View {
+        let fahrzeug = trip.vehicleStore.profile
+        Text(
+            "\(Int(fahrzeug.usableBatteryKWh)) kWh · "
+                + String(format: "%.1f", fahrzeug.consumptionKWhPer100km) + " kWh/100 km · "
+                + "Start \(Int(fahrzeug.currentChargePercent)) % · "
+                + "Reichweite \(Int(fahrzeug.remainingRangeKm)) km"
+        )
+        .font(.system(size: 11).monospacedDigit())
+        .foregroundStyle(Theme.faint)
+        .textCase(nil)
+    }
+
     /// Der Ladeplan, in einem Satz.
     ///
     /// Wichtiger als die Ladezeit ist die Zahl der Stopps: Wer zweimal hält,
@@ -173,6 +194,7 @@ struct StationListSheet: View {
                 .textCase(nil)
 
                 chargingPlanLine
+                vehicleLine
             }
         }
         .padding(.bottom, 4)
