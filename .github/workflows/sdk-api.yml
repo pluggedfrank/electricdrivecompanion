@@ -52,7 +52,12 @@ jobs:
           set -o pipefail
           echo "Suche nach \"$SUCHE\" in $MODUL"
 
-          DATEIEN=$(find SourcePackages -path "*$MODUL*" -name '*.swiftinterface' 2>/dev/null | head -4)
+          # Nur die oeffentliche Schnittstelle einer Architektur. Vier Dateien
+          # sind viermal dasselbe und machen die Ausgabe unlesbar.
+          DATEIEN=$(find SourcePackages -path "*$MODUL*" \
+            -name 'arm64-apple-ios-simulator.swiftinterface' 2>/dev/null | head -1)
+          [ -z "$DATEIEN" ] && DATEIEN=$(find SourcePackages -path "*$MODUL*" \
+            -name '*.swiftinterface' 2>/dev/null | head -1)
           if [ -z "$DATEIEN" ]; then
             echo "Kein .swiftinterface gefunden. Was liegt da:"
             find SourcePackages -path "*$MODUL*" -maxdepth 8 2>/dev/null | head -30
@@ -64,10 +69,14 @@ jobs:
             echo '```swift'
           } >> "$GITHUB_STEP_SUMMARY"
 
+          # Schlicht nach dem Begriff suchen. Das Muster verlangte vorher ein
+          # Schluesselwort davor, und wer dann nach "func remove" suchte, fand
+          # nichts: Das Schluesselwort war der Suchbegriff selbst. Eine leere
+          # Antwort sah aus wie "gibt es nicht" und war es nicht.
           for datei in $DATEIEN; do
-            echo "--- $datei"
-            grep -nE "(func|var|let|struct|enum|class|case|init|protocol)[^{]*$SUCHE" "$datei" |
-              sed 's/^[[:space:]]*//' | sort -u | head -80 | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "--- $(basename "$(dirname "$(dirname "$(dirname "$datei")")")")"
+            grep -nE "$SUCHE" "$datei" |
+              sed 's/^[[:space:]]*//' | sort -u | head -100 | tee -a "$GITHUB_STEP_SUMMARY"
           done
 
           echo '```' >> "$GITHUB_STEP_SUMMARY"
