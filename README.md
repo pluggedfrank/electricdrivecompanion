@@ -31,6 +31,31 @@ Neuberechnung. Für den Prototypen wird die Ansage deshalb selbst gebaut, aus
 den Manöverdaten der Routing-API und der Sprachausgabe von iOS. Der Plan dazu
 steht in [`docs/PROJEKT.md`](docs/PROJEKT.md).
 
+## Auf dem Laufenden bleiben
+
+Einmal einrichten:
+
+```
+./aktualisieren.sh --einrichten
+```
+
+Danach genügt im Terminal das Wort `lade`. Es holt den neuen Stand und erzeugt
+das Xcode-Projekt neu, falls Dateien der App dazugekommen sind. Ohne diesen
+zweiten Schritt kennt Xcode neue Dateien nicht, und der Fehler sieht dann aus
+wie ein Compilerproblem.
+
+Dieselbe Einrichtung legt einen Hintergrunddienst an, der alle zehn Minuten
+nachsieht und sich meldet, wenn etwas Neues da war. Läuft Xcode gerade, wird das
+Projekt nicht neu erzeugt: XcodeGen schreibt die `.xcodeproj` neu, und das
+mitten in einem laufenden Build ergibt eine Fehlermeldung, deren Ursache niemand
+vermutet. Stattdessen kommt ein Hinweis.
+
+Abschalten:
+
+```
+launchctl unload ~/Library/LaunchAgents/de.plugged.laderoute.aktualisieren.plist
+```
+
 ## Einrichtung
 
 Voraussetzung ist ein TomTom-Key vom Developer-Portal. Der Freemium-Key reicht,
@@ -505,6 +530,7 @@ electricdrivecompanion/
     Routing/                   async-Hülle um den Routenplaner
     Features/                  ViewModel und Oberfläche
     Resources/                 editorial-stations.json
+  aktualisieren.sh             neuen Stand holen und Projekt nachziehen
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
