@@ -22,7 +22,11 @@ struct ChargingStop: Identifiable, Hashable, Sendable {
 
     var id: String { station.id }
 
-    var standSeconds: Double { chargingSeconds + detourSeconds }
+    /// Was der Stopp insgesamt kostet: Laden, Umweg und der Aufwand des
+    /// Anhaltens selbst.
+    var standSeconds: Double {
+        chargingSeconds + detourSeconds + ChargingStopPlanner.stopOverheadSeconds
+    }
 }
 
 struct ChargingPlan: Sendable {
@@ -48,6 +52,15 @@ struct ChargingPlan: Sendable {
 }
 
 enum ChargingStopPlanner {
+    // MARK: Kennzahlen
+
+    /// Was ein Stopp kostet, bevor das erste Elektron fließt.
+    ///
+    /// Abfahren, Parkplatz suchen, anstecken, Bezahlvorgang, wieder auffahren.
+    /// Ohne diesen Posten sieht ein Stopp mit einer Minute Ladezeit fast gratis
+    /// aus, und die Planung streut sie über die Strecke.
+    static let stopOverheadSeconds: Double = 300
+
     // MARK: Ladekurve
 
     /// Ladeleistung bei einem bestimmten Ladestand.
@@ -107,18 +120,26 @@ enum ChargingStopPlanner {
     ///
     /// 1. So wenige Stopps wie möglich. Ist eine Station in Reichweite, von der
     ///    aus das Ziel erreichbar ist, wird eine davon genommen, und zwar die
-    ///    mit der kürzesten Standzeit aus Laden und Umweg.
-    /// 2. Sonst die Station, die je Minute Standzeit am weitesten bringt.
+    ///    mit der kürzesten Standzeit aus Laden, Umweg und Aufwand.
+    /// 2. Sonst die Station, die je Minute Standzeit am meisten *zusätzliche*
+    ///    Strecke bringt.
     ///
-    /// Die Reihenfolge ist der Kern. Die naheliegende Auswahl wäre, immer die
-    /// stärkste Säule in Reichweite zu nehmen; das ist falsch, weil eine
-    /// 300-kW-Säule nach 60 km einen zweiten Stopp erzwingt, den eine
-    /// 150-kW-Säule nach 260 km erspart. Ein Stopp kostet mehr als die Ladezeit:
-    /// abfahren, anstecken, bezahlen, wieder auffahren.
+    /// Das Wort zusätzlich ist der Kern, und es hat gefehlt. Die erste Fassung
+    /// maß, wie weit man nach dem Stopp insgesamt kommt. Damit sah ein Halt nach
+    /// einem Kilometer großartig aus: kaum Ladezeit, und danach fast die volle
+    /// Reichweite, die man aber ohnehin schon hatte. Auf 823 km ergab das
+    /// neununddreißig Stopps mit je 1,3 kWh, und genau so sah es im Simulator
+    /// auch aus. Gemessen wird jetzt gegen das Durchfahren: Wie viel weiter
+    /// komme ich mit diesem Stopp, als wenn ich nicht halte? Ein Halt ohne
+    /// Nachladen bringt dann exakt null und fällt heraus.
+    ///
+    /// Ebenfalls falsch wäre, immer die stärkste Säule in Reichweite zu nehmen:
+    /// Eine 300-kW-Säule nach 60 km erzwingt einen zweiten Stopp, den eine
+    /// 150-kW-Säule nach 260 km erspart.
     ///
     /// Die Fahrzeit steht in keiner der beiden Regeln. Sie fällt an, egal welche
     /// Station gewählt wird; sie mitzurechnen ließ weit entfernte Stationen
-    /// teuer aussehen und bevorzugte den frühen Stopp.
+    /// teuer aussehen und bevorzugte ebenfalls den frühen Stopp.
     static func plan(
         routeLengthMeters: Double,
         stations: [AnnotatedStation],
@@ -200,7 +221,11 @@ enum ChargingStopPlanner {
                 )
                 let furtherMeters = max(0, (target - atStop) / perMeter)
                 let totalMeters = candidate.progress + furtherMeters
-                guard totalMeters > position else { continue }
+
+                // Gegen das Durchfahren gerechnet, nicht gegen den aktuellen
+                // Standort. Ein Halt ohne Nachladen bringt genau null.
+                let gain = totalMeters - (position + rangeMeters)
+                guard gain > 0 else { continue }
 
                 rated.append((
                     stop: ChargingStop(
@@ -211,7 +236,7 @@ enum ChargingStopPlanner {
                         chargingSeconds: seconds,
                         detourSeconds: detour
                     ),
-                    gainMeters: totalMeters - position,
+                    gainMeters: gain,
                     finishes: target - rest * perMeter >= atArrival - 1e-9
                 ))
             }

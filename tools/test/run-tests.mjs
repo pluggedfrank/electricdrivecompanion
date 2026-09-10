@@ -1420,3 +1420,50 @@ test('die letzten Prozent kosten mehr Zeit als die ersten', () => {
   const oben = ladeplanung.ladezeitSekunden(53.9, 69.3, AUTO.chargingCurve, 300);
   assert.ok(oben > unten * 2, `oben ${oben}, unten ${unten}`);
 });
+
+test('ein Halt ohne Nachladen ist kein Halt', () => {
+  // Der Fehler, der im Simulator sichtbar wurde: 823 km, dichte Stationskette,
+  // und die Planung streute neununddreissig Stopps mit je 1,3 kWh darueber.
+  // Ursache war die Messung des Gewinns gegen den Standort statt gegen das
+  // Durchfahren; ein Halt nach einem Kilometer sah damit fast gratis aus.
+  const kette = [];
+  for (let km = 1; km < 823; km += 7) {
+    kette.push({
+      id: `k${km}`,
+      name: `Station ${km}`,
+      progressMeters: km * 1000,
+      distanceFromRouteMeters: 100,
+      detourSeconds: 0,
+      maxPowerKW: 350,
+    });
+  }
+
+  const ergebnis = ladeplanung.planeStopps({
+    routeLengthMeters: 823_000,
+    stations: kette,
+    fahrzeug: AUTO,
+  });
+
+  assert.equal(ergebnis.machbar, true);
+  assert.ok(
+    ergebnis.stopps.length <= 3,
+    `${ergebnis.stopps.length} Stopps auf 823 km bei 284 km Reichweite`
+  );
+
+  for (const stopp of ergebnis.stopps) {
+    const geladen = stopp.abfahrtKWh - stopp.ankunftKWh;
+    assert.ok(geladen > 5, `Stopp bei km ${stopp.progressMeters / 1000} laedt nur ${geladen} kWh`);
+  }
+
+  // Und die Stopps liegen dort, wo der Akku sie verlangt, nicht am Anfang.
+  assert.ok(
+    ergebnis.stopps[0].progressMeters > 200_000,
+    `erster Stopp schon bei km ${ergebnis.stopps[0].progressMeters / 1000}`
+  );
+});
+
+test('der Aufwand je Stopp zaehlt mit', () => {
+  // Ohne diesen Posten sieht ein Stopp mit einer Minute Ladezeit fast gratis
+  // aus. Fuenf Minuten sind Abfahren, Anstecken, Bezahlen, Wiederauffahren.
+  assert.equal(ladeplanung.STOPP_AUFWAND_SEKUNDEN, 300);
+});

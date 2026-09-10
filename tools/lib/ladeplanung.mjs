@@ -37,6 +37,15 @@ export function leistungBei(ladungKWh, kurve) {
 }
 
 /**
+ * Was ein Stopp kostet, bevor das erste Elektron fliesst.
+ *
+ * Abfahren, Parkplatz suchen, anstecken, Bezahlvorgang, wieder auffahren. Ohne
+ * diesen Posten sieht ein Stopp mit einer Minute Ladezeit fast gratis aus, und
+ * die Planung streut sie ueber die Strecke.
+ */
+export const STOPP_AUFWAND_SEKUNDEN = 300;
+
+/**
  * Wie lange dauert es, von einem Ladestand auf einen anderen zu kommen.
  *
  * In kleinen Schritten aufsummiert, weil die Leistung waehrend des Ladens
@@ -84,18 +93,26 @@ export function schwellen(fahrzeug) {
  *
  * 1. So wenige Stopps wie moeglich. Kommt eine Station in Reichweite, von der
  *    aus sich das Ziel erreichen laesst, wird eine davon genommen, und zwar die
- *    mit der kuerzesten Standzeit aus Laden und Umweg.
- * 2. Sonst die Station, die je Minute Standzeit am weitesten bringt.
+ *    mit der kuerzesten Standzeit aus Laden, Umweg und Aufwand.
+ * 2. Sonst die Station, die je Minute Standzeit am meisten *zusaetzliche*
+ *    Strecke bringt.
  *
- * Die Reihenfolge ist der Kern. Die naheliegende Auswahl waere, immer die
- * staerkste Saeule in Reichweite zu nehmen; das ist falsch, weil eine
- * 300-kW-Saeule nach 60 km einen zweiten Stopp erzwingt, den eine 150-kW-Saeule
- * nach 260 km erspart. Ein Stopp kostet mehr als die Ladezeit: Abfahren,
- * anstecken, bezahlen, wieder auffahren.
+ * Das Wort zusaetzlich ist der Kern, und es hat gefehlt. Die erste Fassung mass,
+ * wie weit man nach dem Stopp insgesamt kommt. Damit sah ein Halt nach einem
+ * Kilometer grossartig aus: kaum Ladezeit, und danach fast die volle
+ * Reichweite, die man aber ohnehin schon hatte. Auf 823 km ergab das
+ * neununddreissig Stopps mit je 1,3 kWh, und genau so sah es auch im Simulator
+ * aus. Gemessen wird jetzt gegen das Durchfahren: Wie viel weiter komme ich mit
+ * diesem Stopp, als wenn ich nicht halte? Ein Halt ohne Nachladen bringt dann
+ * exakt null und faellt heraus.
  *
- * Die Fahrzeit steht bewusst in keiner der beiden Regeln. Sie faellt an, egal
- * welche Station gewaehlt wird; sie mitzurechnen liess weit entfernte
- * Stationen teuer aussehen und bevorzugte den fruehen Stopp.
+ * Ebenfalls falsch waere, immer die staerkste Saeule in Reichweite zu nehmen:
+ * Eine 300-kW-Saeule nach 60 km erzwingt einen zweiten Stopp, den eine
+ * 150-kW-Saeule nach 260 km erspart.
+ *
+ * Die Fahrzeit steht in keiner der beiden Regeln. Sie faellt an, egal welche
+ * Station gewaehlt wird; sie mitzurechnen liess weit entfernte Stationen teuer
+ * aussehen und bevorzugte ebenfalls den fruehen Stopp.
  */
 export function planeStopps({
   routeLengthMeters,
@@ -178,7 +195,11 @@ export function planeStopps({
       const ladezeit = ladezeitSekunden(ankunft, ziel, kurve, station.maxPowerKW ?? 0);
       const weiterMeter = Math.max(0, (ziel - s.unterwegs) / proMeter);
       const gesamtMeter = station.progressMeters + weiterMeter;
-      if (gesamtMeter <= position) continue;
+
+      // Gegen das Durchfahren gerechnet, nicht gegen den aktuellen Standort.
+      // Ein Halt ohne Nachladen bringt genau null und faellt hier heraus.
+      const gewinnMeter = gesamtMeter - (position + reichweiteMeter);
+      if (gewinnMeter <= 0) continue;
 
       bewertet.push({
         station,
@@ -186,8 +207,8 @@ export function planeStopps({
         zielKWh: ziel,
         ladezeitSekunden: ladezeit,
         umwegSekunden: umweg,
-        standzeit: ladezeit + umweg,
-        gewinnMeter: gesamtMeter - position,
+        standzeit: ladezeit + umweg + STOPP_AUFWAND_SEKUNDEN,
+        gewinnMeter,
         // Reicht es von hier bis zum Ziel, mit Reserve?
         bisZumZiel: ziel - restNachStopp * proMeter >= s.amZiel - 1e-9,
       });
