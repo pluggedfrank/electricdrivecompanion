@@ -45,10 +45,11 @@ zweiten Schritt kennt Xcode neue Dateien nicht, und der Fehler sieht dann aus
 wie ein Compilerproblem.
 
 Dieselbe Einrichtung legt einen Hintergrunddienst an, der alle zehn Minuten
-nachsieht und sich meldet, wenn etwas Neues da war. Läuft Xcode gerade, wird das
-Projekt nicht neu erzeugt: XcodeGen schreibt die `.xcodeproj` neu, und das
-mitten in einem laufenden Build ergibt eine Fehlermeldung, deren Ursache niemand
-vermutet. Stattdessen kommt ein Hinweis.
+nachsieht und sich meldet, wenn etwas Neues da war. Läuft gerade ein Build, wird
+das Projekt nicht neu erzeugt: XcodeGen schreibt die `.xcodeproj` neu, und das
+mitten im Übersetzen ergibt eine Fehlermeldung, deren Ursache niemand vermutet.
+Ein bloß geöffnetes Xcode ist dagegen kein Grund zu warten, es lädt das Projekt
+von selbst nach.
 
 Abschalten:
 

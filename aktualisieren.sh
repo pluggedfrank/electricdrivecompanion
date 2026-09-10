@@ -113,14 +113,21 @@ BRAUCHT_XCODEGEN=0
 echo "$GEAENDERT" | grep -qE '^(LadeRoute/|project\.yml)' && BRAUCHT_XCODEGEN=1
 
 if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
-  # Nicht waehrend Xcode offen ist: xcodegen schreibt die .xcodeproj neu, und
-  # das mitten in einem laufenden Build ergibt eine Fehlermeldung, deren
-  # Ursache niemand vermutet.
-  if pgrep -x Xcode > /dev/null 2>&1; then
-    sage "Xcode ist offen, das Projekt wurde nicht neu erzeugt."
-    sage "Nach dem Schliessen: ./aktualisieren.sh, oder in Xcode einfach lade tippen."
+  # Nicht waehrend gebaut wird. xcodegen schreibt die .xcodeproj neu, und das
+  # mitten in einem laufenden Build ergibt eine Fehlermeldung, deren Ursache
+  # niemand vermutet.
+  #
+  # Geprueft wird der Compiler, nicht Xcode. Die erste Fassung hat bei jedem
+  # offenen Xcode abgelehnt, und damit lehnte sie fast immer ab: Wer die App
+  # entwickelt, hat Xcode offen. Ein offenes Xcode ohne laufenden Build vertraegt
+  # ein neu erzeugtes Projekt problemlos, es laedt es nach.
+  if pgrep -x swift-frontend > /dev/null 2>&1 ||
+     pgrep -x xcodebuild > /dev/null 2>&1 ||
+     pgrep -x swift-driver > /dev/null 2>&1; then
+    sage "Xcode baut gerade, das Projekt wurde nicht neu erzeugt."
+    sage "Nach dem Build noch einmal: lade"
     if [ "$STILL" -eq 1 ]; then
-      osascript -e "display notification \"$ANZAHL neue Commits. Xcode schliessen und lade tippen.\" with title \"LadeRoute\"" 2>/dev/null || true
+      osascript -e "display notification \"$ANZAHL neue Commits. Nach dem Build noch einmal lade tippen.\" with title \"LadeRoute\"" 2>/dev/null || true
     fi
     exit 0
   fi
@@ -128,6 +135,9 @@ if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
   if command -v xcodegen > /dev/null 2>&1; then
     xcodegen generate > /dev/null
     sage "Projekt neu erzeugt, es waren Dateien der App dabei."
+    if pgrep -x Xcode > /dev/null 2>&1; then
+      sage "Xcode laedt es von selbst nach."
+    fi
   else
     sage "xcodegen fehlt: brew install xcodegen"
   fi
