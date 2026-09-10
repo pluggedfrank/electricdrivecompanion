@@ -50,10 +50,19 @@ enum TomTomAPIError: LocalizedError {
 /// Auf der Langstrecke ist alles unter 50 kW ohne Belang: Wer 300 km vor sich
 /// hat, lädt nicht an einer 22-kW-AC-Säule. Da eine Antwort nur 20 Treffer
 /// fasst, verdrängen langsame Säulen sonst die brauchbaren.
+/// Ladeleistungsstufen.
+///
+/// Die Vorgabe ist 150 kW, nicht 50. Eine 50-kW-Säule fährt heute niemand mehr
+/// gezielt an, das ist eine Notlösung, wenn sonst nichts in Reichweite steht.
+/// Sie bleibt deshalb wählbar, aber nicht voreingestellt.
 enum PowerTier: Double, CaseIterable, Identifiable, Sendable {
     case alle = 0
-    case schnell = 50
-    case hpc = 150
+    case notloesung = 50
+    case schnell = 150
+    case hpc = 300
+
+    /// Was die App zeigt, wenn nichts gewählt wurde.
+    static let standard: PowerTier = .schnell
 
     var id: Double { rawValue }
 
@@ -63,16 +72,18 @@ enum PowerTier: Double, CaseIterable, Identifiable, Sendable {
     var label: String {
         switch self {
         case .alle: return "alle"
-        case .schnell: return "ab 50 kW"
-        case .hpc: return "ab 150 kW"
+        case .notloesung: return "ab 50 kW"
+        case .schnell: return "ab 150 kW"
+        case .hpc: return "ab 300 kW"
         }
     }
 
     var explanation: String {
         switch self {
         case .alle: return "Auch AC-Säulen. Für die Stadt, nicht für die Langstrecke."
-        case .schnell: return "Schnellladen. Die sinnvolle Untergrenze für lange Fahrten."
-        case .hpc: return "Nur Hochleistungslader. Kurze Stopps, dafür weniger Auswahl."
+        case .notloesung: return "Notlösung. Nur, wenn sonst nichts in Reichweite steht."
+        case .schnell: return "Die sinnvolle Untergrenze für lange Fahrten."
+        case .hpc: return "Kurze Stopps, dafür weniger Auswahl."
         }
     }
 }
@@ -102,7 +113,7 @@ struct AlongRouteSearchOptions: Sendable {
     var limitPerRequest: Int = 20
     /// Mindest-Ladeleistung in kW. Vorgabe ist die Langstreckenschwelle.
     /// nil oder 0 schaltet den Filter ab.
-    var minPowerKW: Double? = PowerTier.schnell.minPowerKW
+    var minPowerKW: Double? = PowerTier.standard.minPowerKW
     /// Die Leistung zusätzlich an den Daten prüfen, statt dem Server zu trauen.
     /// Nach der Erfahrung mit categorySet ist das keine Paranoia.
     var enforceMinPowerLocally: Bool = true

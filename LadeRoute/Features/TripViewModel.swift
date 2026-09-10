@@ -60,7 +60,7 @@ final class TripViewModel: ObservableObject {
     /// Die Vorgabe ist die Langstreckenschwelle: Unter 50 kW lohnt ein Stopp auf
     /// einer langen Fahrt nicht, und da eine Antwort nur 20 Treffer fasst,
     /// verdrängen langsame Säulen sonst die brauchbaren.
-    @Published var powerTier: PowerTier = .schnell
+    @Published var powerTier: PowerTier = .standard
     @Published var maxDetourMinutes: Double = 10
 
     var selectedStation: AnnotatedStation? {

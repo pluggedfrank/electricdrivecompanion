@@ -96,13 +96,19 @@ Prozent Abweichung, die beiden Wege beschreiben dasselbe. Und aus 31.505
 Einrichtungen werden 14.804 Standorte, das Zusammenfassen leistet also
 tatsächlich etwas, im Schnitt zwei Einrichtungen und vier Ladepunkte je Ort.
 
-**Der Zuschnitt ist eine redaktionelle Entscheidung, keine technische.** 14.804
-Orte sind mit einer Zuschauerschaft nicht vollständig zu erfassen, und eine
-Karte, die auf Jahre zu 99 Prozent leer bleibt, entmutigt statt anzuspornen.
-Empfehlung: **ab 300 kW**, 4.668 Orte. Das sind die Ladeparks, um die herum man
-eine Langstrecke plant, es ist derselbe Zuschnitt wie in der App, und es ist
-eine Zahl, die eine Zuschauerschaft in überschaubarer Zeit füllen kann. Ab
-150 kW bleibt der nächste Ausbauschritt, ab 50 kW die Vollerhebung.
+**Entschieden: ab 300 kW, danach 150 kW, 50 kW gar nicht.** 4.668 Orte im
+ersten Schritt, 9.285 im zweiten. Die 50-kW-Lader bleiben draußen, und das ist
+kein Aufwandsargument: Sie werden heute nicht mehr gezielt angefahren, sie sind
+Notlösungen. Eine Erhebung, die sie mitführte, würde Aufwand in Orte stecken,
+über die niemand eine Kaufentscheidung trifft.
+
+14.804 Orte wären ohnehin nicht zu schaffen gewesen. Eine Karte, die auf Jahre
+zu 99 Prozent leer bleibt, entmutigt statt anzuspornen.
+
+Dieselbe Entscheidung gilt in der App: Die Voreinstellung der Liste liegt bei
+150 kW statt bei 50, mit 300 kW als Stufe darüber. 50 kW bleibt wählbar, denn
+im Auto ist eine Notlösung immer noch besser als nichts, aber sie steht nicht
+mehr vorn.
 
 Für den Fortschritt spricht auch die Verteilung: Die fünfzehn größten Betreiber
 decken rund die Hälfte aller Standorte ab. Eine Kampagne kann daran entlang
@@ -239,8 +245,9 @@ Stelle, das Matching bleibt unberührt.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
 - [ ] Woher kommen Verbrauch und Ladekurve des Fahrzeugs? Ohne beides plant die
       EV-Route falsch. Für v1 reicht ein Profil von Hand.
-- [ ] Welcher Zuschnitt gilt für die Erfassung? Empfehlung ab 300 kW, siehe
-      oben. Entscheidet über Kampagne, Karte und Aufwand.
+- [ ] Namensnennung: Das Register steht unter CC BY 4.0. Wo die Daten auf
+      plugged.de sichtbar werden, gehört "Bundesnetzagentur.de" sichtbar dazu.
+      Der Erfassungsbogen trägt den Hinweis in seinen Kopfdaten mit.
 - [ ] Fotos aus Einsendungen: Speicherort, Rechte, Haftung. Ein Foto von einer
       fremden Person ist rechtlich etwas anderes als eines von einer Ladesäule.
 - [ ] Mehrfachabgaben trotz Sichtung: Ein Sichter, der hundert gleichlautende
@@ -270,9 +277,9 @@ Zwei Stränge, die parallel laufen können.
 
 1. ~~Domain und Technik festlegen.~~ plugged.de, WordPress, ohne Anmeldung,
    mit Sichtung.
-2. ~~Grundgesamtheit erzeugen.~~ Gezählt am 10.09.2026, siehe oben. Der
-   Erfassungsbogen entsteht mit `tools/register-schnelllader.mjs --export=...`,
-   der Zuschnitt mit `--leistung=`.
+2. ~~Grundgesamtheit erzeugen.~~ Gezählt am 10.09.2026, siehe oben.
+   Erfassungsbogen ab 300 kW:
+   `node tools/register-schnelllader.mjs --leistung=300 --export=daten/standorte-300kw.json`
 3. Datenspeicher aufsetzen: Standorte, Bewertungen, Fotos, Sichtungsstand.
 4. Erfassungsseite bauen: Karte mit Stand der Erfassung, Kurzformular,
    Vollformular für Tester.

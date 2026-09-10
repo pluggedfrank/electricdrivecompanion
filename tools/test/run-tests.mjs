@@ -29,6 +29,21 @@ const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 
 // einen Bestand, der sich nicht bewegt.
 const entries = fixture('editorial-entries.json');
 
+/**
+ * Die Fixture-Treffer ohne Leistungsfilter.
+ *
+ * Die Vorgabe liegt bei 150 kW, und in der Fixture steckt bewusst eine
+ * 50-kW-Station. Tests, die Uebersetzung, Kategoriefilter oder Zuordnung
+ * pruefen, sollen daran nicht haengen: Sonst faellt bei jeder Verschiebung der
+ * Leistungsschwelle die halbe Testreihe um, ohne dass an ihrem Gegenstand
+ * etwas falsch waere.
+ */
+const alleTreffer = (optionen = {}) =>
+  ev.parseAlongRouteResponse(fixture('alongroute-response.json'), {
+    minPowerKW: 0,
+    ...optionen,
+  });
+
 const MEERBUSCH = { lat: 51.2560, lon: 6.6890 };
 const NORDDEICH = { lat: 53.6148, lon: 7.1621 };
 
@@ -199,7 +214,7 @@ test('Request-Body hat die von TomTom erwartete Form', () => {
 // --------------------------------------------------------- Antwortauswertung
 
 test('Suchtreffer werden vollständig übersetzt', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   assert.equal(stations.length, 5, 'die Tankstelle muss herausgefallen sein');
 
   const first = stations[0];
@@ -213,7 +228,7 @@ test('Suchtreffer werden vollständig übersetzt', () => {
 });
 
 test('fehlende Felder führen nicht zum Absturz', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   const ohneAdresse = stations.find((s) => s.id === 'poi-5');
   assert.equal(ohneAdresse.address, '');
   assert.equal(ohneAdresse.availabilityID, null);
@@ -245,10 +260,8 @@ test('fehlt total, wird es aus den Zählern rekonstruiert', () => {
 // ------------------------------------------------- Ladestation oder nicht
 
 test('ohne Kategoriefilter kommt Fremdes mit und wird aussortiert', () => {
-  const roh = ev.parseAlongRouteResponse(fixture('alongroute-response.json'), {
-    onlyEVStations: false,
-  });
-  const gefiltert = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const roh = alleTreffer({ onlyEVStations: false });
+  const gefiltert = alleTreffer();
 
   assert.equal(roh.length, 6);
   assert.equal(gefiltert.length, 5);
@@ -297,10 +310,20 @@ test('die Kategorie-ID lässt sich zum Ausprobieren setzen', () => {
 
 // ---------------------------------------------------------- Ladeleistung
 
-test('auf der Langstrecke gilt ab 50 kW als Vorgabe', () => {
-  assert.equal(ev.DEFAULT_OPTIONS.minPowerKW, 50);
+test('auf der Langstrecke gilt ab 150 kW als Vorgabe', () => {
+  // 50 kW faehrt niemand mehr gezielt an, das ist eine Notloesung. Waehlbar
+  // bleibt die Stufe, voreingestellt ist sie nicht.
+  assert.equal(ev.POWER_TIERS.notloesung, 50);
+  assert.equal(ev.DEFAULT_POWER_TIER, 150);
+  assert.equal(ev.DEFAULT_OPTIONS.minPowerKW, 150);
   const url = new URL(ev.buildAlongRouteURL('KEY'));
-  assert.equal(url.searchParams.get('minPowerKW'), '50');
+  assert.equal(url.searchParams.get('minPowerKW'), '150');
+});
+
+test('die Stufen decken sich mit den Schritten von State of Charge', () => {
+  // Erfassung beginnt bei 300 kW, dann 150. Waeren die Zahlen hier andere,
+  // zeigte die App etwas anderes an, als das Projekt erfasst.
+  assert.deepEqual(ev.POWER_TIERS, { alle: 0, notloesung: 50, schnell: 150, hpc: 300 });
 });
 
 test('0 schaltet den Leistungsfilter ab, statt 0 zu senden', () => {
@@ -356,25 +379,25 @@ test('die 22-kW-Säule fällt bei der Vorgabe heraus', () => {
 // -------------------------------------------------------------- Zuordnung
 
 test('Station trifft den Redaktionseintrag über Nähe und Betreiber', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   const treffer = editorial.match(stations.find((s) => s.id === 'poi-1'), entries);
   assert.ok(treffer, 'poi-1 hätte ed-001 treffen müssen');
   assert.equal(treffer.id, 'ed-001');
 });
 
 test('zweiter Treffer über abweichenden Namen bei gleichem Betreiber', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   const treffer = editorial.match(stations.find((s) => s.id === 'poi-2'), entries);
   assert.equal(treffer?.id, 'ed-003');
 });
 
 test('weit entfernte Station bleibt ohne Zuordnung', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   assert.equal(editorial.match(stations.find((s) => s.id === 'poi-3'), entries), null);
 });
 
 test('knapp jenseits des Radius wird nicht mehr zugeordnet', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   const poi4 = stations.find((s) => s.id === 'poi-4');
   const ed002 = entries.find((e) => e.id === 'ed-002');
   const d = geo.distance(
@@ -386,7 +409,7 @@ test('knapp jenseits des Radius wird nicht mehr zugeordnet', () => {
 });
 
 test('Nähe allein reicht nicht: fremder Name und Betreiber verhindern die Zuordnung', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   const poi5 = stations.find((s) => s.id === 'poi-5');
   const ed005 = entries.find((e) => e.id === 'ed-005');
   const d = geo.distance(
@@ -403,13 +426,13 @@ test('Nähe allein reicht nicht: fremder Name und Betreiber verhindern die Zuord
 
 test('eine hinterlegte POI-ID schlägt jede Heuristik', () => {
   const eintrag = { ...entries[0], tomtomPoiID: 'poi-3', latitude: 0, longitude: 0 };
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   const treffer = editorial.match(stations.find((s) => s.id === 'poi-3'), [eintrag]);
   assert.equal(treffer?.tomtomPoiID, 'poi-3');
 });
 
 test('Anreicherung liefert für jede Station einen Datensatz', () => {
-  const stations = ev.parseAlongRouteResponse(fixture('alongroute-response.json'));
+  const stations = alleTreffer();
   const annotated = editorial.annotate(stations, entries);
   assert.equal(annotated.length, stations.length);
   assert.equal(annotated.filter((a) => a.editorial).length, 2);
@@ -431,7 +454,13 @@ test('lange Route wird in mehrere Anfragen zerlegt und dedupliziert', async () =
     return { ok: true, json: async () => fixture('alongroute-response.json') };
   };
 
-  const result = await ev.searchAlongRoute('KEY', route, { sleepImpl: noSleep }, mockFetch);
+  // Ohne Leistungsfilter: Gegenstand des Tests ist das Zusammenfuehren.
+  const result = await ev.searchAlongRoute(
+    'KEY',
+    route,
+    { sleepImpl: noSleep, minPowerKW: 0 },
+    mockFetch
+  );
   assert.equal(calls, result.segmentCount);
   assert.ok(result.segmentCount >= 2, `nur ${result.segmentCount} Abschnitt(e)`);
   assert.equal(result.stations.length, 5, 'Dubletten wurden nicht zusammengeführt');
@@ -839,7 +868,7 @@ test('Treffer aus mehreren Umkreisen werden zusammengeführt', async () => {
   const result = await ev.searchAroundRoute(
     'KEY',
     route,
-    { sleepImpl: noSleep },
+    { sleepImpl: noSleep, minPowerKW: 0 },
     mockFetch
   );
 

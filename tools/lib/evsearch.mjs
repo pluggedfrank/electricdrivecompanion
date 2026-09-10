@@ -8,17 +8,25 @@ export const BASE_URL = 'https://api.tomtom.com';
 export const EV_STATION_CATEGORY = '7309';
 
 /**
- * Ladeleistungsstufen.
+ * Ladeleistungsstufen. Spiegelt PowerTier in TomTomAPIClient.swift.
  *
  * Auf der Langstrecke ist alles unter 50 kW ohne Belang: Wer 300 km vor sich
  * hat, laedt nicht an einer 22-kW-AC-Saeule. Da eine Antwort nur 20 Treffer
  * fasst, verdraengen langsame Saeulen sonst die brauchbaren.
+ *
+ * Die Vorgabe liegt bei 150 und nicht bei 50: Eine 50-kW-Saeule faehrt heute
+ * niemand mehr gezielt an, das ist eine Notloesung, wenn sonst nichts in
+ * Reichweite steht. Waehlbar bleibt sie.
  */
 export const POWER_TIERS = {
   alle: 0,
-  schnell: 50,
-  hpc: 150,
+  notloesung: 50,
+  schnell: 150,
+  hpc: 300,
 };
+
+/** Was gilt, wenn nichts gewaehlt wurde. */
+export const DEFAULT_POWER_TIER = POWER_TIERS.schnell;
 
 // TomTom deckelt die Anfragen pro Sekunde. Wird zu schnell gefeuert, kommt
 // HTTP 401 mit "missing valid authentication credentials" zurueck, obwohl der
@@ -77,7 +85,7 @@ export const DEFAULT_OPTIONS = {
   // vor sich hat, laedt nicht an einer 22-kW-AC-Saeule, und da eine Antwort nur
   // 20 Treffer fasst, verdraengen langsame Saeulen sonst die brauchbaren.
   // 0 oder null schaltet den Filter ab.
-  minPowerKW: POWER_TIERS.schnell,
+  minPowerKW: DEFAULT_POWER_TIER,
   // Die Leistung zusaetzlich an den Daten pruefen, statt dem Server zu trauen.
   // Nach der Erfahrung mit categorySet ist das keine Paranoia.
   enforceMinPowerLocally: true,

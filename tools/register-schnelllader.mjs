@@ -17,7 +17,7 @@
 // Bewertet wird der Ort.
 
 import { existsSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import * as bnetza from './lib/bnetza.mjs';
@@ -142,7 +142,7 @@ function main() {
 
   if (args.export) {
     const ziel = resolve(String(args.export));
-    const daten = standorte.map((s) => ({
+    const eintraege = standorte.map((s) => ({
       lat: Number(s.lat.toFixed(6)),
       lon: Number(s.lon.toFixed(6)),
       operator: s.operator,
@@ -154,15 +154,34 @@ function main() {
       city: s.city,
       state: s.state,
     }));
+    // Kopfdaten statt nackter Liste, und zwar nicht aus Ordnungsliebe: Die
+    // Lizenz verlangt Namensnennung. Steht sie in der Datei, wandert sie mit,
+    // wenn die Daten irgendwann auf einer Webseite landen.
+    const daten = {
+      quelle: 'Ladesaeulenregister der Bundesnetzagentur',
+      lizenz: 'CC BY 4.0',
+      namensnennung: 'Bundesnetzagentur.de',
+      registerdatei: basename(pfad),
+      erzeugtAm: new Date().toISOString().slice(0, 10),
+      leistungAbKW: gewaehlt,
+      standortRadiusM: DEFAULT_SITE_RADIUS_M,
+      anzahl: eintraege.length,
+      standorte: eintraege,
+    };
+
     writeFileSync(ziel, JSON.stringify(daten, null, 2) + '\n', 'utf8');
     heading('5. Erfassungsbogen geschrieben');
-    console.log(`${zahl(daten.length)} Standorte nach ${ziel}`);
+    console.log(`${zahl(eintraege.length)} Standorte ab ${gewaehlt} kW nach ${ziel}`);
     console.log(
       dim(
         'Ohne Kennungen. Die vergibt der Datenspeicher, sobald er steht; ein\n' +
           'spaeteres Register wird ueber die Naehe zugeordnet, nicht ueber eine\n' +
           'Kennung aus dieser Datei.'
       )
+    );
+    console.log(
+      dim('Lizenz CC BY 4.0. Wo die Daten oeffentlich stehen, gehoert die\n' +
+        'Namensnennung "Bundesnetzagentur.de" sichtbar dazu.')
     );
   } else {
     console.log('');
