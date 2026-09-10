@@ -14,11 +14,14 @@ final class TripViewModel: ObservableObject {
     init(
         apiKey: String,
         editorialStore: EditorialStore = .loadBundled(),
-        vehicleStore: VehicleProfileStore = VehicleProfileStore()
+        // nil und nicht VehicleProfileStore(): Ein Vorgabewert im
+        // Parameterkopf wird außerhalb des Actors ausgewertet, und der Speicher
+        // ist @MainActor. Angelegt wird er deshalb hier drinnen.
+        vehicleStore: VehicleProfileStore? = nil
     ) {
         self.apiKey = apiKey
         self.editorialStore = editorialStore
-        self.vehicleStore = vehicleStore
+        self.vehicleStore = vehicleStore ?? VehicleProfileStore()
         api = TomTomAPIClient(apiKey: apiKey)
         routePlanner = RoutePlannerService(apiKey: apiKey)
 

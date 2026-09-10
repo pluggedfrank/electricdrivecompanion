@@ -103,14 +103,6 @@ jobs:
 
           exit $fehler
 
-      - name: Fehler und Warnungen zusammenfassen
-        if: always()
-        run: |
-          echo "### Compiler-Meldungen" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          grep -E "(error|warning):" build.log | sort -u | head -60 >> "$GITHUB_STEP_SUMMARY" || echo "keine" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
       - name: Build-Protokoll aufbewahren
         if: always()
         uses: actions/upload-artifact@v4
@@ -118,3 +110,17 @@ jobs:
           name: build-log
           path: build.log
           retention-days: 7
+
+      - name: Fehler und Warnungen zusammenfassen
+        if: always()
+        run: |
+          # Auch auf die Standardausgabe, nicht nur in die Zusammenfassung.
+          # Im Protokoll stehen die Meldungen sonst mitten zwischen tausend
+          # Zeilen Compilerbuchhaltung, und wer das Protokoll von hinten liest,
+          # findet nur den Artefakt-Upload.
+          {
+            echo "### Compiler-Meldungen"
+            echo '```'
+            grep -E "(error|warning):" build.log | sort -u | head -60 || echo "keine"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
