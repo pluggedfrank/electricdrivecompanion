@@ -23,7 +23,13 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --still) STILL=1; shift ;;
     --einrichten) EINRICHTEN=1; shift ;;
-    --*) echo "Unbekanntes Argument: $1" >&2; exit 1 ;;
+    # Ein unbekannter Schalter bricht nicht ab, sondern wird gemeldet und
+    # uebergangen. Grund: Die Argumentpruefung laeuft vor dem Holen. Eine
+    # Fassung, die einen neuen Schalter nicht kennt, wuerde sonst aussteigen,
+    # bevor sie die Fassung holt, die ihn kennt. Genau das ist passiert, als
+    # "lade node ..." auf ein Skript traf, das noch keine Befehle annahm: Es
+    # brach ab und holte deshalb nie die Fassung, die es gekonnt haette.
+    --*) echo "Schalter $1 unbekannt, wird uebergangen." >&2; shift ;;
     # Alles ohne Strich davor ist ein Befehl, der im Projektverzeichnis
     # laufen soll. Grund: Die Werkzeuge liegen unter tools/ und wollen von der
     # Wurzel aus gestartet werden. Wer sie von anderswo aufruft, bekommt
