@@ -3,6 +3,7 @@
 # Holt den neuen Stand und richtet das Xcode-Projekt nach, wenn noetig.
 #
 #   ./aktualisieren.sh              einmal holen
+#   lade node tools/matrix-probe.mjs   holen, dann den Befehl hier ausfuehren
 #   ./aktualisieren.sh --einrichten Abkuerzung "lade" und Automatik einrichten
 #   ./aktualisieren.sh --still      ohne Ausgabe, fuer die Automatik
 #
@@ -18,15 +19,28 @@ cd "$VERZEICHNIS"
 
 STILL=0
 EINRICHTEN=0
-for arg in "$@"; do
-  case "$arg" in
-    --still) STILL=1 ;;
-    --einrichten) EINRICHTEN=1 ;;
-    *) echo "Unbekanntes Argument: $arg" >&2; exit 1 ;;
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --still) STILL=1; shift ;;
+    --einrichten) EINRICHTEN=1; shift ;;
+    --*) echo "Unbekanntes Argument: $1" >&2; exit 1 ;;
+    # Alles ohne Strich davor ist ein Befehl, der im Projektverzeichnis
+    # laufen soll. Grund: Die Werkzeuge liegen unter tools/ und wollen von der
+    # Wurzel aus gestartet werden. Wer sie von anderswo aufruft, bekommt
+    # "Cannot find module", und das ist hier schon passiert.
+    *) break ;;
   esac
 done
 
 sage() { [ "$STILL" -eq 1 ] || echo "$@"; }
+
+# Am Ende jedes Weges: den mitgegebenen Befehl im Projektverzeichnis ausfuehren.
+fertig() {
+  if [ $# -gt 0 ]; then
+    exec "$@"
+  fi
+  exit 0
+}
 
 # --- Einrichten --------------------------------------------------------
 
@@ -147,7 +161,7 @@ if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
     if [ "$STILL" -eq 1 ]; then
       osascript -e "display notification \"$ANZAHL neue Commits. Nach dem Build noch einmal lade tippen.\" with title \"LadeRoute\"" 2>/dev/null || true
     fi
-    exit 0
+    fertig "$@"
   fi
 
   if command -v xcodegen > /dev/null 2>&1; then
@@ -164,3 +178,5 @@ fi
 if [ "$STILL" -eq 1 ] && [ "$NICHTS_GEHOLT" -eq 0 ]; then
   osascript -e "display notification \"$ANZAHL neue Commits geholt.\" with title \"LadeRoute\"" 2>/dev/null || true
 fi
+
+fertig "$@"

@@ -48,6 +48,16 @@ Entschieden wird über die Zeitstempel und nicht darüber, was der Abgleich gera
 geholt hat. Das heilt sich selbst: Fiel eine Erzeugung einmal aus, weil gerade
 gebaut wurde, holt der nächste Lauf sie nach.
 
+`lade` nimmt außerdem einen Befehl entgegen und führt ihn im Projektverzeichnis
+aus, egal wo man gerade steht:
+
+```
+lade node tools/matrix-probe.mjs --gross
+```
+
+Die Werkzeuge liegen unter `tools/` und wollen von der Wurzel aus gestartet
+werden. Wer sie von anderswo aufruft, bekommt `Cannot find module`.
+
 Dieselbe Einrichtung legt einen Hintergrunddienst an, der alle zehn Minuten
 nachsieht und sich meldet, wenn etwas Neues da war. Läuft gerade ein Build, wird
 das Projekt nicht neu erzeugt: XcodeGen schreibt die `.xcodeproj` neu, und das
