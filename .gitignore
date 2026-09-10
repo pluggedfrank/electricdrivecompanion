@@ -13,3 +13,6 @@ DerivedData/
 # Node-Werkzeuge
 tools/node_modules/
 tools/.probe-cache/
+
+# Von xcodebuild in der CI erzeugt.
+build/

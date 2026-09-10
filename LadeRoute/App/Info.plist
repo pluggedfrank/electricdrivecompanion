@@ -2,19 +2,32 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Die Pflichtangaben eines Bundles. Ohne CFBundleIdentifier laesst sich
+	     die App uebersetzen, aber nicht installieren; der Simulator antwortet
+	     dann mit "Missing Bundle ID". Die Werte kommen aus den
+	     Build-Einstellungen, damit project.yml die einzige Quelle bleibt. -->
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>de_DE</string>
+	<string>de</string>
 	<key>CFBundleDisplayName</key>
 	<string>LadeRoute</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Leeres Woerterbuch heisst: Standard-Startbildschirm. Vorher stand hier
+	     ein UIColorName ohne Wert, was keine Farbe benennt. -->
 	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIColorName</key>
-		<string></string>
-	</dict>
+	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

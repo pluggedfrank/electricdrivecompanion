@@ -62,8 +62,46 @@ jobs:
             -scheme LadeRoute \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | tee build.log
+
+      - name: Fertige App prüfen
+        # Uebersetzen ist nicht dasselbe wie installieren. Die Info.plist hatte
+        # keinen CFBundleIdentifier: Der Build lief gruen durch, der Simulator
+        # verweigerte die Installation mit "Missing Bundle ID". Ein Blick in das
+        # fertige Bundle faengt genau das ab.
+        run: |
+          set -e
+          APP=$(find build/Build/Products -maxdepth 2 -name '*.app' -type d | head -1)
+          if [ -z "$APP" ]; then
+            echo "Kein .app-Bundle gebaut." >&2
+            exit 1
+          fi
+          echo "Bundle: $APP"
+          PLIST="$APP/Info.plist"
+
+          lies() { /usr/libexec/PlistBuddy -c "Print :$1" "$PLIST" 2>/dev/null || true; }
+
+          fehler=0
+          for schluessel in CFBundleIdentifier CFBundleExecutable CFBundleName CFBundleVersion; do
+            wert=$(lies "$schluessel")
+            echo "  $schluessel = ${wert:-(fehlt)}"
+            if [ -z "$wert" ]; then
+              echo "    fehlt, die App liesse sich nicht installieren" >&2
+              fehler=1
+            fi
+            case "$wert" in
+              *'$('*) echo "    nicht ersetzt, Build-Einstellung fehlt" >&2; fehler=1 ;;
+            esac
+          done
+
+          if [ "$(lies CFBundleIdentifier)" != "de.plugged.laderoute" ]; then
+            echo "  Unerwartete Bundle-Kennung." >&2
+            fehler=1
+          fi
+
+          exit $fehler
 
       - name: Fehler und Warnungen zusammenfassen
         if: always()
