@@ -171,6 +171,34 @@ Der lange Druck auf die Karte bleibt als zweiter Weg für Orte ohne Namen. Als
 einziger Weg war er nie brauchbar: Die Karte zoomt auf den eigenen Standort, ein
 Ziel dreihundert Kilometer weiter liegt außerhalb des Bildes.
 
+## Was der Schlüssel darf
+
+Stand 10.09.2026, aus dem Selbstbedienungskatalog des Dashboards.
+
+| Freigeschaltet | Wofür wir es brauchen |
+|---|---|
+| Map Display | Karte |
+| Search | Ladestationen und die Zielsuche |
+| Routing | Route und Manöver für die Ansage |
+| EV Charging Stations Availability | Belegung der Ladepunkte |
+| **Reachable Range** | Wie weit kommt das Fahrzeug. Noch ungenutzt |
+| Traffic, Traffic Flow, Traffic Incidents, Maps Assets | Verkehr auf der Karte |
+
+Nicht angehakt, aber im Katalog und damit jederzeit zu holen:
+
+| Offen | Wofür es später taugt |
+|---|---|
+| **Extended Routing** | Vermutlich das Zuhause von Long Distance EV Routing |
+| **Snap to Roads** | Position auf die Straße legen, gegen das Zittern bei der Ansage |
+| Geocoding, Reverse Geocoding | Adressen. Die Suche deckt das bisher ab |
+| Waypoint Optimization | Reihenfolge mehrerer Ziele. Erst bei Mehrtagesrouten |
+| Matrix Routing | Viele Strecken auf einmal. Für Auswertungen, nicht fürs Fahren |
+
+**Reachable Range ist der wichtigste Fund.** Der Dienst beantwortet als Fläche,
+wie weit das Fahrzeug mit dem aktuellen Ladestand kommt. Damit lässt sich die
+Stationssuche auf den Abschnitt begrenzen, der überhaupt erreichbar ist, statt
+die ganze Strecke abzugrasen, und er ist bereits freigeschaltet.
+
 ## Wie die Ladestopps in die Route kommen
 
 Der Prototyp sucht die Ladestationen für die ganze Strecke auf einmal: 49
@@ -192,6 +220,16 @@ Route geändert.
 Voraussetzung für beides ist ein **Fahrzeugprofil**: Akkukapazität, Verbrauch,
 aktueller Ladestand. Ohne das plant die EV-Route falsch, und ohne das lässt sich
 auch keine Reichweite bestimmen. Für v1 genügt ein von Hand gepflegtes Profil.
+
+**Falls der Dienst verschlossen bleibt**, planen wir die Stopps selbst. Nichts
+davon fehlt uns: die Route mit Stützpunkten, jede Station mit ihrer Lage
+entlang der Strecke, Leistung und Umweg, dazu Kapazität, Verbrauch und
+Ladekurve. Man läuft die Route entlang, rechnet den Ladestand mit und wählt vor
+dem Unterschreiten der Reserve den besten erreichbaren Halt. Reachable Range
+liefert die Gegenprobe.
+
+Für ein Magazin ist eigene Logik ohnehin eher ein Vorteil als ein Notbehelf:
+Warum genau dieser Stopp vorgeschlagen wird, lässt sich dann erklären.
 
 ## Der Weg zur Ansage
 
@@ -283,11 +321,11 @@ Stelle, das Matching bleibt unberührt.
 - [ ] Trägt die selbst gebaute Ansage im Alltag? Das entscheidet eine Fahrt,
       keine Überlegung. Größter technischer Brocken von v1.
 - [ ] Was kostet das Navigation SDK, und was geht über die Presseschiene?
-- [ ] **Long Distance EV Routing ist für den Schlüssel gesperrt.** Alle vier
-      Bauformen des Probelaufs bekommen HTTP 403, "You are not allowed to
-      access this endpoint". Im Dashboard unter Products nachtragen; bleibt es
-      dabei, planen wir die Ladestopps selbst aus Fahrzeugprofil und
-      Stationsliste. Die Daten dafür liegen alle vor.
+- [ ] **Long Distance EV Routing steht nicht zur Selbstbedienung.** Der
+      Probelauf bekommt HTTP 403 auf alle vier Bauformen, und im Katalog der
+      selbst freischaltbaren APIs taucht der Dienst nicht auf. Am ehesten
+      verbirgt er sich hinter "Extended Routing API", das noch nicht
+      angehakt ist. Sonst gehört er zur Presseanfrage.
 - [ ] Deckt das Freemium-Kontingent eine Fahrt mit Neuberechnungen? Non-Tile
       liegt bei 2.500 Anfragen am Tag, eine Fahrt braucht davon wenige Dutzend.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.

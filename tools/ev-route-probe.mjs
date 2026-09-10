@@ -230,6 +230,70 @@ function zeigeRoute(json) {
   });
 }
 
+/**
+ * Prueft die Reichweiten-API.
+ *
+ * Sie steht im Selbstbedienungskatalog und ist fuer den Schluessel bereits
+ * freigeschaltet. Sie beantwortet genau die Frage, wie weit das Fahrzeug mit
+ * dem aktuellen Ladestand kommt, und liefert die Antwort als Flaeche. Damit
+ * laesst sich die Suche nach Ladestationen auf den Abschnitt begrenzen, der
+ * ueberhaupt erreichbar ist, statt die ganze Strecke abzugrasen.
+ */
+async function reichweite(apiKey, from) {
+  const f = FAHRZEUG;
+  const budget = (f.usableBatteryKWh * (f.currentChargePercent - f.minArrivalPercent)) / 100;
+
+  const url = new URL(
+    `${ev.BASE_URL}/routing/1/calculateReachableRange/${from.lat},${from.lon}/json`
+  );
+  url.searchParams.set('key', apiKey);
+  url.searchParams.set('vehicleEngineType', 'electric');
+  url.searchParams.set('energyBudgetInkWh', String(budget.toFixed(2)));
+  url.searchParams.set(
+    'constantSpeedConsumptionInkWhPerHundredkm',
+    verbrauchstabelle(f.consumptionKWhPer100km)
+  );
+
+  const antwort = await fetch(url);
+  const text = await antwort.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // Rohtext ist dann die Auskunft.
+  }
+  return { status: antwort.status, json, text, budget };
+}
+
+function zeigeReichweite(json, from, budget) {
+  const grenze = json?.reachableRange?.boundary;
+  if (!Array.isArray(grenze) || grenze.length === 0) {
+    console.log(red('  Antwort ohne Grenzlinie.'));
+    return;
+  }
+
+  // Wie weit reicht es? Groesster Abstand vom Startpunkt, grob ueber die
+  // Kugeloberflaeche.
+  const R = 6371000;
+  const rad = (g) => (g * Math.PI) / 180;
+  let weiteste = 0;
+  for (const punkt of grenze) {
+    const dLat = rad(punkt.latitude - from.lat);
+    const dLon = rad(punkt.longitude - from.lon);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(from.lat)) * Math.cos(rad(punkt.latitude)) * Math.sin(dLon / 2) ** 2;
+    const d = 2 * R * Math.asin(Math.sqrt(a));
+    if (d > weiteste) weiteste = d;
+  }
+
+  console.log(
+    `  ${bold(`${Math.round(weiteste / 1000)} km`)} in der weitesten Richtung, ` +
+      `mit ${budget.toFixed(1)} kWh Budget`
+  );
+  console.log(dim(`  Grenzlinie aus ${grenze.length} Punkten`));
+}
+
 async function main() {
   const args = parseArgs(process.argv);
   const from = parseCoordinate(args.from ?? VORGABE.from, '--from');
@@ -285,6 +349,30 @@ async function main() {
     }
   }
 
+  // --- Reichweite ------------------------------------------------------
+
+  console.log(`\n${bold('5. Reichweite (calculateReachableRange)')}`);
+  console.log(dim('   Steht im Selbstbedienungskatalog. Wie weit kommt das Fahrzeug?'));
+  await new Promise((r) => setTimeout(r, ev.MIN_REQUEST_INTERVAL_MS));
+
+  try {
+    const { status, json, text, budget } = await reichweite(apiKey, from);
+    if (status >= 200 && status < 300) {
+      console.log(green(`  HTTP ${status}`));
+      zeigeReichweite(json, from, budget);
+      console.log(
+        dim('  Damit laesst sich die Stationssuche auf das Erreichbare begrenzen.')
+      );
+    } else {
+      console.log(red(`  HTTP ${status}`));
+      console.log(
+        `  ${json?.error?.description ?? json?.detailedError?.message ?? text.slice(0, 300)}`
+      );
+    }
+  } catch (fehler) {
+    console.log(red(`  Anfrage fehlgeschlagen: ${fehler.message}`));
+  }
+
   console.log('');
   if (erfolgreich === 0) {
     console.log(
@@ -293,8 +381,11 @@ async function main() {
     );
     console.log(
       dim(
-        'Bei 403 ist der Endpunkt fuer den Schluessel nicht freigeschaltet:\n' +
-          'im Dashboard unter Products nachtragen.'
+        'Bei 403 ist der Endpunkt fuer den Schluessel nicht freigeschaltet.\n' +
+          'Long Distance EV Routing steht nicht im Selbstbedienungskatalog;\n' +
+          'am ehesten verbirgt es sich hinter "Extended Routing API". Steht es\n' +
+          'auch danach nicht zur Verfuegung, planen wir die Ladestopps selbst,\n' +
+          'aus Fahrzeugprofil, Reichweite und Stationsliste.'
       )
     );
   } else {
