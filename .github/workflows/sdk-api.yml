@@ -1,0 +1,87 @@
+# SDK-API nachschlagen.
+#
+# Die Dokumentation des TomTom SDK steht online, der Code hier entsteht ohne
+# Zugriff darauf. Geratene Methodennamen haben schon drei Compilerfehler
+# gekostet. tools/dump-sdk-api.sh loest das auf einem Mac; dieser Workflow loest
+# es auf dem Laeufer, damit niemand Ausgaben von Hand herueberreichen muss.
+#
+# Von Hand starten: Actions -> SDK-API -> Run workflow, Suchbegriff eintragen.
+#
+# Es wird nur aufgeloest, nicht gebaut. Das dauert einen Bruchteil.
+
+name: SDK-API
+
+on:
+  workflow_dispatch:
+    inputs:
+      suche:
+        description: "Suchbegriff, etwa Zoom, Camera, Marker"
+        required: true
+        default: "Camera"
+      modul:
+        description: "Modul, etwa TomTomSDKMapDisplay"
+        required: false
+        default: "TomTomSDKMapDisplay"
+
+jobs:
+  nachschlagen:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: XcodeGen installieren
+        run: brew install xcodegen
+
+      - name: Schlüsseldatei mit Platzhalter anlegen
+        run: sed 's|YOUR_API_KEY|CIPLACEHOLDERKEY0000000000000000|' Secrets.xcconfig.example > Secrets.xcconfig
+
+      - name: Projekt erzeugen
+        run: xcodegen generate
+
+      - name: Pakete auflösen
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project LadeRoute.xcodeproj \
+            -clonedSourcePackagesDirPath SourcePackages
+
+      - name: Nachschlagen
+        env:
+          SUCHE: ${{ inputs.suche }}
+          MODUL: ${{ inputs.modul }}
+        run: |
+          set -o pipefail
+          echo "Suche nach \"$SUCHE\" in $MODUL"
+
+          DATEIEN=$(find SourcePackages -path "*$MODUL*" -name '*.swiftinterface' 2>/dev/null | head -4)
+          if [ -z "$DATEIEN" ]; then
+            echo "Kein .swiftinterface gefunden. Was liegt da:"
+            find SourcePackages -path "*$MODUL*" -maxdepth 8 2>/dev/null | head -30
+            exit 1
+          fi
+
+          {
+            echo "### $MODUL, Deklarationen mit \"$SUCHE\""
+            echo '```swift'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for datei in $DATEIEN; do
+            echo "--- $datei"
+            grep -nE "(func|var|let|struct|enum|class|case|init|protocol)[^{]*$SUCHE" "$datei" |
+              sed 's/^[[:space:]]*//' | sort -u | head -80 | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Interface-Dateien aufbewahren
+        if: always()
+        run: |
+          mkdir -p interfaces
+          find SourcePackages -name '*.swiftinterface' -exec cp {} interfaces/ \; 2>/dev/null || true
+          ls -la interfaces | head -40
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swiftinterfaces
+          path: interfaces/
+          retention-days: 7
