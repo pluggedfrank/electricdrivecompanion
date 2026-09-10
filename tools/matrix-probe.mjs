@@ -60,34 +60,60 @@ function parseArgs(argv) {
  */
 function varianten(apiKey) {
   const punkt = (p) => ({ point: { latitude: p.lat, longitude: p.lon } });
+  const nackt = (p) => ({ latitude: p.lat, longitude: p.lon });
+
+  // Der erste Lauf hat die Tuer gefunden: Mit routeType und travelMode in der
+  // URL kam 403, ohne sie 400. Ein 400 heisst, die Anfrage wird geprueft statt
+  // abgewiesen; gestritten wird nur noch ueber die Form. Alle Varianten laufen
+  // deshalb ueber dieselbe URL mit nichts als dem Schluessel.
+  const url = `${ev.BASE_URL}/routing/matrix/2?key=${apiKey}`;
 
   return [
     {
-      name: 'v2, origins und destinations mit point',
-      url: `${ev.BASE_URL}/routing/matrix/2?key=${apiKey}&routeType=fastest&travelMode=car`,
+      name: 'Punkte in point, ohne options',
+      url,
+      body: { origins: AUF_ROUTE.map(punkt), destinations: ABSEITS.map(punkt) },
+    },
+    {
+      name: 'Punkte in point, options ohne traffic',
+      url,
       body: {
         origins: AUF_ROUTE.map(punkt),
         destinations: ABSEITS.map(punkt),
+        options: { routeType: 'fastest', travelMode: 'car' },
       },
     },
     {
-      name: 'v2, mit options fuer die Ausgabe',
-      url: `${ev.BASE_URL}/routing/matrix/2?key=${apiKey}`,
+      name: 'Punkte direkt, ohne point',
+      url,
+      body: { origins: AUF_ROUTE.map(nackt), destinations: ABSEITS.map(nackt) },
+    },
+    {
+      name: 'Punkte als GeoJSON-Reihenfolge, lon dann lat',
+      url,
       body: {
-        origins: AUF_ROUTE.map(punkt),
-        destinations: ABSEITS.map(punkt),
-        options: { routeType: 'fastest', travelMode: 'car', traffic: 'live' },
+        origins: AUF_ROUTE.map((p) => ({ point: { longitude: p.lon, latitude: p.lat } })),
+        destinations: ABSEITS.map((p) => ({ point: { longitude: p.lon, latitude: p.lat } })),
       },
     },
     {
-      name: 'v1 synchron',
-      url:
-        `${ev.BASE_URL}/routing/matrix/1/json?key=${apiKey}` +
-        '&routeType=fastest&travelMode=car',
+      name: 'mit departAt now',
+      url,
       body: {
         origins: AUF_ROUTE.map(punkt),
         destinations: ABSEITS.map(punkt),
+        options: { departAt: 'now', travelMode: 'car', routeType: 'fastest' },
       },
+    },
+    {
+      name: 'asynchron',
+      url: `${ev.BASE_URL}/routing/matrix/2/async?key=${apiKey}`,
+      body: { origins: AUF_ROUTE.map(punkt), destinations: ABSEITS.map(punkt) },
+    },
+    {
+      name: 'Orbis-Fassung',
+      url: `${ev.BASE_URL}/maps/orbis/routing/matrix/2?key=${apiKey}&apiVersion=2`,
+      body: { origins: AUF_ROUTE.map(punkt), destinations: ABSEITS.map(punkt) },
     },
   ];
 }
@@ -165,12 +191,10 @@ async function main() {
         if (!gelungen) gelungen = variante;
       } else {
         console.log(red(`  HTTP ${status}`));
-        const meldung =
-          json?.error?.description ??
-          json?.detailedError?.message ??
-          json?.message ??
-          text.slice(0, 300);
-        console.log(`  ${meldung}`);
+        // Die ganze Antwort, nicht die eine Zeile, die ich fuer die richtige
+        // hielt. Beim ersten Lauf stand da nur "Bad Request", und die
+        // Begruendung, die daneben lag, blieb ungesehen.
+        console.log(dim('  ' + text.slice(0, 700).replace(/\n/g, '\n  ')));
       }
     } catch (fehler) {
       console.log(red(`  Anfrage fehlgeschlagen: ${fehler.message}`));
