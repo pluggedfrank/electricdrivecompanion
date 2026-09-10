@@ -203,7 +203,7 @@ Nicht angehakt, aber im Katalog und damit jederzeit zu holen:
 | **Snap to Roads** | Position auf die Straße legen, gegen das Zittern bei der Ansage |
 | Geocoding, Reverse Geocoding | Adressen. Die Suche deckt das bisher ab |
 | Waypoint Optimization | Reihenfolge mehrerer Ziele. Erst bei Mehrtagesrouten |
-| Matrix Routing | Viele Strecken auf einmal. Für Auswertungen, nicht fürs Fahren |
+| Matrix Routing | Viele Strecken auf einmal. Rechnet die Umwege, die die Umkreissuche nicht mitliefert |
 
 **Reachable Range ist der wichtigste Fund.** Der Dienst beantwortet als Fläche,
 wie weit das Fahrzeug mit dem aktuellen Ladestand kommt. Damit lässt sich die
@@ -257,17 +257,35 @@ einmal, und sie steht im Selbstbedienungskatalog.
 
 **Der Haken an einer Matrix:** Sie rechnet das Kreuzprodukt. Zweihundert
 Stationen einzeln gegen ihren jeweiligen Ausfahrtspunkt wären 200 mal 200
-Zellen, um 200 Werte zu bekommen. Der Ausweg ist ein grobes Raster:
+Zellen, um 200 Werte zu bekommen. Und die API nimmt ohnehin nur 200 Zellen je
+Anfrage (gemessen: 200 gehen durch, 300 nicht). Der Ausweg ist ein grobes
+Raster:
 
-1. Auf der Route alle 15 km einen Stützpunkt setzen. Bei 527 km sind das 35.
-2. Eine Matrix Stützpunkte gegen Stationen, eine zweite Stationen gegen
-   Stützpunkte. Je 35 mal 200 gleich 7.000 Zellen.
-3. Für jede Station den Stützpunkt davor und den dahinter nehmen:
-   `Umweg = t(davor → Station) + t(Station → danach) − t(davor → danach)`.
-   Die letzte Zeit steckt schon in der Route und kostet nichts.
+1. Auf der Route alle 50 km einen Stützpunkt setzen. Bei 321 km sind das 8.
+2. Für jede Station den Stützpunkt davor und den dahinter bestimmen.
+3. Drei Matrizen: Stützpunkte gegen Stationen, Stationen gegen Stützpunkte,
+   und Stützpunkt gegen den nächsten Stützpunkt. Die Stationen werden dafür
+   in Blöcke unter 200 Zellen geteilt; weil sie entlang der Route sortiert
+   sind, teilen sich Nachbarn ihre Stützpunkte, und die Blöcke werden groß.
+4. `Umweg = t(davor → Station) + t(Station → danach) − t(davor → danach)`.
 
-Zwei Anfragen statt zweihundert. Wo TomTom den Umweg schon mitgeliefert hat,
-bleibt sein Wert stehen; gerechnet wird nur, was fehlt.
+Für 104 Stationen auf 321 km sind das fünf Anfragen. Wo TomTom den Umweg schon
+mitgeliefert hat, bleibt sein Wert stehen; gerechnet wird nur, was fehlt, und
+nur bis 5 km neben der Route, dem Anschlag des Abstandsreglers.
+
+**Die dritte Matrix ist Pflicht, das war eine Lehre.** Die erste Fassung nahm
+die Zeit von Stützpunkt zu Stützpunkt anteilig aus der Gesamtfahrzeit der
+Route, mit der Begründung, der Fehler hebe sich zwischen Hin- und Rückweg auf.
+Er hebt sich nicht auf. 321 km in 182 min sind rechnerisch 106 km/h überall,
+auch auf den ersten 50 km durch Düsseldorf; der Abschnitt geriet um zwölf
+Minuten zu kurz, und genau die zwölf Minuten standen dann als Umweg an jeder
+Station darin. Alle drei Zeiten müssen aus derselben Rechnung kommen, sonst
+misst die Differenz vor allem den Unterschied der Quellen.
+
+Der Probelauf (`node tools/tomtom-probe.mjs --umwege=alle`) rechnet auch die
+Stationen nach, für die TomTom einen Umweg mitliefert, und zeigt die Abweichung.
+Das ist die Kontrolle, ohne jemanden fragen zu müssen. In der App steckt
+dasselbe Verfahren in `DetourMatrix.swift` und `DetourCalculator.swift`.
 
 **Das Format steht, gemessen am 10.09.2026.** Beide Domains der Dokumentation
 sind von der Entwicklungsumgebung aus gesperrt; `tools/matrix-probe.mjs` hat es
