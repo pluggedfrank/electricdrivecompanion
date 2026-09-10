@@ -59,35 +59,70 @@ struct StationListSheet: View {
     @ViewBuilder
     private var chargingPlanLine: some View {
         if let plan = trip.chargingPlan {
+            // Solange die Umkreissuche läuft, ist die Liste unvollständig, und
+            // eine Lücke darin ist womöglich gar keine. Ein rotes "geht nicht"
+            // wäre dann schlicht falsch: Genau das ist im Simulator passiert,
+            // bei 46 von 94 Stationen.
+            let vorläufig = trip.isWideningSearch && !plan.isFeasible
+
             HStack(alignment: .top, spacing: 7) {
-                Image(systemName: plan.isFeasible ? "bolt.batteryblock" : "exclamationmark.triangle")
+                Image(systemName: symbol(for: plan, vorläufig: vorläufig))
                     .font(.system(size: 12))
-                    .foregroundStyle(plan.isFeasible ? Theme.river : Theme.signal)
+                    .foregroundStyle(farbe(for: plan, vorläufig: vorläufig))
                     .padding(.top, 1)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(planHeadline(plan))
+                    Text(vorläufig ? "Noch keine durchgehende Ladeplanung" : planHeadline(plan))
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(plan.isFeasible ? Theme.ink2 : Theme.signal)
+                        .foregroundStyle(farbe(for: plan, vorläufig: vorläufig))
 
-                    if plan.isFeasible, !plan.stops.isEmpty {
+                    if vorläufig {
+                        Text("Die Umkreissuche läuft noch, es fehlen Stationen.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.meta)
+                    } else if plan.isFeasible, !plan.stops.isEmpty {
                         Text(planDetail(plan))
                             .font(.system(size: 11))
                             .foregroundStyle(Theme.meta)
                             .fixedSize(horizontal: false, vertical: true)
-                    } else if case let .gap(_, _, missing) = plan.problem {
-                        Text(
-                            "Zwischen zwei Stationen liegen \(Int((missing / 1000).rounded())) km "
-                                + "mehr, als der Akku hergibt. Mit einer niedrigeren Leistungsstufe "
-                                + "kämen mehr Säulen in Frage."
-                        )
-                        .font(.system(size: 11))
-                        .foregroundStyle(Theme.meta)
-                        .fixedSize(horizontal: false, vertical: true)
+                    } else if let text = problemDetail(plan) {
+                        Text(text)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.meta)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
             .padding(.vertical, 2)
+        }
+    }
+
+    private func symbol(for plan: ChargingPlan, vorläufig: Bool) -> String {
+        if vorläufig { return "hourglass" }
+        return plan.isFeasible ? "bolt.batteryblock" : "exclamationmark.triangle"
+    }
+
+    private func farbe(for plan: ChargingPlan, vorläufig: Bool) -> Color {
+        if vorläufig { return Theme.meta }
+        return plan.isFeasible ? Theme.ink2 : Theme.signal
+    }
+
+    /// Sagt, woran es liegt, und nennt die Stelle.
+    ///
+    /// "18 km zu viel" allein hilft niemandem. Wo die Lücke liegt, entscheidet
+    /// darüber, ob man den Filter lockert, das Fahrzeug voller lädt oder die
+    /// Route ändert.
+    private func problemDetail(_ plan: ChargingPlan) -> String? {
+        switch plan.problem {
+        case let .gap(from, to, missing):
+            return "Zwischen km \(Int(from / 1000)) und km \(Int(to / 1000)) liegen "
+                + "\(Int((missing / 1000).rounded())) km mehr, als der Akku hergibt. "
+                + "Mit dem Ladestand von dort reicht es \(Int((plan.rangeMeters / 1000).rounded())) km. "
+                + "Eine niedrigere Leistungsstufe bringt mehr Säulen in Frage."
+        case .noStations:
+            return "Auf dieser Strecke steht keine Station, die den Filter erfüllt."
+        case .noProgress, .none:
+            return nil
         }
     }
 
