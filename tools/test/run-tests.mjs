@@ -21,6 +21,7 @@ import * as corridor from '../lib/corridor.mjs';
 import * as sites from '../lib/sites.mjs';
 import * as redaktion from '../lib/redaktion.mjs';
 import * as ladeplanung from '../lib/ladeplanung.mjs';
+import * as matrix from '../lib/matrix.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -1466,4 +1467,97 @@ test('der Aufwand je Stopp zaehlt mit', () => {
   // Ohne diesen Posten sieht ein Stopp mit einer Minute Ladezeit fast gratis
   // aus. Fuenf Minuten sind Abfahren, Anstecken, Bezahlen, Wiederauffahren.
   assert.equal(ladeplanung.STOPP_AUFWAND_SEKUNDEN, 300);
+});
+
+// ------------------------------------------------------------- Matrix
+
+test('der Rumpf der Matrix-Anfrage hat die Punkte in point', () => {
+  // Die API weist alles andere namentlich zurueck: "Required key [point] not
+  // found". Gemessen am 10.09.2026, die Dokumentation war nicht erreichbar.
+  const body = matrix.buildMatrixBody(
+    [{ lat: 51.5, lon: 6.5 }],
+    [{ lat: 51.6, lon: 6.6 }, { lat: 51.7, lon: 6.7 }]
+  );
+  assert.deepEqual(body.origins, [{ point: { latitude: 51.5, longitude: 6.5 } }]);
+  assert.equal(body.destinations.length, 2);
+  assert.equal(body.destinations[1].point.latitude, 51.7);
+});
+
+test('die Antwort wird zur Tabelle, Luecken bleiben null', () => {
+  const json = {
+    data: [
+      { originIndex: 0, destinationIndex: 0, routeSummary: { travelTimeInSeconds: 249 } },
+      { originIndex: 0, destinationIndex: 2, routeSummary: { travelTimeInSeconds: 600 } },
+      { originIndex: 1, destinationIndex: 1, routeSummary: { travelTimeInSeconds: 120 } },
+      // Ausserhalb der angefragten Groesse. Kommt nicht vor, darf aber nicht
+      // in eine Zeile schreiben, die es nicht gibt.
+      { originIndex: 9, destinationIndex: 9, routeSummary: { travelTimeInSeconds: 1 } },
+    ],
+  };
+  const tabelle = matrix.parseMatrix(json, 2, 3);
+  assert.deepEqual(tabelle, [[249, null, 600], [null, 120, null]]);
+});
+
+test('Stuetzpunkte liegen im gewuenschten Abstand und tragen die Zeit', () => {
+  const route = syntheticRoute(MEERBUSCH, NORDDEICH, 400);
+  const stuetzen = matrix.stuetzpunkte(route, 4 * 3600, 50_000);
+
+  assert.ok(stuetzen.length >= 6, `nur ${stuetzen.length} Stuetzpunkte`);
+  assert.equal(stuetzen[0].progressMeters, 0);
+
+  for (let i = 1; i < stuetzen.length - 1; i++) {
+    const abstand = stuetzen[i].progressMeters - stuetzen[i - 1].progressMeters;
+    assert.ok(abstand >= 45_000 && abstand <= 60_000, `Abstand ${Math.round(abstand)} m`);
+    assert.ok(stuetzen[i].timeSeconds > stuetzen[i - 1].timeSeconds);
+  }
+});
+
+test('die Klammer findet den Stuetzpunkt davor und dahinter', () => {
+  const stuetzen = [
+    { progressMeters: 0 },
+    { progressMeters: 50_000 },
+    { progressMeters: 100_000 },
+    { progressMeters: 130_000 },
+  ];
+  assert.deepEqual(matrix.klammer(stuetzen, 0), { davor: 0, dahinter: 1 });
+  assert.deepEqual(matrix.klammer(stuetzen, 60_000), { davor: 1, dahinter: 2 });
+  assert.deepEqual(matrix.klammer(stuetzen, 100_000), { davor: 2, dahinter: 3 });
+  // Am Ende gibt es kein Dahinter mehr; dann zeigt beides auf den letzten.
+  assert.deepEqual(matrix.klammer(stuetzen, 129_000), { davor: 2, dahinter: 3 });
+  assert.deepEqual(matrix.klammer(stuetzen, 130_000), { davor: 3, dahinter: 3 });
+});
+
+test('die Bloecke bleiben unter der Zellengrenze', () => {
+  // 150 Stationen entlang der Route, alle 3 km eine, Stuetzpunkte alle 50 km.
+  const zuordnungen = Array.from({ length: 150 }, (_, i) => ({
+    id: `s${i}`,
+    stuetzIndex: Math.floor((i * 3000) / 50_000),
+  }));
+
+  const teile = matrix.bloecke(zuordnungen);
+
+  const summe = teile.reduce((n, t) => n + t.eintraege.length, 0);
+  assert.equal(summe, 150, 'keine Station darf verlorengehen');
+
+  for (const teil of teile) {
+    const zellen = teil.stuetzen.length * teil.eintraege.length;
+    assert.ok(zellen <= matrix.MAX_ZELLEN, `${zellen} Zellen in einem Block`);
+  }
+
+  // Und es sollen wenige Anfragen sein, sonst lohnt der ganze Aufwand nicht.
+  assert.ok(teile.length <= 6, `${teile.length} Anfragen für 150 Stationen`);
+});
+
+test('der Umweg ist die Differenz zur ohnehin gefahrenen Strecke', () => {
+  // Fünf Minuten hin, fünf zurück, vier hätte man ohnehin gebraucht.
+  assert.equal(matrix.umwegSekunden(300, 300, 240), 360);
+
+  // Findet die Matrix einen kürzeren Weg als die geplante Route, kommt
+  // rechnerisch ein Gewinn heraus. Das ist Rauschen, kein Umweg.
+  assert.equal(matrix.umwegSekunden(100, 100, 400), 0);
+
+  // Fehlende Zellen ergeben keinen Umweg, nicht null Sekunden. Der
+  // Unterschied entscheidet darüber, ob die App filtert oder durchlässt.
+  assert.equal(matrix.umwegSekunden(null, 300, 240), null);
+  assert.equal(matrix.umwegSekunden(300, null, 240), null);
 });
