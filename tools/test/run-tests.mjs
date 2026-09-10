@@ -1183,3 +1183,64 @@ test('Standorte tragen Bundesland und Anschrift fuer den Erfassungsbogen', () =>
   assert.equal(standort.maxPowerKW, 300, 'die staerkste Saeule bestimmt den Ort');
   assert.equal(standort.pointCount, 6);
 });
+
+// ------------------------------------------------------- Fahrzeugprofil
+
+/** Spiegelt VehicleProfile.consumptionTable in Swift. */
+function verbrauchstabelle(kWhPro100km) {
+  const stuetzstellen = [
+    [30, 0.62], [50, 0.68], [80, 0.83], [100, 1.0], [120, 1.24], [130, 1.38],
+  ];
+  return stuetzstellen
+    .map(([tempo, faktor]) => `${tempo},${(kWhPro100km * faktor).toFixed(2)}`)
+    .join(':');
+}
+
+test('die Verbrauchstabelle hat die Form, die die Routing-API erwartet', () => {
+  const tabelle = verbrauchstabelle(19);
+  assert.match(tabelle, /^(\d+,\d+\.\d\d:){5}\d+,\d+\.\d\d$/);
+
+  const paare = tabelle.split(':').map((p) => p.split(',').map(Number));
+  // Aufsteigend nach Geschwindigkeit, sonst weist die API sie zurueck.
+  for (let i = 1; i < paare.length; i++) {
+    assert.ok(paare[i][0] > paare[i - 1][0], 'Geschwindigkeit muss steigen');
+    assert.ok(paare[i][1] > paare[i - 1][1], 'Verbrauch steigt mit der Geschwindigkeit');
+  }
+  // Der angegebene Wert gilt bei 100 km/h.
+  assert.equal(paare.find((p) => p[0] === 100)[1], 19);
+});
+
+test('die Ladekurve steigt in der Zeit und in der Ladung', () => {
+  const kapazitaet = 77;
+  const spitze = 240;
+  const punkte = [[0.0, 1.0], [0.2, 1.0], [0.4, 0.92], [0.6, 0.7], [0.8, 0.45], [1.0, 0.15]];
+
+  let sekunden = 0;
+  let letzte = 0;
+  const kurve = punkte.map(([anteil, faktor], i) => {
+    const ladung = kapazitaet * anteil;
+    const leistung = Math.max(11, spitze * faktor);
+    if (i > 0) sekunden += ((ladung - letzte) / leistung) * 3600;
+    letzte = ladung;
+    return { chargeInkWh: ladung, timeToChargeInSeconds: sekunden };
+  });
+
+  for (let i = 1; i < kurve.length; i++) {
+    assert.ok(kurve[i].chargeInkWh > kurve[i - 1].chargeInkWh);
+    assert.ok(kurve[i].timeToChargeInSeconds > kurve[i - 1].timeToChargeInSeconds);
+  }
+  assert.equal(kurve[0].timeToChargeInSeconds, 0);
+
+  // Von leer auf voll darf nicht schneller gehen als mit der Spitzenleistung.
+  const schnellstens = (kapazitaet / spitze) * 3600;
+  const gesamt = kurve[kurve.length - 1].timeToChargeInSeconds;
+  assert.ok(gesamt > schnellstens, 'die fallende Kurve muss den Stopp verlaengern');
+
+  // Und die letzten zwanzig Prozent kosten mehr Zeit als die ersten zwanzig.
+  const ersteFuenftel = kurve[1].timeToChargeInSeconds - kurve[0].timeToChargeInSeconds;
+  const letzteFuenftel = kurve[5].timeToChargeInSeconds - kurve[4].timeToChargeInSeconds;
+  assert.ok(
+    letzteFuenftel > ersteFuenftel * 3,
+    'oben laedt jede Saeule langsam, das ist der Grund fuer die 80-Prozent-Grenze'
+  );
+});

@@ -44,6 +44,27 @@ jobs:
             -project LadeRoute.xcodeproj \
             -clonedSourcePackagesDirPath SourcePackages
 
+      - name: Interface-Dateien aufbewahren
+        if: always()
+        run: |
+          mkdir -p interfaces
+          # Mit dem Modulnamen davor. Alle Dateien heissen nach der Architektur,
+          # also arm64-apple-ios.swiftinterface; ein schlichtes cp laesst nur
+          # sechs Dateien uebrig, weil jede die vorige ueberschreibt.
+          find SourcePackages -name '*.swiftinterface' | while read -r datei; do
+            modul=$(echo "$datei" | sed -n 's|.*/\([A-Za-z0-9]*\)\.framework/.*|\1|p')
+            [ -z "$modul" ] && modul=$(basename "$(dirname "$(dirname "$datei")")")
+            cp "$datei" "interfaces/${modul}-$(basename "$datei")"
+          done
+          echo "$(ls interfaces | wc -l | tr -d ' ') Dateien, $(du -sh interfaces | cut -f1)"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swiftinterfaces
+          path: interfaces/
+          retention-days: 7
+
       - name: Nachschlagen
         env:
           SUCHE: ${{ inputs.suche }}
@@ -80,25 +101,3 @@ jobs:
           done
 
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Interface-Dateien aufbewahren
-        if: always()
-        run: |
-          mkdir -p interfaces
-          # Mit dem Modulnamen davor. Alle Dateien heissen nach der Architektur,
-          # also arm64-apple-ios.swiftinterface; ein schlichtes cp laesst nur
-          # sechs Dateien uebrig, weil jede die vorige ueberschreibt.
-          find SourcePackages -name '*.swiftinterface' | while read -r datei; do
-            modul=$(echo "$datei" | sed -n 's|.*/\([A-Za-z0-9]*\)\.framework/.*|\1|p')
-            [ -z "$modul" ] && modul=$(basename "$(dirname "$(dirname "$datei")")")
-            cp "$datei" "interfaces/${modul}-$(basename "$datei")"
-          done
-          ls -la interfaces | head -60
-          du -sh interfaces
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: swiftinterfaces
-          path: interfaces/
-          retention-days: 7
