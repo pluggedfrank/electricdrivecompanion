@@ -40,7 +40,10 @@ final class TripViewModel: ObservableObject {
             .store(in: &cancellables)
 
         // Ein geändertes Fahrzeug ändert die Ladeplanung, nicht die Suche.
-        vehicleStore.$profile
+        //
+        // self. ist hier Pflicht: Im Initialisierer meint der schlichte Name
+        // den Parameter, und der ist optional.
+        self.vehicleStore.$profile
             .dropFirst()
             .sink { [weak self] _ in self?.planCharging() }
             .store(in: &cancellables)
