@@ -73,22 +73,55 @@ function verbrauchstabelle(kWhPro100km) {
     .join(':');
 }
 
-/** Ladekurve als Stuetzstellen. Spiegelt VehicleProfile.chargingCurve. */
+/**
+ * Ladekurve als Stuetzstellen. Spiegelt VehicleProfile.chargingCurve.
+ *
+ * Beide Werte muessen positiv sein, das hat der erste Lauf gezeigt:
+ * "chargeInkWh must be positive float and timeToChargeInSeconds must be
+ * positive integer". Der Nullpunkt, mit dem eine Kurve natuerlich beginnt,
+ * faellt deshalb weg; gerechnet wird trotzdem von leer an.
+ */
 function ladekurve(kapazitaetKWh, spitzeKW) {
-  const punkte = [[0.0, 1.0], [0.2, 1.0], [0.4, 0.92], [0.6, 0.7], [0.8, 0.45], [1.0, 0.15]];
+  const punkte = [[0.1, 1.0], [0.2, 1.0], [0.4, 0.92], [0.6, 0.7], [0.8, 0.45], [1.0, 0.15]];
   let sekunden = 0;
   let letzteLadung = 0;
-  return punkte.map(([anteil, faktor], i) => {
+  return punkte.map(([anteil, faktor]) => {
     const ladung = kapazitaetKWh * anteil;
     const leistung = Math.max(11, spitzeKW * faktor);
-    if (i > 0) sekunden += ((ladung - letzteLadung) / leistung) * 3600;
+    sekunden += ((ladung - letzteLadung) / leistung) * 3600;
     letzteLadung = ladung;
     return {
       chargeInkWh: Number(ladung.toFixed(2)),
-      timeToChargeInSeconds: Math.round(sekunden),
+      timeToChargeInSeconds: Math.max(1, Math.round(sekunden)),
     };
   });
 }
+
+/**
+ * Anschlussarten, die geprueft werden.
+ *
+ * Charge_200_to_240V_1_Phase_at_32A ist belegt: Der zweite Lauf hat daran
+ * nichts bemaengelt, nur an der Kurve. Fuer Schnellladen braucht es aber
+ * Gleichstrom, und wie TomTom den benennt, sagt die API selbst. Sie
+ * beanstandet einen falschen Wert namentlich, das genuegt als Antwort.
+ */
+const ANSCHLUSSARTEN = [
+  'Charge_200_to_240V_1_Phase_at_32A',
+  'Charge_380_to_480V_3_Phase_at_32A',
+  'Charge_380_to_480V_3_Phase_at_63A',
+  'Charge_50_to_500V_Direct_Current_at_125A',
+  'Charge_50_to_500V_Direct_Current_at_350A',
+  'Charge_200_to_450V_Direct_Current_at_200A',
+  'Charge_200_to_480V_Direct_Current_at_255A',
+  'Charge_Direct_Current_at_50kW',
+];
+
+const STECKERARTEN = [
+  'IEC_62196_Type_2_Outlet',
+  'IEC_62196_Type_2_CableAttached',
+  'IEC_62196_Type_2_CCS',
+  'Chademo',
+];
 
 function grundparameter(apiKey) {
   const f = FAHRZEUG;
@@ -346,6 +379,78 @@ async function main() {
       }
     } catch (fehler) {
       console.log(red(`  Anfrage fehlgeschlagen: ${fehler.message}`));
+    }
+  }
+
+  // --- Anschlussarten --------------------------------------------------
+
+  console.log(`\n${bold('Anschlussarten, die die API kennt')}`);
+  console.log(dim('   Ein falscher Wert wird namentlich beanstandet, das genuegt als Antwort.'));
+
+  const gueltigeAnschluesse = [];
+  for (const art of ANSCHLUSSARTEN) {
+    await new Promise((r) => setTimeout(r, ev.MIN_REQUEST_INTERVAL_MS));
+    const variante = {
+      name: art,
+      body: {
+        chargingModes: [
+          {
+            chargingConnections: [{ facilityType: art, plugType: 'IEC_62196_Type_2_CCS' }],
+            chargingCurve: KURVE,
+          },
+        ],
+      },
+    };
+    try {
+      const { status, json, text } = await versuch(apiKey, from, to, variante);
+      const meldung = json?.error?.description ?? json?.detailedError?.message ?? text.slice(0, 160);
+      const unbekannt = /Invalid value .* for JSON field .*facilityType/.test(meldung);
+      if (unbekannt) {
+        console.log(`  ${red('nein')}  ${art}`);
+      } else {
+        console.log(`  ${green('ja  ')}  ${art}${status >= 400 ? dim(`  (HTTP ${status}: ${meldung.slice(0, 90)})`) : ''}`);
+        gueltigeAnschluesse.push(art);
+      }
+    } catch (fehler) {
+      console.log(`  ${red('?')}     ${art}: ${fehler.message}`);
+    }
+  }
+
+  if (gueltigeAnschluesse.length > 0) {
+    console.log(`\n${bold('Steckerarten')}`);
+    for (const stecker of STECKERARTEN) {
+      await new Promise((r) => setTimeout(r, ev.MIN_REQUEST_INTERVAL_MS));
+      const variante = {
+        name: stecker,
+        body: {
+          chargingModes: [
+            {
+              chargingConnections: [
+                { facilityType: gueltigeAnschluesse[0], plugType: stecker },
+              ],
+              chargingCurve: KURVE,
+            },
+          ],
+        },
+      };
+      try {
+        const { status, json, text } = await versuch(apiKey, from, to, variante);
+        const meldung =
+          json?.error?.description ?? json?.detailedError?.message ?? text.slice(0, 160);
+        const unbekannt = /Invalid value .* for JSON field .*plugType/.test(meldung);
+        console.log(
+          unbekannt
+            ? `  ${red('nein')}  ${stecker}`
+            : `  ${green('ja  ')}  ${stecker}${status >= 400 ? dim(`  (HTTP ${status})`) : ''}`
+        );
+        if (!unbekannt && status >= 200 && status < 300) {
+          console.log(green('\n  Diese Kombination liefert eine Route:'));
+          zeigeRoute(json ?? {});
+          break;
+        }
+      } catch (fehler) {
+        console.log(`  ${red('?')}     ${stecker}: ${fehler.message}`);
+      }
     }
   }
 

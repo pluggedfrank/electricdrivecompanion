@@ -9,6 +9,7 @@ struct RootView: View {
     @State private var sheetDetent: PresentationDetent = .fraction(0.35)
     @State private var showsResults = false
     @FocusState private var searchFieldFocused: Bool
+    @State private var showsVehicleSheet = false
 
     init(apiKey: String) {
         _trip = StateObject(wrappedValue: TripViewModel(apiKey: apiKey))
@@ -37,6 +38,9 @@ struct RootView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
+        }
+        .sheet(isPresented: $showsVehicleSheet) {
+            VehicleProfileSheet(store: trip.vehicleStore)
         }
         .task {
             // Hier und nicht im Initialisierer: Der Freigabedialog gehört auf
@@ -225,6 +229,17 @@ struct RootView: View {
             }
 
             Spacer()
+
+            Button {
+                showsVehicleSheet = true
+            } label: {
+                Image(systemName: "car")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.ink2)
+                    .frame(width: 30, height: 30)
+                    .background(Theme.paper, in: Circle())
+            }
+            .accessibilityLabel("Fahrzeug")
 
             if trip.route != nil {
                 Button {

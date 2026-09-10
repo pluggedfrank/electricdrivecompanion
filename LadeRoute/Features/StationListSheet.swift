@@ -22,7 +22,11 @@ struct StationListSheet: View {
                         NavigationLink {
                             StationDetailView(station: item)
                         } label: {
-                            StationRow(index: index + 1, item: item)
+                            StationRow(
+                                index: index + 1,
+                                item: item,
+                                isPlannedStop: trip.plannedStopIDs.contains(item.id)
+                            )
                         }
                         .listRowBackground(
                             item.id == trip.selectedStationID ? Theme.panel : Theme.paper
@@ -45,6 +49,66 @@ struct StationListSheet: View {
                 }
             }
         }
+    }
+
+    /// Der Ladeplan, in einem Satz.
+    ///
+    /// Wichtiger als die Ladezeit ist die Zahl der Stopps: Wer zweimal hält,
+    /// verliert mehr als die Differenz der Ladezeiten, weil jeder Halt
+    /// Abfahren, Anstecken, Bezahlen und Wiederauffahren kostet.
+    @ViewBuilder
+    private var chargingPlanLine: some View {
+        if let plan = trip.chargingPlan {
+            HStack(alignment: .top, spacing: 7) {
+                Image(systemName: plan.isFeasible ? "bolt.batteryblock" : "exclamationmark.triangle")
+                    .font(.system(size: 12))
+                    .foregroundStyle(plan.isFeasible ? Theme.river : Theme.signal)
+                    .padding(.top, 1)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(planHeadline(plan))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(plan.isFeasible ? Theme.ink2 : Theme.signal)
+
+                    if plan.isFeasible, !plan.stops.isEmpty {
+                        Text(planDetail(plan))
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.meta)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else if case let .gap(_, _, missing) = plan.problem {
+                        Text(
+                            "Zwischen zwei Stationen liegen \(Int((missing / 1000).rounded())) km "
+                                + "mehr, als der Akku hergibt. Mit einer niedrigeren Leistungsstufe "
+                                + "kämen mehr Säulen in Frage."
+                        )
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.meta)
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func planHeadline(_ plan: ChargingPlan) -> String {
+        guard plan.isFeasible else { return "Mit diesem Filter geht die Strecke nicht auf" }
+        if plan.stops.isEmpty { return "Ohne Ladestopp zu schaffen" }
+        let laden = Int((plan.totalChargingSeconds / 60).rounded())
+        return plan.stops.count == 1
+            ? "Ein Ladestopp, \(laden) min laden"
+            : "\(plan.stops.count) Ladestopps, \(laden) min laden"
+    }
+
+    private func planDetail(_ plan: ChargingPlan) -> String {
+        plan.stops
+            .map { stopp in
+                let km = Int((stopp.progressMeters / 1000).rounded())
+                let minuten = Int((stopp.chargingSeconds / 60).rounded())
+                let name = stopp.station.operatorName ?? stopp.station.name
+                return "km \(km) \(name), \(minuten) min"
+            }
+            .joined(separator: "  ·  ")
     }
 
     private var summaryHeader: some View {
@@ -72,6 +136,8 @@ struct StationListSheet: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.meta)
                 .textCase(nil)
+
+                chargingPlanLine
             }
         }
         .padding(.bottom, 4)
@@ -125,12 +191,19 @@ struct StationListSheet: View {
 struct StationRow: View {
     let index: Int
     let item: AnnotatedStation
+    /// Steht die Station im Ladeplan? Dann ist sie kein Vorschlag mehr,
+    /// sondern der Halt, mit dem die Strecke aufgeht.
+    var isPlannedStop = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(item.hasEditorialContent ? Theme.signal : Theme.faint)
+                    .fill(
+                        isPlannedStop
+                            ? Theme.river
+                            : (item.hasEditorialContent ? Theme.signal : Theme.faint)
+                    )
                     .frame(width: 26, height: 26)
                 Text("\(index)")
                     .font(.system(size: 13, weight: .semibold))
@@ -138,10 +211,24 @@ struct StationRow: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.station.name)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.ink)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(item.station.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+
+                    if isPlannedStop {
+                        HStack(spacing: 3) {
+                            Image(systemName: "bolt.fill").font(.system(size: 8, weight: .bold))
+                            Text("Ladestopp")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Theme.river, in: Capsule())
+                    }
+                }
 
                 HStack(spacing: 6) {
                     if let power = item.station.maxPowerKW {

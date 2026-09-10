@@ -13,10 +13,12 @@ final class TripViewModel: ObservableObject {
 
     init(
         apiKey: String,
-        editorialStore: EditorialStore = .loadBundled()
+        editorialStore: EditorialStore = .loadBundled(),
+        vehicleStore: VehicleProfileStore = VehicleProfileStore()
     ) {
         self.apiKey = apiKey
         self.editorialStore = editorialStore
+        self.vehicleStore = vehicleStore
         api = TomTomAPIClient(apiKey: apiKey)
         routePlanner = RoutePlannerService(apiKey: apiKey)
 
@@ -32,6 +34,12 @@ final class TripViewModel: ObservableObject {
             .debounce(for: .milliseconds(350), scheduler: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] text in self?.startPlaceSearch(text) }
+            .store(in: &cancellables)
+
+        // Ein geändertes Fahrzeug ändert die Ladeplanung, nicht die Suche.
+        vehicleStore.$profile
+            .dropFirst()
+            .sink { [weak self] _ in self?.planCharging() }
             .store(in: &cancellables)
     }
 
@@ -55,6 +63,17 @@ final class TripViewModel: ObservableObject {
     /// niemand führen will.
     @Published private(set) var currentLocation: CLLocationCoordinate2D?
     @Published var destination: CLLocationCoordinate2D?
+
+    /// Wo geladen werden muss, damit die Strecke aufgeht.
+    @Published private(set) var chargingPlan: ChargingPlan?
+
+    /// Das Fahrzeug. Die Oberfläche darf es bearbeiten, die Planung hört zu.
+    let vehicleStore: VehicleProfileStore
+
+    /// Kennungen der geplanten Stopps, für die Kennzeichnung in Liste und Karte.
+    var plannedStopIDs: Set<String> {
+        Set(chargingPlan?.stops.map(\.station.id) ?? [])
+    }
 
     /// Was im Suchfeld steht.
     @Published var destinationQuery = ""
@@ -165,6 +184,7 @@ final class TripViewModel: ObservableObject {
         stations = []
         fetchedStations = []
         fetchedTier = nil
+        chargingPlan = nil
         selectedStationID = nil
         destination = nil
         chosenPlaceName = nil
@@ -390,6 +410,24 @@ final class TripViewModel: ObservableObject {
         nummer == streckenNummer && !Task.isCancelled
     }
 
+    /// Rechnet die Ladestopps neu.
+    ///
+    /// Grundlage ist die angezeigte Liste, nicht der gesamte Bestand: Wer den
+    /// Filter auf 300 kW stellt, will auch an 300 kW laden.
+    private func planCharging() {
+        guard let route, !stations.isEmpty else {
+            chargingPlan = nil
+            return
+        }
+
+        chargingPlan = ChargingStopPlanner.plan(
+            routeLengthMeters: route.summary.length.converted(to: .meters).value,
+            stations: stations,
+            vehicle: vehicleStore.profile,
+            minPowerKW: powerTier.minPowerKW ?? 50
+        )
+    }
+
     /// Wendet Leistung, Umweg und seitlichen Abstand auf das Gefundene an.
     ///
     /// Kostet keine Anfrage. Alle drei Regler sind damit sofort wirksam, und
@@ -416,6 +454,8 @@ final class TripViewModel: ObservableObject {
 
             return true
         }
+
+        planCharging()
     }
 
     /// Startet die Zielsuche neu und bricht die vorige ab.

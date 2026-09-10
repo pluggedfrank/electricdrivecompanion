@@ -20,6 +20,7 @@ import * as bnetza from '../lib/bnetza.mjs';
 import * as corridor from '../lib/corridor.mjs';
 import * as sites from '../lib/sites.mjs';
 import * as redaktion from '../lib/redaktion.mjs';
+import * as ladeplanung from '../lib/ladeplanung.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -1243,4 +1244,179 @@ test('die Ladekurve steigt in der Zeit und in der Ladung', () => {
     letzteFuenftel > ersteFuenftel * 3,
     'oben laedt jede Saeule langsam, das ist der Grund fuer die 80-Prozent-Grenze'
   );
+});
+
+// ------------------------------------------------------- Ladestopp-Planung
+
+const AUTO = {
+  usableBatteryKWh: 77,
+  consumptionKWhPer100km: 19,
+  maxChargePowerKW: 240,
+  currentChargePercent: 80,
+  minArrivalPercent: 10,
+  minChargeAtStopPercent: 10,
+  maxChargeAtStopPercent: 80,
+  // Von leer bis voll, in derselben Form wie VehicleProfile.chargingCurve.
+  chargingCurve: [
+    { chargeKWh: 0, powerKW: 240 },
+    { chargeKWh: 15.4, powerKW: 240 },
+    { chargeKWh: 30.8, powerKW: 220.8 },
+    { chargeKWh: 46.2, powerKW: 168 },
+    { chargeKWh: 61.6, powerKW: 108 },
+    { chargeKWh: 77, powerKW: 36 },
+  ],
+};
+
+/** Stationen in gleichmaessigem Abstand, alle gleich stark. */
+function stationenAlle(abstandKm, bisKm, leistungKW = 300) {
+  const liste = [];
+  for (let km = abstandKm; km < bisKm; km += abstandKm) {
+    liste.push({
+      id: `s-${km}`,
+      name: `Station ${km}`,
+      progressMeters: km * 1000,
+      distanceFromRouteMeters: 100,
+      detourSeconds: 0,
+      maxPowerKW: leistungKW,
+    });
+  }
+  return liste;
+}
+
+test('kurze Strecke braucht keinen Stopp', () => {
+  const ergebnis = ladeplanung.planeStopps({
+    routeLengthMeters: 150_000,
+    stations: stationenAlle(30, 150),
+    fahrzeug: AUTO,
+  });
+  assert.equal(ergebnis.machbar, true);
+  assert.equal(ergebnis.stopps.length, 0);
+  // 150 km bei 19 kWh/100 km sind 28,5 kWh. Von 61,6 bleiben 33,1.
+  assert.ok(Math.abs(ergebnis.ankunftKWh - 33.1) < 0.2, `waren ${ergebnis.ankunftKWh}`);
+});
+
+test('lange Strecke bekommt Stopps, und der Ladestand bleibt im Rahmen', () => {
+  const ergebnis = ladeplanung.planeStopps({
+    routeLengthMeters: 800_000,
+    stations: stationenAlle(25, 800),
+    fahrzeug: AUTO,
+  });
+
+  assert.equal(ergebnis.machbar, true);
+  assert.ok(ergebnis.stopps.length >= 2, `nur ${ergebnis.stopps.length} Stopp(s)`);
+
+  const untergrenze = (77 * AUTO.minChargeAtStopPercent) / 100;
+  const obergrenze = (77 * AUTO.maxChargeAtStopPercent) / 100;
+  for (const stopp of ergebnis.stopps) {
+    assert.ok(stopp.ankunftKWh >= untergrenze - 0.01, `Ankunft mit ${stopp.ankunftKWh} kWh`);
+    assert.ok(stopp.abfahrtKWh <= obergrenze + 0.01, `Abfahrt mit ${stopp.abfahrtKWh} kWh`);
+    assert.ok(stopp.abfahrtKWh > stopp.ankunftKWh, 'ein Stopp ohne Laden ist keiner');
+  }
+
+  const zielreserve = (77 * AUTO.minArrivalPercent) / 100;
+  assert.ok(ergebnis.ankunftKWh >= zielreserve - 0.01, `am Ziel nur ${ergebnis.ankunftKWh} kWh`);
+
+  // Aufsteigend entlang der Route, keine Sprünge zurück.
+  for (let i = 1; i < ergebnis.stopps.length; i++) {
+    assert.ok(ergebnis.stopps[i].progressMeters > ergebnis.stopps[i - 1].progressMeters);
+  }
+});
+
+test('die weiter entfernte Station gewinnt gegen die naeher gelegene starke', () => {
+  // Der Fehler, den eine naive Auswahl macht: immer die staerkste Saeule in
+  // Reichweite nehmen. Eine 300-kW-Saeule nach 60 km erzwingt einen zweiten
+  // Stopp, eine 150-kW-Saeule nach 260 km nicht.
+  const ergebnis = ladeplanung.planeStopps({
+    routeLengthMeters: 480_000,
+    stations: [
+      { id: 'nah', name: 'Nah', progressMeters: 60_000, distanceFromRouteMeters: 100, detourSeconds: 0, maxPowerKW: 300 },
+      { id: 'weit', name: 'Weit', progressMeters: 260_000, distanceFromRouteMeters: 100, detourSeconds: 0, maxPowerKW: 150 },
+    ],
+    fahrzeug: AUTO,
+  });
+
+  assert.equal(ergebnis.machbar, true);
+  assert.equal(ergebnis.stopps.length, 1);
+  assert.equal(ergebnis.stopps[0].station.id, 'weit');
+});
+
+test('bei gleicher Lage gewinnt die staerkere Saeule', () => {
+  const ergebnis = ladeplanung.planeStopps({
+    routeLengthMeters: 600_000,
+    stations: [
+      { id: 'langsam', name: 'Langsam', progressMeters: 250_000, distanceFromRouteMeters: 100, detourSeconds: 0, maxPowerKW: 50 },
+      { id: 'schnell', name: 'Schnell', progressMeters: 250_500, distanceFromRouteMeters: 100, detourSeconds: 0, maxPowerKW: 300 },
+    ],
+    fahrzeug: AUTO,
+  });
+  assert.equal(ergebnis.stopps[0].station.id, 'schnell');
+});
+
+test('ein grosser Umweg laesst die Station verlieren', () => {
+  // Beide Stationen reichen bis zum Ziel, es geht also allein um die
+  // Standzeit. Die weiter vorne liegende gewinnt, weil sie weniger nachladen
+  // muss; ein Umweg von 25 Minuten dreht das um.
+  const plan = (sekunden) =>
+    ladeplanung.planeStopps({
+      routeLengthMeters: 500_000,
+      stations: [
+        { id: 'abseits', name: 'Abseits', progressMeters: 270_000, distanceFromRouteMeters: 4000, detourSeconds: sekunden, maxPowerKW: 300 },
+        { id: 'anderRoute', name: 'An der Route', progressMeters: 250_000, distanceFromRouteMeters: 100, detourSeconds: 0, maxPowerKW: 300 },
+      ],
+      fahrzeug: AUTO,
+    });
+
+  const ohne = plan(0);
+  assert.equal(ohne.machbar, true);
+  assert.equal(ohne.stopps.length, 1);
+  assert.equal(ohne.stopps[0].station.id, 'abseits', 'ohne Umweg gewinnt die weiter vorne liegende');
+
+  const mit = plan(25 * 60);
+  assert.equal(mit.stopps[0].station.id, 'anderRoute', '25 Minuten Umweg drehen das um');
+});
+
+test('eine Luecke groesser als die Reichweite wird gemeldet, nicht verschwiegen', () => {
+  const ergebnis = ladeplanung.planeStopps({
+    routeLengthMeters: 900_000,
+    stations: [
+      { id: 'eine', name: 'Einzige', progressMeters: 700_000, distanceFromRouteMeters: 100, detourSeconds: 0, maxPowerKW: 300 },
+    ],
+    fahrzeug: AUTO,
+  });
+
+  assert.equal(ergebnis.machbar, false);
+  assert.equal(ergebnis.grund, 'luecke');
+  assert.equal(ergebnis.luecke.station.id, 'eine');
+  assert.ok(ergebnis.luecke.fehlendeMeter > 0);
+  // Die Reichweite passt zur Rechnung: 61,6 minus 7,7 kWh Reserve, bei
+  // 19 kWh je 100 km sind das rund 284 km.
+  assert.ok(Math.abs(ergebnis.reichweiteMeter - 284_000) < 3_000, `${ergebnis.reichweiteMeter} m`);
+});
+
+test('zu schwache Saeulen zaehlen nicht als Stopp', () => {
+  const ergebnis = ladeplanung.planeStopps({
+    routeLengthMeters: 600_000,
+    stations: stationenAlle(50, 600, 22),
+    fahrzeug: AUTO,
+    minPowerKW: 50,
+  });
+  assert.equal(ergebnis.machbar, false);
+  assert.equal(ergebnis.grund, 'keineStationen');
+});
+
+test('Ladezeit steigt, wenn die Saeule schwaecher ist', () => {
+  const schnell = ladeplanung.ladezeitSekunden(15, 60, AUTO.chargingCurve, 300);
+  const langsam = ladeplanung.ladezeitSekunden(15, 60, AUTO.chargingCurve, 50);
+  assert.ok(langsam > schnell * 2, `${langsam} gegen ${schnell}`);
+
+  // Die Saeule kann das Auto nicht ueberholen: mehr als die Fahrzeugkurve
+  // hergibt, bringt auch eine 400-kW-Saeule nicht.
+  const sehrSchnell = ladeplanung.ladezeitSekunden(15, 60, AUTO.chargingCurve, 400);
+  assert.equal(sehrSchnell, schnell);
+});
+
+test('die letzten Prozent kosten mehr Zeit als die ersten', () => {
+  const unten = ladeplanung.ladezeitSekunden(7.7, 23.1, AUTO.chargingCurve, 300);
+  const oben = ladeplanung.ladezeitSekunden(53.9, 69.3, AUTO.chargingCurve, 300);
+  assert.ok(oben > unten * 2, `oben ${oben}, unten ${unten}`);
 });
