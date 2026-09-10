@@ -82,6 +82,32 @@ Bundesnetzagentur, zu Standorten zusammengefasst. Das ist der Erfassungsbogen,
 und daran misst sich der Fortschritt: erfasst gegen bekannt. Ein Routen-Export
 kann das nicht leisten, er ist immer nur ein Ausschnitt einer Strecke.
 
+Gemessen am Register vom 01.09.2026, 116.442 Ladeeinrichtungen:
+
+| Leistung | Ladeeinrichtungen | Standorte | Ladepunkte |
+|---|---:|---:|---:|
+| ab 50 kW | 31.505 | 14.804 | 61.025 |
+| ab 150 kW | 23.582 | 9.285 | 42.922 |
+| ab 300 kW | 11.248 | 4.668 | 21.496 |
+
+Zwei Kontrollen, die beide beruhigen: Die eigene Klassifizierung des Registers
+zählt 31.154 Schnellladeeinrichtungen, die Nennleistungsschwelle 31.505. Ein
+Prozent Abweichung, die beiden Wege beschreiben dasselbe. Und aus 31.505
+Einrichtungen werden 14.804 Standorte, das Zusammenfassen leistet also
+tatsächlich etwas, im Schnitt zwei Einrichtungen und vier Ladepunkte je Ort.
+
+**Der Zuschnitt ist eine redaktionelle Entscheidung, keine technische.** 14.804
+Orte sind mit einer Zuschauerschaft nicht vollständig zu erfassen, und eine
+Karte, die auf Jahre zu 99 Prozent leer bleibt, entmutigt statt anzuspornen.
+Empfehlung: **ab 300 kW**, 4.668 Orte. Das sind die Ladeparks, um die herum man
+eine Langstrecke plant, es ist derselbe Zuschnitt wie in der App, und es ist
+eine Zahl, die eine Zuschauerschaft in überschaubarer Zeit füllen kann. Ab
+150 kW bleibt der nächste Ausbauschritt, ab 50 kW die Vollerhebung.
+
+Für den Fortschritt spricht auch die Verteilung: Die fünfzehn größten Betreiber
+decken rund die Hälfte aller Standorte ab. Eine Kampagne kann daran entlang
+laufen, statt die Landkarte gleichmäßig abzuarbeiten.
+
 **Im Web zuerst.** Eine Seite auf **plugged.de**, WordPress, aus einem Video
 heraus mit einem Klick erreichbar. Sie zeigt die Karte mit dem Stand der Erfassung,
 also welche Standorte schon bewertet sind und welche nicht, und nimmt neue
@@ -192,9 +218,12 @@ gehört damit dorthin, wo ohnehin gearbeitet wird. Sicherung, Zugriffsrechte und
 Impressum gelten für die Seite und decken die Daten mit ab. Und die App braucht
 nur einen offenen Lesepunkt, den die WordPress-REST-Schnittstelle hergibt.
 
-Was das kostet: PHP statt Swift oder JavaScript, und eine Karte mit mehreren
-tausend Punkten will vorbereitet ausgeliefert werden, nicht bei jedem Aufruf
-frisch berechnet. Beides ist überschaubar.
+Was das kostet: PHP statt Swift oder JavaScript, und die Karte will vorbereitet
+ausgeliefert werden. Bei 4.668 Orten ist das eine zwischengespeicherte Datei von
+gut einem Megabyte, die sich clientseitig zu Gruppen zusammenfassen lässt. Bei
+14.804 wäre es das Dreifache und der Punkt, an dem es Kartenkacheln oder eine
+Abfrage nach Bildausschnitt braucht. Auch das spricht für den engeren
+Zuschnitt zu Beginn.
 
 Die im App-Bundle mitgelieferte JSON-Datei bleibt bis dahin und wird dann
 ersetzt. `EditorialStore.loadBundled()` ist dafür die einzige auszutauschende
@@ -210,8 +239,8 @@ Stelle, das Matching bleibt unberührt.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
 - [ ] Woher kommen Verbrauch und Ladekurve des Fahrzeugs? Ohne beides plant die
       EV-Route falsch. Für v1 reicht ein Profil von Hand.
-- [ ] Wie groß ist die Aufgabe wirklich? `tools/register-schnelllader.mjs`
-      beantwortet das aus dem Register, sobald es einmal gelaufen ist.
+- [ ] Welcher Zuschnitt gilt für die Erfassung? Empfehlung ab 300 kW, siehe
+      oben. Entscheidet über Kampagne, Karte und Aufwand.
 - [ ] Fotos aus Einsendungen: Speicherort, Rechte, Haftung. Ein Foto von einer
       fremden Person ist rechtlich etwas anderes als eines von einer Ladesäule.
 - [ ] Mehrfachabgaben trotz Sichtung: Ein Sichter, der hundert gleichlautende
@@ -241,9 +270,9 @@ Zwei Stränge, die parallel laufen können.
 
 1. ~~Domain und Technik festlegen.~~ plugged.de, WordPress, ohne Anmeldung,
    mit Sichtung.
-2. Grundgesamtheit erzeugen: `tools/register-schnelllader.mjs` zählt die
-   Schnellladestandorte in Deutschland und schreibt den Erfassungsbogen heraus.
-   Danach ist die Größe der Aufgabe eine Zahl und keine Schätzung.
+2. ~~Grundgesamtheit erzeugen.~~ Gezählt am 10.09.2026, siehe oben. Der
+   Erfassungsbogen entsteht mit `tools/register-schnelllader.mjs --export=...`,
+   der Zuschnitt mit `--leistung=`.
 3. Datenspeicher aufsetzen: Standorte, Bewertungen, Fotos, Sichtungsstand.
 4. Erfassungsseite bauen: Karte mit Stand der Erfassung, Kurzformular,
    Vollformular für Tester.
