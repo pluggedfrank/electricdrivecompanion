@@ -242,6 +242,37 @@ liefert die Gegenprobe.
 Für ein Magazin ist eigene Logik ohnehin eher ein Vorteil als ein Notbehelf:
 Warum genau dieser Stopp vorgeschlagen wird, lässt sich dann erklären.
 
+## Umwege für alle Stationen
+
+Der Umweg ist die Fahrzeit vom Verlassen der Route bis zum Wiederauffahren. Die
+Along-Route-Suche liefert ihn mit, die Umkreissuche nicht, und die bringt den
+größeren Teil der Treffer. In der App wirkt der Umwegregler dadurch nur auf ein
+Viertel der Liste; für den Rest steht die Luftlinie da, und die sagt über die
+Fahrzeit fast nichts. Eine Säule 200 Meter neben der Autobahn kann zehn
+Kilometer Umweg bedeuten, wenn die nächste Abfahrt weit weg ist.
+
+Je Station eine eigene Route zu rechnen wäre exakt und bei zweihundert
+Stationen zu teuer. Die **Matrix-Routing-API** rechnet viele Verbindungen auf
+einmal, und sie steht im Selbstbedienungskatalog.
+
+**Der Haken an einer Matrix:** Sie rechnet das Kreuzprodukt. Zweihundert
+Stationen einzeln gegen ihren jeweiligen Ausfahrtspunkt wären 200 mal 200
+Zellen, um 200 Werte zu bekommen. Der Ausweg ist ein grobes Raster:
+
+1. Auf der Route alle 15 km einen Stützpunkt setzen. Bei 527 km sind das 35.
+2. Eine Matrix Stützpunkte gegen Stationen, eine zweite Stationen gegen
+   Stützpunkte. Je 35 mal 200 gleich 7.000 Zellen.
+3. Für jede Station den Stützpunkt davor und den dahinter nehmen:
+   `Umweg = t(davor → Station) + t(Station → danach) − t(davor → danach)`.
+   Die letzte Zeit steckt schon in der Route und kostet nichts.
+
+Zwei Anfragen statt zweihundert. Wo TomTom den Umweg schon mitgeliefert hat,
+bleibt sein Wert stehen; gerechnet wird nur, was fehlt.
+
+**Erst messen, dann bauen.** `tools/matrix-probe.mjs` prüft die Bauform der
+Anfrage und wie viele Zellen die API annimmt. Das Format der v2-Fassung ist von
+hier aus nicht nachzulesen, beide Domains der Dokumentation sind gesperrt.
+
 ## Der Weg zur Ansage
 
 Das Navigation SDK von TomTom ist im frei zugänglichen Paket nicht enthalten.

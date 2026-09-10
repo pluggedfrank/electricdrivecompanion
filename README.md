@@ -545,4 +545,6 @@ electricdrivecompanion/
   daten/                       Erfassungsbogen fuer State of Charge
     redaktion-einbauen.mjs     Export der Treffer in den Bestand der App
     register-schnelllader.mjs  Schnellladestandorte in Deutschland zaehlen
+    ev-route-probe.mjs         EV-Routenplanung und Reichweite ausprobieren
+    matrix-probe.mjs           Matrix-Routing ausprobieren, fuer die Umwege
 ```
