@@ -19,6 +19,11 @@ final class TripViewModel: ObservableObject {
         self.editorialStore = editorialStore
         api = TomTomAPIClient(apiKey: apiKey)
         routePlanner = RoutePlannerService(apiKey: apiKey)
+
+        // Ohne receive(on:): Die Quelle ist selbst @MainActor und veröffentlicht
+        // dort, ein Umweg über die Queue brächte nur eine Bildschirmaktualisierung
+        // Verzögerung.
+        locationSource.$coordinate.assign(to: &$currentLocation)
     }
 
     // MARK: Zustand
@@ -35,7 +40,10 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var route: TomTomSDKRoute.Route?
     @Published private(set) var stations: [AnnotatedStation] = []
     @Published var selectedStationID: String?
-    @Published var currentLocation: CLLocationCoordinate2D?
+    /// Der eigene Standort. Kommt aus `UserLocationSource` und nirgends sonst;
+    /// zwei Schreiber auf derselben Angabe wären eine Fehlersuche wert, die
+    /// niemand führen will.
+    @Published private(set) var currentLocation: CLLocationCoordinate2D?
     @Published var destination: CLLocationCoordinate2D?
     @Published var mapIsReady = false
     @Published var mapBottomInset: CGFloat = 0
@@ -119,7 +127,9 @@ final class TripViewModel: ObservableObject {
     private func planAndSearch() async {
         guard let destination else { return }
         guard let origin = currentLocation else {
-            phase = .failed("Noch keine GPS-Position. Standortfreigabe prüfen.")
+            // Die Quelle weiß, woran es liegt: keine Freigabe, oder Freigabe
+            // erteilt und noch kein Fix. Das sind zwei verschiedene Ratschläge.
+            phase = .failed(locationSource.problem?.message ?? "Noch keine Position.")
             return
         }
 
@@ -236,8 +246,17 @@ final class TripViewModel: ObservableObject {
         }
     }
 
+    /// Fragt die Standortfreigabe an und beginnt zu orten.
+    ///
+    /// Bewusst nicht im Initialisierer: Der Systemdialog soll erscheinen, wenn
+    /// die Karte steht, nicht vor dem ersten Bild.
+    func startLocating() {
+        locationSource.start()
+    }
+
     // MARK: Private
 
+    private let locationSource = UserLocationSource()
     private let apiKey: String
     private let api: TomTomAPIClient
     private let routePlanner: RoutePlannerService

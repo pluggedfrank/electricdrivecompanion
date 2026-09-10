@@ -96,8 +96,10 @@ extension MapCoordinator: TomTomSDKMapDisplay.MapDelegate {
 
 extension MapCoordinator: TomTomSDKLocationProvider.LocationUpdateObserver {
     func didUpdateLocation(location: GeoLocation) {
-        trip.currentLocation = location.location.coordinate
-
+        // Nur die Kamera. Die Position zum Planen kommt aus UserLocationSource
+        // über CoreLocation; dieser Anbieter hier gehört der Karte und zeichnet
+        // den Pfeil.
+        //
         // Nur einmal zentrieren, sonst reißt es dem Nutzer die Karte weg.
         guard !didCenterOnUser else { return }
         didCenterOnUser = true

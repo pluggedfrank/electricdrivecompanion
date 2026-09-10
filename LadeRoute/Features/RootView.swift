@@ -28,6 +28,11 @@ struct RootView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
         }
+        .task {
+            // Hier und nicht im Initialisierer: Der Freigabedialog gehört auf
+            // eine sichtbare Oberfläche, nicht vor das erste Bild.
+            trip.startLocating()
+        }
         .onChange(of: trip.stations.count) { _, count in
             showsResults = count > 0
         }
