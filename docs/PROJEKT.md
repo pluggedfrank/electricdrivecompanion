@@ -82,8 +82,8 @@ Bundesnetzagentur, zu Standorten zusammengefasst. Das ist der Erfassungsbogen,
 und daran misst sich der Fortschritt: erfasst gegen bekannt. Ein Routen-Export
 kann das nicht leisten, er ist immer nur ein Ausschnitt einer Strecke.
 
-**Im Web zuerst.** Eine Seite auf einer eigenen Domain, aus einem Video heraus
-mit einem Klick erreichbar. Sie zeigt die Karte mit dem Stand der Erfassung,
+**Im Web zuerst.** Eine Seite auf **plugged.de**, WordPress, aus einem Video
+heraus mit einem Klick erreichbar. Sie zeigt die Karte mit dem Stand der Erfassung,
 also welche Standorte schon bewertet sind und welche nicht, und nimmt neue
 Bewertungen entgegen. Das Zeigen ist nicht Beiwerk: Wer sieht, dass in seiner
 Ecke noch nichts steht, hat einen Grund mitzumachen.
@@ -103,6 +103,13 @@ Sicherheitsgefühl bei Nacht, Barrierefreiheit.
 
 Die Kurzform ist die Voreinstellung, die Vollform hängt hinter einem Aufklapper
 und an dem Haken, den ein Tester in der App setzt.
+
+**Ohne Anmeldung, mit Sichtung.** Ein Konto vor der ersten Bewertung kostet mehr
+Teilnehmer, als Mehrfachabgaben schaden. Dafür geht keine Einsendung
+ungeprüft online. Die Sichtung ist ohnehin nötig, sobald aus den Daten ein
+Artikel wird, und sie fängt beides ab, Unfug und ehrliche Fehler. Technisch
+heißt das: Einsendungen landen in einem Eingang, veröffentlicht wird, was
+freigegeben ist, und nur das Freigegebene sieht die App.
 
 **In der App.** Wer sich als Bewerter beteiligt, setzt einen Haken. Danach
 tragen die Ladestationen entlang der Route einen zusätzlichen Marker: schon
@@ -168,17 +175,30 @@ Meter, Mindestpunktzahl 0,45.
 | Ansage | selbst gebaut, siehe oben | offen |
 | Ladestopps in der Route | Long Distance EV Routing API | offen |
 | Verteilung v1 | TestFlight | offen |
-| Backend | Voraussetzung, nicht Option, siehe unten | offen |
-| Web-Erfassung | Seite mit Karte und Formular | offen |
+| Backend | in WordPress, siehe unten | offen |
+| Web-Erfassung | plugged.de, WordPress-Erweiterung | offen |
 | Geteilte Logik prüfen | Node-Werkzeuge unter `tools/`, 99 Tests | steht |
 | Build | GitHub Actions, macOS-Läufer | steht |
 
-Zum Backend: Web und App zusammen machen einen gemeinsamen Datenspeicher zur
-Voraussetzung, nicht zur Option. Und weil die Erfassung zeitnah beginnen soll,
-steht diese Entscheidung jetzt an und nicht am Ende. Eine im App-Bundle
-mitgelieferte JSON-Datei kann das nicht leisten; sie bleibt bis dahin und wird
-dann ersetzt. `EditorialStore.loadBundled()` ist dafür die einzige
-auszutauschende Stelle, das Matching bleibt unberührt.
+Zum Backend: Web und App zusammen brauchen einen gemeinsamen Datenspeicher, und
+weil die Erfassung zeitnah beginnen soll, steht die Entscheidung jetzt an.
+Da die Seite auf WordPress läuft, ist WordPress auch der Datenspeicher. Eine
+eigene Erweiterung mit eigenen Tabellen, nicht mit Beiträgen: Standorte,
+Einsendungen, Freigabestand.
+
+Der Grund gegen einen zweiten Dienst daneben ist nicht Technikliebe, sondern
+Betrieb. Die Redaktion ist auf plugged.de ohnehin angemeldet, die Sichtung
+gehört damit dorthin, wo ohnehin gearbeitet wird. Sicherung, Zugriffsrechte und
+Impressum gelten für die Seite und decken die Daten mit ab. Und die App braucht
+nur einen offenen Lesepunkt, den die WordPress-REST-Schnittstelle hergibt.
+
+Was das kostet: PHP statt Swift oder JavaScript, und eine Karte mit mehreren
+tausend Punkten will vorbereitet ausgeliefert werden, nicht bei jedem Aufruf
+frisch berechnet. Beides ist überschaubar.
+
+Die im App-Bundle mitgelieferte JSON-Datei bleibt bis dahin und wird dann
+ersetzt. `EditorialStore.loadBundled()` ist dafür die einzige auszutauschende
+Stelle, das Matching bleibt unberührt.
 
 ## Offene Fragen und Risiken
 
@@ -190,14 +210,16 @@ auszutauschende Stelle, das Matching bleibt unberührt.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
 - [ ] Woher kommen Verbrauch und Ladekurve des Fahrzeugs? Ohne beides plant die
       EV-Route falsch. Für v1 reicht ein Profil von Hand.
-- [ ] Auf welcher Domain läuft die Erfassungsseite, und auf welcher Technik?
-      Eine bestehende Redaktionsseite oder etwas Eigenes entscheidet über den
-      halben Aufwand.
-- [ ] Missbrauch bei State of Charge: Offene Bewertungen aus dem Web ohne Konto
-      laden zu Mehrfachabgaben ein. Anmeldung schreckt ab, keine Anmeldung
-      kostet Verlässlichkeit. Eine Sichtung vor Veröffentlichung ist
-      wahrscheinlich ohnehin nötig, sobald daraus ein Artikel wird.
-- [ ] Fotos aus Einsendungen: Speicherort, Rechte, Haftung.
+- [ ] Wie groß ist die Aufgabe wirklich? `tools/register-schnelllader.mjs`
+      beantwortet das aus dem Register, sobald es einmal gelaufen ist.
+- [ ] Fotos aus Einsendungen: Speicherort, Rechte, Haftung. Ein Foto von einer
+      fremden Person ist rechtlich etwas anderes als eines von einer Ladesäule.
+- [ ] Mehrfachabgaben trotz Sichtung: Ein Sichter, der hundert gleichlautende
+      Einsendungen durchsehen muss, ist das eigentliche Problem, nicht die
+      Datenqualität. Einfache Bremsen vorher einbauen.
+- [ ] Wie kommt ein neues Register in den Bestand, ohne dass vorhandene
+      Bewertungen ihren Standort verlieren? Zuordnung über Nähe, nicht über
+      Kennungen aus der Registerdatei.
 - [ ] Belegungsabfrage kostet eine Anfrage je Standort. Bei 125 Standorten
       entlang einer Route ist das zu viel für einen Rutsch.
 
@@ -217,10 +239,11 @@ Zwei Stränge, die parallel laufen können.
 
 **State of Charge**
 
-1. Domain und Technik der Erfassungsseite festlegen.
-2. Grundgesamtheit erzeugen: Schnelllader aus dem Register, zu Standorten
-   zusammengefasst, mit TomTom-POI-IDs verknüpft. Der Leser, das Clustering und
-   die Zuordnung stehen bereits.
+1. ~~Domain und Technik festlegen.~~ plugged.de, WordPress, ohne Anmeldung,
+   mit Sichtung.
+2. Grundgesamtheit erzeugen: `tools/register-schnelllader.mjs` zählt die
+   Schnellladestandorte in Deutschland und schreibt den Erfassungsbogen heraus.
+   Danach ist die Größe der Aufgabe eine Zahl und keine Schätzung.
 3. Datenspeicher aufsetzen: Standorte, Bewertungen, Fotos, Sichtungsstand.
 4. Erfassungsseite bauen: Karte mit Stand der Erfassung, Kurzformular,
    Vollformular für Tester.

@@ -7,7 +7,8 @@
 // Fassungen ändert, ändert die andere mit.
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -1110,4 +1111,46 @@ test('nur erfasste Stationen zaehlen nicht als Test', () => {
   assert.ok(erfasst, 'die Fixtures brauchen einen nicht getesteten Eintrag');
   assert.equal(redaktion.istGetestet(erfasst), false);
   assert.equal(entries.filter(redaktion.istGetestet).length, entries.length - 1);
+});
+
+// ------------------------------------------------------- Registerdatei finden
+
+test('eine angegebene Datei wird unveraendert genommen', () => {
+  const ziel = join(here, 'fixtures', 'alongroute-response.json');
+  const { path, searchedDirectory } = bnetza.resolveRegisterPath(ziel);
+  assert.equal(path, ziel);
+  assert.equal(searchedDirectory, null, 'kein Verzeichnis, also keine Suche');
+});
+
+test('in einem Verzeichnis gewinnt die groesste passende CSV', () => {
+  const verzeichnis = mkdtempSync(join(tmpdir(), 'register-'));
+  writeFileSync(join(verzeichnis, 'Ladesaeulenregister.csv'), 'x'.repeat(5000));
+  writeFileSync(join(verzeichnis, 'ladepunkte-klein.csv'), 'x'.repeat(10));
+  writeFileSync(join(verzeichnis, 'urlaubsfotos.csv'), 'x'.repeat(999999));
+
+  const { path, candidates } = bnetza.resolveRegisterPath(verzeichnis);
+  assert.equal(path, join(verzeichnis, 'Ladesaeulenregister.csv'));
+  assert.equal(candidates.length, 2, 'die Fotos passen nicht auf das Namensmuster');
+});
+
+test('ein Verzeichnis ohne Registerdatei liefert keinen Pfad', () => {
+  const verzeichnis = mkdtempSync(join(tmpdir(), 'leer-'));
+  const { path, searchedDirectory } = bnetza.resolveRegisterPath(verzeichnis);
+  assert.equal(path, null);
+  assert.equal(searchedDirectory, verzeichnis, 'der Aufrufer soll sagen koennen, wo gesucht wurde');
+});
+
+test('Standorte tragen Bundesland und Anschrift fuer den Erfassungsbogen', () => {
+  const eintraege = [
+    { lat: 51.5, lon: 6.5, operator: 'EnBW', powerKW: 300, pointCount: 4,
+      address: 'Musterweg 1', postalCode: '47441', city: 'Moers', state: 'Nordrhein-Westfalen' },
+    { lat: 51.50002, lon: 6.50002, operator: 'EnBW', powerKW: 150, pointCount: 2,
+      address: 'Musterweg 1', postalCode: '47441', city: 'Moers', state: 'Nordrhein-Westfalen' },
+  ];
+  const [standort] = sites.clusterSites(eintraege);
+  assert.equal(standort.deviceCount, 2, 'zwei Einrichtungen, ein Ort');
+  assert.equal(standort.state, 'Nordrhein-Westfalen');
+  assert.equal(standort.address, 'Musterweg 1');
+  assert.equal(standort.maxPowerKW, 300, 'die staerkste Saeule bestimmt den Ort');
+  assert.equal(standort.pointCount, 6);
 });

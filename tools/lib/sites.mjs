@@ -103,6 +103,8 @@ function toSite(members) {
     pointCount: members.reduce((sum, m) => sum + (m.pointCount ?? 0), 0),
     postalCode: members[0].postalCode,
     city: members[0].city,
+    state: members[0].state,
+    address: members[0].address,
     distanceToRouteMeters: distances.length > 0 ? Math.min(...distances) : null,
     members,
   };

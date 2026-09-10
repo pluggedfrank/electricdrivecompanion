@@ -97,7 +97,7 @@ node tomtom-probe.mjs               # fragt den Schluessel ab, Meerbusch nach No
 node tomtom-probe.mjs --diagnose    # welcher Suchbegriff trifft die Kategorie?
 node tomtom-probe.mjs --no-wide     # nur Along-Route, wie die TomTom-Pro-App
 node tomtom-probe.mjs --power=150 --detour=20
-npm test                            # 99 Tests
+npm test                            # 103 Tests
 ```
 
 Der Probe-Lauf nutzt beide Suchverfahren, genau wie die App. `--no-wide`
@@ -404,7 +404,7 @@ demselben Rastplatz. Name allein trifft eine Kette wie EnBW bundesweit. Der Test
 
 Ehrlich getrennt nach dem, was belegt ist, und dem, was nicht:
 
-**Getestet und grün.** Die 99 Tests unter `tools/test/` decken Geometrie,
+**Getestet und grün.** Die 103 Tests unter `tools/test/` decken Geometrie,
 Routenaufteilung, Anfragebau, Antwortauswertung und das Matching ab. Sie laufen
 gegen Fixtures, brauchen kein Netz und keinen Key.
 
@@ -508,8 +508,9 @@ electricdrivecompanion/
   tools/
     lib/                       dieselbe Logik in JavaScript, dazu Registerleser
                                und Korridorfilter
-    test/                      99 Tests gegen Fixtures
+    test/                      103 Tests gegen Fixtures
     tomtom-probe.mjs           Datenkette gegen die echte API
     coverage-check.mjs         Abdeckung gegen das amtliche Register
     redaktion-einbauen.mjs     Export der Treffer in den Bestand der App
+    register-schnelllader.mjs  Schnellladestandorte in Deutschland zaehlen
 ```

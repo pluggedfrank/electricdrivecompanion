@@ -13,7 +13,97 @@
 // Namensfragmente zugeordnet, nicht über Positionen. Was erkannt wurde, gibt
 // das Werkzeug aus; eine Fehlzuordnung fällt damit sofort auf.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join, resolve } from 'node:path';
+
+// ------------------------------------------------------------ Datei finden
+
+export const DOWNLOAD_HINT =
+  'Ladesaeulenliste als CSV holen (rund 51 MB, CC BY 4.0):\n' +
+  '  https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/' +
+  'E-Mobilitaet/Ladesaeulenkarte/start.html';
+
+/** Ohne Angabe wird hier gesucht. */
+export const DEFAULT_SEARCH_DIR = '~/Downloads';
+
+/** Macht ~ am Anfang eines Pfades auf. */
+export function expandPath(path) {
+  const text = String(path);
+  return resolve(text.startsWith('~') ? text.replace(/^~/, homedir()) : text);
+}
+
+/**
+ * Sucht in einem Verzeichnis nach Dateien, die das Register sein koennten.
+ *
+ * Nach Groesse sortiert, die groesste zuerst: Das Register ist mit Abstand die
+ * dickste Datei, die auf das Namensmuster passt.
+ */
+export function findRegisterCandidates(directory) {
+  let names;
+  try {
+    names = readdirSync(directory);
+  } catch {
+    return [];
+  }
+
+  return names
+    .filter((name) => /lade|s[\u00e4a]ul|charg/i.test(name) && /\.(csv|xlsx?)$/i.test(name))
+    .map((name) => {
+      const path = join(directory, name);
+      try {
+        return { path, sizeMB: (statSync(path).size / 1024 / 1024).toFixed(1) };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => Number(b.sizeMB) - Number(a.sizeMB))
+    .slice(0, 5);
+}
+
+/**
+ * Loest die Angabe zu einem Dateipfad auf.
+ *
+ * Angegeben werden darf eine Datei, ein Verzeichnis oder gar nichts. Ohne
+ * Angabe wird im Download-Ordner gesucht. Ein Dateiname, den man abtippen muss,
+ * ist eine Fehlerquelle ohne Gegenwert: Der Download heisst je nach Browser und
+ * Ausgabe anders.
+ *
+ * Gibt aus statt auszugeben: Das Melden bleibt beim Aufrufer, damit dieselbe
+ * Aufloesung in mehreren Werkzeugen und im Test benutzbar ist.
+ */
+export function pickRegisterFile(argument, options = {}) {
+  const {
+    onInfo = (text) => console.log(text),
+    onFatal = (text) => console.error(text),
+  } = options;
+
+  const { path, candidates, searchedDirectory } = resolveRegisterPath(argument);
+  if (!searchedDirectory) return path;
+
+  if (!path) {
+    onFatal(`In ${searchedDirectory} liegt keine Registerdatei.`);
+    onFatal(DOWNLOAD_HINT);
+    onFatal('Danach ohne Argument starten, die Datei wird dann gefunden.');
+    return null;
+  }
+
+  onInfo(`Registerdatei gefunden: ${candidates[0].path} (${candidates[0].sizeMB} MB)`);
+  if (candidates.length > 1) {
+    onInfo(`${candidates.length - 1} weitere Kandidaten ignoriert, groesste gewaehlt.`);
+  }
+  return path;
+}
+
+export function resolveRegisterPath(argument, { defaultDir = DEFAULT_SEARCH_DIR } = {}) {
+  const given = expandPath(argument ?? defaultDir);
+  const isDirectory = existsSync(given) && statSync(given).isDirectory();
+  if (!isDirectory) return { path: given, candidates: [], searchedDirectory: null };
+
+  const candidates = findRegisterCandidates(given).filter((k) => /\.csv$/i.test(k.path));
+  return { path: candidates[0]?.path ?? null, candidates, searchedDirectory: given };
+}
 
 /** Spalten, die uns interessieren, mit den Fragmenten zu ihrer Erkennung. */
 const COLUMN_HINTS = {
