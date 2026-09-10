@@ -279,6 +279,47 @@ actor TomTomAPIClient {
         }
     }
 
+    /// Freitextsuche nach einem Ziel.
+    ///
+    /// Ein Navi, bei dem man das Ziel auf der Karte suchen muss, ist keins. Die
+    /// Suche laeuft ueber denselben Dienst wie die Ladestationssuche, nur ohne
+    /// Kategorie- und Leistungsfilter: Gesucht wird alles, Ort, Anschrift,
+    /// Betrieb.
+    ///
+    /// `near` verschiebt die Trefferliste in die eigene Gegend. Ohne diesen
+    /// Bezugspunkt liefert eine Suche nach "Hauptstraße" irgendeine.
+    func findPlaces(
+        matching query: String,
+        near: CLLocationCoordinate2D?,
+        limit: Int = 8
+    ) async throws -> [Place] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return [] }
+
+        let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
+        guard !encoded.isEmpty else { return [] }
+
+        var components = URLComponents(string: "\(Self.baseURL)/search/2/search/\(encoded).json")
+        var items = [
+            URLQueryItem(name: "key", value: apiKey),
+            URLQueryItem(name: "limit", value: String(min(limit, 20))),
+            // Waehrend des Tippens: Der Dienst behandelt die Eingabe dann als
+            // angefangenes Wort und nicht als vollstaendigen Suchbegriff.
+            URLQueryItem(name: "typeahead", value: "true"),
+            URLQueryItem(name: "language", value: "de-DE"),
+        ]
+        if let near {
+            items.append(URLQueryItem(name: "lat", value: String(near.latitude)))
+            items.append(URLQueryItem(name: "lon", value: String(near.longitude)))
+        }
+        components?.queryItems = items
+        guard let url = components?.url else { throw TomTomAPIError.invalidURL }
+
+        let data = try await perform(URLRequest(url: url))
+        let response = try JSONDecoder().decode(AlongRouteSearchResponse.self, from: data)
+        return response.results.compactMap(Place.init(result:))
+    }
+
     // MARK: Private
 
     private static let baseURL = "https://api.tomtom.com"

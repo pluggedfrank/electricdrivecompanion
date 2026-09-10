@@ -24,6 +24,15 @@ final class TripViewModel: ObservableObject {
         // dort, ein Umweg über die Queue brächte nur eine Bildschirmaktualisierung
         // Verzögerung.
         locationSource.$coordinate.assign(to: &$currentLocation)
+
+        // Nicht bei jedem Tastendruck eine Anfrage: Ein Ziel einzutippen wären
+        // sonst zwanzig Aufrufe für ein Ergebnis. 350 ms ist die Pause, nach
+        // der jemand aufgehört hat zu tippen.
+        $destinationQuery
+            .debounce(for: .milliseconds(350), scheduler: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] text in self?.startPlaceSearch(text) }
+            .store(in: &cancellables)
     }
 
     // MARK: Zustand
@@ -45,6 +54,14 @@ final class TripViewModel: ObservableObject {
     /// niemand führen will.
     @Published private(set) var currentLocation: CLLocationCoordinate2D?
     @Published var destination: CLLocationCoordinate2D?
+
+    /// Was im Suchfeld steht.
+    @Published var destinationQuery = ""
+    @Published private(set) var placeResults: [Place] = []
+    @Published private(set) var isSearchingPlaces = false
+    /// Name des zuletzt gewählten Ziels, für die Kopfzeile. Beim Ziel per
+    /// langem Druck gibt es keinen.
+    @Published private(set) var chosenPlaceName: String?
     @Published var mapIsReady = false
     @Published var mapBottomInset: CGFloat = 0
 
@@ -99,6 +116,19 @@ final class TripViewModel: ObservableObject {
         Task { await planAndSearch() }
     }
 
+    /// Übernimmt ein Suchergebnis als Ziel.
+    func choosePlace(_ place: Place) {
+        destinationQuery = ""
+        placeResults = []
+        chosenPlaceName = place.title
+        setDestination(place.coordinate)
+    }
+
+    func clearPlaceSearch() {
+        destinationQuery = ""
+        placeResults = []
+    }
+
     func selectStation(id: String) {
         selectedStationID = id
         Task { await loadAvailability(for: id) }
@@ -113,7 +143,9 @@ final class TripViewModel: ObservableObject {
         stations = []
         selectedStationID = nil
         destination = nil
+        chosenPlaceName = nil
         phase = .idle
+        clearPlaceSearch()
     }
 
     /// Nach einer Filteränderung nur die Suche wiederholen, die Route bleibt.
@@ -256,6 +288,40 @@ final class TripViewModel: ObservableObject {
 
     // MARK: Private
 
+    /// Startet die Zielsuche neu und bricht die vorige ab.
+    ///
+    /// Ohne Abbruch überholt eine langsame Antwort zu "Ess" die schnelle zu
+    /// "Essen", und in der Liste steht das Falsche.
+    private func startPlaceSearch(_ text: String) {
+        placeSearchTask?.cancel()
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else {
+            placeResults = []
+            isSearchingPlaces = false
+            return
+        }
+
+        isSearchingPlaces = true
+        placeSearchTask = Task { [weak self] in
+            guard let self else { return }
+            let near = currentLocation
+            do {
+                let treffer = try await api.findPlaces(matching: trimmed, near: near)
+                guard !Task.isCancelled else { return }
+                placeResults = treffer
+            } catch {
+                guard !Task.isCancelled else { return }
+                // Kein Fehlerbanner: Eine misslungene Zwischensuche beim Tippen
+                // ist kein Vorfall, über den jemand unterrichtet werden will.
+                placeResults = []
+            }
+            isSearchingPlaces = false
+        }
+    }
+
+    private var cancellables = Set<AnyCancellable>()
+    private var placeSearchTask: Task<Void, Never>?
     private let locationSource = UserLocationSource()
     private let apiKey: String
     private let api: TomTomAPIClient

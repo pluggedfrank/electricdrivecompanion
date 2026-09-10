@@ -1,12 +1,14 @@
 //  RootView.swift
 //  Karte im Hintergrund, Ergebnisse in einem Sheet darüber.
 
+import Foundation
 import SwiftUI
 
 struct RootView: View {
     @StateObject private var trip: TripViewModel
     @State private var sheetDetent: PresentationDetent = .fraction(0.35)
     @State private var showsResults = false
+    @FocusState private var searchFieldFocused: Bool
 
     init(apiKey: String) {
         _trip = StateObject(wrappedValue: TripViewModel(apiKey: apiKey))
@@ -19,10 +21,16 @@ struct RootView: View {
 
             VStack(spacing: 10) {
                 header
+                searchField
+                if !trip.placeResults.isEmpty {
+                    placeResultList
+                }
                 if case let .failed(message) = trip.phase {
                     errorBanner(message)
                 }
-                statusPill
+                if trip.placeResults.isEmpty {
+                    statusPill
+                }
                 Spacer()
             }
             .padding(.horizontal, 16)
@@ -45,6 +53,92 @@ struct RootView: View {
         }
     }
 
+    // MARK: Zielsuche
+
+    private var searchField: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Theme.meta)
+
+            TextField("Ziel suchen", text: $trip.destinationQuery)
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.ink)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .focused($searchFieldFocused)
+
+            if trip.isSearchingPlaces {
+                ProgressView().scaleEffect(0.7).frame(width: 14, height: 14)
+            } else if !trip.destinationQuery.isEmpty {
+                Button {
+                    trip.clearPlaceSearch()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Theme.faint)
+                }
+                .accessibilityLabel("Suche leeren")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(Theme.paper.opacity(0.96), in: Capsule())
+        .shadow(color: .black.opacity(0.10), radius: 10, y: 3)
+    }
+
+    private var placeResultList: some View {
+        VStack(spacing: 0) {
+            ForEach(trip.placeResults) { place in
+                Button {
+                    searchFieldFocused = false
+                    trip.choosePlace(place)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "mappin.circle")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Theme.river)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(place.title)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Theme.ink)
+                                .lineLimit(1)
+                            if let subtitle = place.subtitle {
+                                Text(subtitle)
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Theme.meta)
+                                    .lineLimit(1)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        if let meters = place.distanceMeters {
+                            Text(entfernung(meters))
+                                .font(.system(size: 12).monospacedDigit())
+                                .foregroundStyle(Theme.faint)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if place.id != trip.placeResults.last?.id {
+                    Divider().padding(.leading, 40)
+                }
+            }
+        }
+        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
+    }
+
+    private func entfernung(_ meters: Double) -> String {
+        meters < 1000
+            ? "\(Int(meters.rounded())) m"
+            : String(format: "%.0f km", meters / 1000)
+    }
+
     // MARK: Kopfzeile
 
     private var header: some View {
@@ -55,12 +149,19 @@ struct RootView: View {
             Text("LadeRoute")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Theme.ink)
-            Text("Prototyp")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(Theme.meta)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Theme.panel, in: Capsule())
+            if let ziel = trip.chosenPlaceName {
+                Text(ziel)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.meta)
+                    .lineLimit(1)
+            } else {
+                Text("Prototyp")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Theme.meta)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Theme.panel, in: Capsule())
+            }
 
             Spacer()
 
@@ -87,7 +188,7 @@ struct RootView: View {
     private var statusPill: some View {
         switch trip.phase {
         case .idle:
-            pill(icon: "hand.tap", text: "Ziel lange auf die Karte drücken")
+            pill(icon: "magnifyingglass", text: "Ziel suchen oder lange auf die Karte drücken")
         case .planningRoute:
             pill(icon: "point.topleft.down.curvedto.point.bottomright.up", text: "Route wird geplant …", busy: true)
         case .searchingStations:
