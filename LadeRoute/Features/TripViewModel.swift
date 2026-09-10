@@ -47,6 +47,7 @@ final class TripViewModel: ObservableObject {
 
     @Published private(set) var phase: Phase = .idle
     @Published private(set) var route: TomTomSDKRoute.Route?
+    /// Was angezeigt wird: die gefundenen Treffer, gefiltert.
     @Published private(set) var stations: [AnnotatedStation] = []
     @Published var selectedStationID: String?
     /// Der eigene Standort. Kommt aus `UserLocationSource` und nirgends sonst;
@@ -156,6 +157,8 @@ final class TripViewModel: ObservableObject {
     func clearTrip() {
         route = nil
         stations = []
+        fetchedStations = []
+        fetchedTier = nil
         selectedStationID = nil
         destination = nil
         chosenPlaceName = nil
@@ -163,10 +166,23 @@ final class TripViewModel: ObservableObject {
         clearPlaceSearch()
     }
 
-    /// Nach einer Filteränderung nur die Suche wiederholen, die Route bleibt.
+    /// Filter neu anwenden, ohne noch einmal zu suchen.
+    ///
+    /// Vorher hat jede Umschaltung von 150 auf 300 kW die komplette Suche neu
+    /// gestartet, also rund fünfzig Anfragen für eine Entscheidung, die längst
+    /// in den vorhandenen Daten steckte. Gesucht wird jetzt einmal an der
+    /// Untergrenze, gefiltert wird örtlich.
+    ///
+    /// Eine Ausnahme bleibt: "alle" liegt unter der Untergrenze der Suche. Wer
+    /// auch AC-Säulen sehen will, bekommt eine neue Runde.
     func reapplyFilters() {
         guard route != nil else { return }
-        Task { await searchStations() }
+
+        if powerTier.rawValue < Self.fetchTier.rawValue, fetchedTier != powerTier {
+            Task { await searchStations() }
+            return
+        }
+        applyLocalFilters()
     }
 
     // MARK: Ablauf
@@ -182,6 +198,7 @@ final class TripViewModel: ObservableObject {
 
         phase = .planningRoute
         stations = []
+        fetchedStations = []
         selectedStationID = nil
 
         do {
@@ -195,13 +212,27 @@ final class TripViewModel: ObservableObject {
         await searchStations()
     }
 
+    /// Mit dieser Untergrenze wird gesucht, unabhängig vom gewählten Filter.
+    ///
+    /// Nicht ganz ohne Grenze: Eine Antwort der Along-Route-Suche fasst nur
+    /// zwanzig Treffer je Abschnitt. Ohne Untergrenze verdrängen AC-Säulen die
+    /// brauchbaren, und dann fehlen sie in jeder Filterstufe.
+    static let fetchTier: PowerTier = .notloesung
+
+    /// So weit seitlich wird aufgehoben. Der Anzeigefilter ist enger.
+    private static let keepDistanceMeters: Double = 10_000
+
     private func searchStations() async {
         guard let route else { return }
 
         phase = .searchingStations
         var options = AlongRouteSearchOptions()
-        options.maxDetourSeconds = Int(maxDetourMinutes * 60)
-        options.minPowerKW = powerTier.minPowerKW
+        // Der weiteste Wert, den der Regler zulässt. Der Umweg wird örtlich
+        // gefiltert; die Messung hat gezeigt, dass maxDetourTime den Korridor
+        // der Suche ohnehin nicht verbreitert.
+        options.maxDetourSeconds = 30 * 60
+        options.minPowerKW = powerTier == .alle ? nil : Self.fetchTier.minPowerKW
+        fetchedTier = powerTier == .alle ? .alle : Self.fetchTier
 
         // Erste Runde: schnell, deckt den engen Korridor an der Route ab.
         do {
@@ -212,9 +243,10 @@ final class TripViewModel: ObservableObject {
             let sortiert = GeoUtils.orderAlongRoute(
                 found,
                 routeGeometry: route.geometry,
-                maxDistanceMeters: maxDistanceFromRouteMeters
+                maxDistanceMeters: Self.keepDistanceMeters
             )
-            stations = editorialStore.annotate(sortiert)
+            fetchedStations = editorialStore.annotate(sortiert)
+            applyLocalFilters()
             phase = .ready
         } catch {
             phase = .failed(error.localizedDescription)
@@ -244,8 +276,8 @@ final class TripViewModel: ObservableObject {
             // Beide Runden zusammen sortieren, nicht die zweite hinten anhängen.
             // Die Umkreissuche liefert keinen Umweg mit, ihre Treffer ließen
             // sich sonst gar nicht einordnen.
-            var known = Set(stations.map(\.id))
-            var alle = stations.map(\.station)
+            var known = Set(fetchedStations.map(\.id))
+            var alle = fetchedStations.map(\.station)
             for station in nearby where !known.contains(station.id) {
                 known.insert(station.id)
                 alle.append(station)
@@ -254,19 +286,20 @@ final class TripViewModel: ObservableObject {
             let sortiert = GeoUtils.orderAlongRoute(
                 alle,
                 routeGeometry: route.geometry,
-                maxDistanceMeters: maxDistanceFromRouteMeters
+                maxDistanceMeters: Self.keepDistanceMeters
             )
 
             // Bereits geholte Live-Belegungen nicht wegwerfen.
             let belegungen = Dictionary(
-                stations.compactMap { item in item.availability.map { (item.id, $0) } },
+                fetchedStations.compactMap { item in item.availability.map { (item.id, $0) } },
                 uniquingKeysWith: { first, _ in first }
             )
-            stations = editorialStore.annotate(sortiert).map { item in
+            fetchedStations = editorialStore.annotate(sortiert).map { item in
                 var angereichert = item
                 angereichert.availability = belegungen[item.id]
                 return angereichert
             }
+            applyLocalFilters()
         } catch {
             // Die erste Runde steht bereits. Ein Fehler hier kostet nur die
             // Ergänzung, nicht das Ergebnis.
@@ -277,15 +310,19 @@ final class TripViewModel: ObservableObject {
     /// Live-Belegung erst beim Antippen holen, nicht für alle Treffer auf einmal.
     /// Das spart im Freemium-Kontingent den Löwenanteil der Anfragen.
     private func loadAvailability(for stationID: String) async {
-        guard let index = stations.firstIndex(where: { $0.id == stationID }) else { return }
-        guard stations[index].availability == nil else { return }
-        guard let availabilityID = stations[index].station.availabilityID else { return }
+        // In den Bestand geschrieben, nicht in die Anzeige: `stations` ist eine
+        // abgeleitete Sicht, ein späterer Filterwechsel würde die Belegung
+        // sonst wieder wegwerfen.
+        guard let index = fetchedStations.firstIndex(where: { $0.id == stationID }) else { return }
+        guard fetchedStations[index].availability == nil else { return }
+        guard let availabilityID = fetchedStations[index].station.availabilityID else { return }
 
         do {
             let availability = try await api.availability(for: availabilityID)
             // Der Index kann sich zwischenzeitlich verschoben haben.
-            if let current = stations.firstIndex(where: { $0.id == stationID }) {
-                stations[current].availability = availability
+            if let current = fetchedStations.firstIndex(where: { $0.id == stationID }) {
+                fetchedStations[current].availability = availability
+                applyLocalFilters()
             }
         } catch {
             // Live-Daten sind eine Zugabe. Fehlen sie, bleibt der Rest nutzbar.
@@ -302,6 +339,34 @@ final class TripViewModel: ObservableObject {
     }
 
     // MARK: Private
+
+    /// Wendet Leistung, Umweg und seitlichen Abstand auf das Gefundene an.
+    ///
+    /// Kostet keine Anfrage. Alle drei Regler sind damit sofort wirksam, und
+    /// zwar in beide Richtungen: Auch das Zurückstellen von 300 auf 150 kW
+    /// zeigt die Stationen wieder, statt sie neu zu suchen.
+    private func applyLocalFilters() {
+        let minPower = powerTier.minPowerKW
+        let maxDetour = maxDetourMinutes * 60
+
+        stations = fetchedStations.filter { item in
+            let station = item.station
+
+            if let minPower, !station.meetsMinPower(minPower) { return false }
+
+            if let abstand = station.distanceFromRouteMeters,
+               abstand > maxDistanceFromRouteMeters {
+                return false
+            }
+
+            // Der Umweg gilt nur, wo einer bekannt ist. Treffer aus der
+            // Umkreissuche bringen keinen mit; sie über einen fehlenden Wert
+            // auszuschließen, würde die halbe Liste kosten.
+            if let umweg = station.detourSeconds, umweg > maxDetour { return false }
+
+            return true
+        }
+    }
 
     /// Startet die Zielsuche neu und bricht die vorige ab.
     ///
@@ -335,6 +400,10 @@ final class TripViewModel: ObservableObject {
         }
     }
 
+    /// Alles, was die Suche gefunden hat. `stations` ist die gefilterte Sicht.
+    private var fetchedStations: [AnnotatedStation] = []
+    /// Mit welcher Untergrenze zuletzt gesucht wurde.
+    private var fetchedTier: PowerTier?
     private var cancellables = Set<AnyCancellable>()
     private var placeSearchTask: Task<Void, Never>?
     private let locationSource = UserLocationSource()
