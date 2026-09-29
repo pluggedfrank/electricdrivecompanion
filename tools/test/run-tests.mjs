@@ -1565,6 +1565,14 @@ test('die Bloecke enthalten die Originale, keine Kopien', () => {
   assert.equal(eintraege[0].ergebnis, 42, 'Schreiben muss beim Original ankommen');
 });
 
+test('buildMatrixBody haengt die Verkehrslage nur auf Wunsch an', () => {
+  const a = [{ lat: 1, lon: 2 }];
+  assert.equal(matrix.buildMatrixBody(a, a).options, undefined);
+  assert.deepEqual(matrix.buildMatrixBody(a, a, { mitVerkehr: true }).options, {
+    departAt: 'now',
+  });
+});
+
 test('abschnitte nennt jedes Stuetzpunktpaar genau einmal', () => {
   const zuordnungen = [
     { davor: 0, dahinter: 1 },

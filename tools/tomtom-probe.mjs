@@ -12,6 +12,7 @@
 //   node tomtom-probe.mjs --verkehr
 //   node tomtom-probe.mjs --umwege        Umwege nachrechnen, wo keiner vorliegt
 //   node tomtom-probe.mjs --umwege=alle   alle nachrechnen, zum Abgleich
+//   node tomtom-probe.mjs --umwege=alle --verkehr   Route und Matrix mit Verkehrslage
 //
 // Statt --key=... kann TOMTOM_API_KEY gesetzt sein. Das ist der bessere Weg,
 // weil der Schlüssel sonst in der Shell-History landet.
@@ -392,7 +393,7 @@ async function diagnose(apiKey, route, baseOptions) {
  * Stuetzpunkt davor plus Rueckfahrt zum Stuetzpunkt dahinter minus der Strecke,
  * die man ohnehin gefahren waere.
  */
-async function berechneUmwege(apiKey, route, stationen, nurFehlende) {
+async function berechneUmwege(apiKey, route, stationen, nurFehlende, mitVerkehr = false) {
   const stuetzen = matrix.stuetzpunkte(route.points, route.durationMin * 60);
   const url = matrix.buildMatrixURL(apiKey);
 
@@ -426,8 +427,8 @@ async function berechneUmwege(apiKey, route, stationen, nurFehlende) {
       const ziele = teil.eintraege.map(punktVon);
 
       const body = stuetzeIstStart
-        ? matrix.buildMatrixBody(punkte, ziele)
-        : matrix.buildMatrixBody(ziele, punkte);
+        ? matrix.buildMatrixBody(punkte, ziele, { mitVerkehr })
+        : matrix.buildMatrixBody(ziele, punkte, { mitVerkehr });
 
       await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS);
       anfragen++;
@@ -797,14 +798,16 @@ async function main() {
     const begonnen = Date.now();
 
     try {
-      const ergebnis = await berechneUmwege(apiKey, route, stationen, nurFehlende);
+      const mitVerkehr = Boolean(args.verkehr);
+      const ergebnis = await berechneUmwege(apiKey, route, stationen, nurFehlende, mitVerkehr);
       matrixAnfragen = ergebnis.anfragen;
       const sekunden = ((Date.now() - begonnen) / 1000).toFixed(1);
 
       const gerechnet = ergebnis.zuordnungen.filter((z) => z.umweg != null);
       console.log(
         `${ergebnis.anfragen} Anfragen, ${ergebnis.zellen} Zellen, ` +
-          `${ergebnis.stuetzpunkte} Stuetzpunkte, ${sekunden} s`
+          `${ergebnis.stuetzpunkte} Stuetzpunkte, ${sekunden} s` +
+          (mitVerkehr ? ', mit Verkehrslage (departAt=now)' : ', ohne Verkehrslage')
       );
       console.log(
         `Umweg für ${bold(String(gerechnet.length))} von ${stationen.length} Stationen`

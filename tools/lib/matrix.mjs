@@ -45,13 +45,22 @@ export function buildMatrixURL(apiKey) {
   return `${BASE_URL}/routing/matrix/2?key=${encodeURIComponent(apiKey)}`;
 }
 
-/** Der Rumpf der Anfrage. Die Punkte muessen in point stehen, das ist Pflicht. */
-export function buildMatrixBody(origins, destinations) {
+/**
+ * Der Rumpf der Anfrage. Die Punkte muessen in point stehen, das ist Pflicht.
+ *
+ * Ohne departAt rechnet die Matrix ohne Verkehrslage. `mitVerkehr` schaltet
+ * sie zu, fuer den Vergleich mit den Umwegen der Along-Route-Suche: Die kommen
+ * offenbar mit Verkehr, und ob die Differenz zu unseren Werten daher ruehrt
+ * oder aus der Definition, laesst sich nur messen, wenn beide gleich rechnen.
+ */
+export function buildMatrixBody(origins, destinations, { mitVerkehr = false } = {}) {
   const punkt = (p) => ({ point: { latitude: p.lat, longitude: p.lon } });
-  return {
+  const body = {
     origins: origins.map(punkt),
     destinations: destinations.map(punkt),
   };
+  if (mitVerkehr) body.options = { departAt: 'now' };
+  return body;
 }
 
 /**
