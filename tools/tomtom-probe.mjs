@@ -13,6 +13,7 @@
 //   node tomtom-probe.mjs --umwege        Umwege nachrechnen, wo keiner vorliegt
 //   node tomtom-probe.mjs --umwege=alle   alle nachrechnen, zum Abgleich
 //   node tomtom-probe.mjs --umwege=alle --verkehr   Route und Matrix mit Verkehrslage
+//   node tomtom-probe.mjs --umwege=alle --pruefen=8   dazu Kontrollrechnung mit dem Routenplaner
 //
 // Statt --key=... kann TOMTOM_API_KEY gesetzt sein. Das ist der bessere Weg,
 // weil der Schlüssel sonst in der Shell-History landet.
@@ -156,6 +157,32 @@ async function planRoute(apiKey, from, to, mitVerkehr = false) {
     lengthKm: route.summary.lengthInMeters / 1000,
     durationMin: route.summary.travelTimeInSeconds / 60,
   };
+}
+
+/**
+ * Fahrzeit einer Route ueber die angegebenen Punkte, in Sekunden.
+ *
+ * Fuer die Kontrollrechnung: Was sagt der Routenplaner selbst, wenn er ueber
+ * die Station faehrt? Das ist die Mehrzeit, die ein Navi beim Umrouten
+ * tatsaechlich ansagen wuerde, und damit der Massstab fuer die Matrix.
+ */
+async function routeSekunden(apiKey, punkte, mitVerkehr = false) {
+  const pfad = punkte.map((p) => `${p.lat},${p.lon}`).join(':');
+  const url = new URL(`${ev.BASE_URL}/routing/1/calculateRoute/${pfad}/json`);
+  url.searchParams.set('key', apiKey);
+  url.searchParams.set('routeType', 'fastest');
+  url.searchParams.set('traffic', mitVerkehr ? 'true' : 'false');
+  url.searchParams.set('travelMode', 'car');
+
+  await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS);
+  const response = await ev.requestWithRetry(fetch, url, {});
+  if (!response.ok) {
+    throw new Error(`Routing antwortet mit ${response.status}`);
+  }
+  const json = await response.json();
+  const sekunden = json.routes?.[0]?.summary?.travelTimeInSeconds;
+  if (typeof sekunden !== 'number') throw new Error('Routing liefert keine Fahrzeit.');
+  return sekunden;
 }
 
 /** Eine einzelne Along-Route-Anfrage, mit Nachfassversuch bei Drosselung. */
@@ -486,7 +513,7 @@ async function berechneUmwege(apiKey, route, stationen, nurFehlende, mitVerkehr 
     );
   }
 
-  return { zuordnungen, anfragen, zellen, stuetzpunkte: stuetzen.length };
+  return { zuordnungen, anfragen, zellen, stuetzpunkte: stuetzen.length, stuetzen };
 }
 
 /**
@@ -504,6 +531,7 @@ function vergleiche(zuordnungen) {
       tomtom: z.station.detourSeconds,
       gerechnet: z.umweg,
       abweichung: Math.abs(z.umweg - z.station.detourSeconds),
+      zuordnung: z,
     }));
 
   if (paare.length === 0) return null;
@@ -515,6 +543,70 @@ function vergleiche(zuordnungen) {
     groesste: paare.reduce((a, b) => (b.abweichung > a.abweichung ? b : a)),
     paare,
   };
+}
+
+/**
+ * Haelt Matrix und TomTom gegen den Routenplaner.
+ *
+ * Die Matrix liegt bei Stadtstationen systematisch unter TomToms Along-Route-
+ * Wert, mit und ohne Verkehr. Zwei Definitionen stehen im Raum: TomTom misst
+ * abfahren und auf dieselbe Route zurueck, die Matrix den besten Weg von
+ * Stuetzpunkt zu Stuetzpunkt ueber die Station. Der Routenplaner mit der
+ * Station als Zwischenziel rechnet Letzteres exakt. Stimmt er mit der Matrix
+ * ueberein, ist die Matrix fuer ihre Definition richtig.
+ *
+ * Zwei Anfragen je Station, die Grundstrecke je Abschnitt nur einmal.
+ */
+async function kontrollrechnung(apiKey, paare, stuetzen, mitVerkehr, args) {
+  const anzahl = args.pruefen === true ? 8 : Math.max(1, Number(args.pruefen) || 8);
+  const auswahl = paare.slice(0, anzahl);
+
+  console.log('');
+  console.log(bold(`Kontrollrechnung mit dem Routenplaner, ${auswahl.length} Stationen`));
+  console.log(dim('Route Stuetzpunkt -> Station -> Stuetzpunkt minus Route Stuetzpunkt -> Stuetzpunkt'));
+  console.log('');
+
+  const grundstrecke = new Map();
+  let anfragen = 0;
+  let summeMatrix = 0;
+  let summeTomTom = 0;
+
+  for (const paar of auswahl) {
+    const { davor, dahinter, station } = paar.zuordnung;
+    const a = stuetzen[davor];
+    const b = stuetzen[dahinter];
+    const schluessel = `${davor}->${dahinter}`;
+
+    try {
+      if (!grundstrecke.has(schluessel)) {
+        grundstrecke.set(schluessel, await routeSekunden(apiKey, [a, b], mitVerkehr));
+        anfragen++;
+      }
+      const ueberStation = await routeSekunden(apiKey, [a, station, b], mitVerkehr);
+      anfragen++;
+
+      const planer = Math.max(0, ueberStation - grundstrecke.get(schluessel));
+      summeMatrix += Math.abs(planer - paar.gerechnet);
+      summeTomTom += Math.abs(planer - paar.tomtom);
+
+      console.log(
+        '  ' +
+          paar.name.slice(0, 26).padEnd(28) +
+          `TomTom ${String(Math.round(paar.tomtom)).padStart(4)} s   ` +
+          `Matrix ${String(Math.round(paar.gerechnet)).padStart(4)} s   ` +
+          `Planer ${String(Math.round(planer)).padStart(4)} s`
+      );
+    } catch (fehler) {
+      console.log('  ' + paar.name.slice(0, 26).padEnd(28) + red(fehler.message));
+    }
+  }
+
+  console.log('');
+  console.log(
+    `Abstand zum Planer im Mittel: Matrix ${Math.round(summeMatrix / auswahl.length)} s, ` +
+      `TomTom ${Math.round(summeTomTom / auswahl.length)} s` +
+      dim(`   (${anfragen} Anfragen)`)
+  );
 }
 
 // ------------------------------------------------- Redaktionsdaten erzeugen
@@ -846,6 +938,10 @@ async function main() {
         }
         if (vergleich.paare.length > 10) {
           console.log(dim(`  ... und ${vergleich.paare.length - 10} weitere`));
+        }
+
+        if (args.pruefen) {
+          await kontrollrechnung(apiKey, vergleich.paare, ergebnis.stuetzen, mitVerkehr, args);
         }
       } else if (nurFehlende) {
         console.log(
