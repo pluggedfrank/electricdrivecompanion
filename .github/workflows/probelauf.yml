@@ -1,0 +1,96 @@
+# Probelaeufe gegen die TomTom-API, auf dem Laeufer statt auf dem Mac.
+#
+# Warum: Die Entwicklungsumgebung, in der der Code entsteht, kommt nicht an
+# api.tomtom.com heran, und jeder Probelauf hiess bisher: Befehl kopieren,
+# im Terminal ausfuehren, Ausgabe zurueckkopieren. Hier laeuft er ohne
+# Mensch dazwischen, und das Ergebnis steht im Protokoll.
+#
+# Voraussetzung, einmalig: Repository-Secret TOMTOM_API_KEY
+# (Settings -> Secrets and variables -> Actions -> New repository secret).
+#
+# Veraendert ein Lauf daten/umwege.json, wird die Tabelle committet, auch
+# wenn der Lauf abbricht oder abgebrochen wird: Was bis dahin gerechnet ist,
+# soll nicht verloren gehen.
+
+name: Probelauf
+
+on:
+  workflow_dispatch:
+    inputs:
+      skript:
+        description: "Welches Werkzeug"
+        type: choice
+        required: true
+        default: register-probe.mjs
+        options:
+          - register-probe.mjs
+          - korridore-abfahren.mjs
+          - umweg-einzeln.mjs
+          - tomtom-probe.mjs
+      argumente:
+        description: "Argumente, etwa --from=51.256,6.689 --to=53.6148,7.1621"
+        required: false
+        default: ""
+
+# Zwei Laeufe, die gleichzeitig an der Tabelle schreiben, wuerden sich beim
+# Push gegenseitig abweisen.
+concurrency:
+  group: probelauf
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  lauf:
+    runs-on: ubuntu-latest
+    # Die Korridore brauchen Stunden; GitHub erlaubt sechs.
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Key vorhanden?
+        env:
+          TOMTOM_API_KEY: ${{ secrets.TOMTOM_API_KEY }}
+        run: |
+          if [ -z "$TOMTOM_API_KEY" ]; then
+            echo "Secret TOMTOM_API_KEY fehlt: Settings -> Secrets and variables -> Actions." >&2
+            exit 1
+          fi
+
+      - name: Lauf
+        env:
+          TOMTOM_API_KEY: ${{ secrets.TOMTOM_API_KEY }}
+          SKRIPT: ${{ inputs.skript }}
+          ARGUMENTE: ${{ inputs.argumente }}
+          # Keine Farbcodes im Protokoll.
+          NO_COLOR: '1'
+        # Argumente absichtlich ungequotet: Sie sollen in Woerter zerfallen.
+        run: node "tools/$SKRIPT" $ARGUMENTE < /dev/null
+
+      - name: Umwegtabelle sichern
+        if: always()
+        run: |
+          if git diff --quiet -- daten/umwege.json; then
+            echo "Tabelle unveraendert."
+            exit 0
+          fi
+          anzahl=$(node -e "console.log(Object.keys(JSON.parse(require('fs').readFileSync('daten/umwege.json','utf8')).eintraege).length)")
+          git config user.name "Probelauf"
+          git config user.email "probelauf@users.noreply.github.com"
+          git add daten/umwege.json
+          git commit -m "Umwegtabelle: $anzahl Eintraege nach $SKRIPT $ARGUMENTE" -m "Automatisch aus dem Workflow Probelauf, Lauf $GITHUB_RUN_ID."
+          # Wer inzwischen gepusht hat, kommt zuerst; die Tabelle wird oben drauf gesetzt.
+          for versuch in 1 2 3; do
+            git pull --rebase -q origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep 5
+          done
+          echo "Push gescheitert." >&2
+          exit 1
+        env:
+          SKRIPT: ${{ inputs.skript }}
+          ARGUMENTE: ${{ inputs.argumente }}
