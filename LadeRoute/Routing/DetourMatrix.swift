@@ -100,33 +100,34 @@ enum DetourMatrix {
 
     /// Teilt die Arbeit in Anfragen unter der Zellengrenze auf.
     ///
-    /// Gierig: Einträge kommen der Reihe nach in den Block, solange das Produkt
-    /// aus verschiedenen Stützpunkten und Blockgröße unter der Grenze bleibt.
-    /// Weil die Stationen entlang der Route sortiert sind, teilen sich
-    /// benachbarte ihre Stützpunkte, und die Blöcke werden von selbst groß.
+    /// Ein Stützpunkt je Block. Die Matrix rechnet das Kreuzprodukt, und
+    /// TomTom rechnet je Zelle ab, nicht je Anfrage: Ein Block mit drei
+    /// Stützpunkten und sechzig Stationen kostet 180 Zellen für sechzig
+    /// Werte. Am 29.09.2026 war das Tageskontingent nach zwei Probeläufen
+    /// mit je 750 Zellen aufgebraucht. So kostet jede Station genau eine
+    /// Zelle je Richtung, bei etwa einer Anfrage je Stützpunkt.
     ///
     /// `supportOf[i]` ist der Stützpunkt, der zum Eintrag i gehört.
     static func blocks(supportOf: [Int], maxCells: Int = maxCells) -> [Block] {
-        var result: [Block] = []
-        var entries: [Int] = []
-        var supports: [Int] = []
-
+        var order: [Int] = []
+        var perSupport: [Int: [Int]] = [:]
         for (index, support) in supportOf.enumerated() {
-            var next = supports
-            if !next.contains(support) { next.append(support) }
-
-            if !entries.isEmpty, next.count * (entries.count + 1) > maxCells {
-                result.append(Block(entries: entries, supports: supports))
-                entries = []
-                supports = [support]
-            } else {
-                supports = next
+            if perSupport[support] == nil {
+                perSupport[support] = []
+                order.append(support)
             }
-            entries.append(index)
+            perSupport[support]?.append(index)
         }
 
-        if !entries.isEmpty {
-            result.append(Block(entries: entries, supports: supports))
+        var result: [Block] = []
+        for support in order {
+            let entries = perSupport[support] ?? []
+            var start = 0
+            while start < entries.count {
+                let end = min(start + maxCells, entries.count)
+                result.append(Block(entries: Array(entries[start ..< end]), supports: [support]))
+                start = end
+            }
         }
         return result
     }

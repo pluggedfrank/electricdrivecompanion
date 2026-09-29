@@ -138,41 +138,37 @@ export function klammer(stuetzen, progressMeters) {
 /**
  * Teilt die Arbeit in Anfragen unter der Zellengrenze auf.
  *
- * Gierig: Stationen kommen der Reihe nach in den Block, solange das Produkt aus
- * verschiedenen Stuetzpunkten und Blockgroesse unter der Grenze bleibt. Weil
- * die Stationen entlang der Route sortiert sind, teilen sich benachbarte
- * Stationen ihre Stuetzpunkte, und die Bloecke werden von selbst gross.
+ * Ein Stuetzpunkt je Block, und das ist eine Kehrtwende: Die erste Fassung
+ * packte gierig mehrere Stuetzpunkte in einen Block, um mit wenigen Anfragen
+ * auszukommen, fuenf je Route. Nur rechnet die Matrix das Kreuzprodukt: Ein
+ * Block mit drei Stuetzpunkten und sechzig Stationen kostet 180 Zellen, von
+ * denen sechzig gebraucht werden. Und TomTom rechnet je Zelle ab, nicht je
+ * Anfrage. Am 29.09.2026 war das Tageskontingent nach zwei Probelaeufen mit
+ * je rund 750 Zellen aufgebraucht: "InsufficientFunds".
+ *
+ * Mit einem Stuetzpunkt je Block kostet jede Station genau eine Zelle je
+ * Richtung. Das sind mehr Anfragen, etwa eine je Stuetzpunkt und Richtung,
+ * aber ein Drittel der Zellen.
  *
  * `stuetzeVon` sagt, welcher Stuetzpunkt zu einem Eintrag gehoert. Als Funktion
- * und nicht als Feldname, und das hat einen Grund: Vorher erwartete diese
- * Funktion ein Feld `stuetzIndex`, der Aufrufer legte es mit einer Kopie an,
- * und die Bloecke enthielten Kopien statt der Originale. Was er hineinschrieb,
- * landete im Nichts. Vier Anfragen liefen durch und lieferten null Umwege.
- *
- * Die Bloecke enthalten die uebergebenen Objekte selbst. Wer etwas
- * hineinschreibt, schreibt in das Original.
+ * und nicht als Feldname: Vorher erwartete diese Funktion ein Feld, der
+ * Aufrufer legte es mit einer Kopie an, und was er nach der Anfrage in die
+ * Bloecke schrieb, landete in den Kopien. Die Bloecke enthalten die
+ * uebergebenen Objekte selbst.
  */
 export function bloecke(eintraege, stuetzeVon, maxZellen = MAX_ZELLEN) {
-  const ergebnis = [];
-  let block = [];
-  let stuetzenImBlock = new Set();
-
-  for (const zuordnung of eintraege) {
-    const naechste = new Set(stuetzenImBlock);
-    naechste.add(stuetzeVon(zuordnung));
-
-    if (block.length > 0 && naechste.size * (block.length + 1) > maxZellen) {
-      ergebnis.push({ eintraege: block, stuetzen: [...stuetzenImBlock] });
-      block = [];
-      stuetzenImBlock = new Set([stuetzeVon(zuordnung)]);
-    } else {
-      stuetzenImBlock = naechste;
-    }
-    block.push(zuordnung);
+  const jeStuetze = new Map();
+  for (const eintrag of eintraege) {
+    const stuetze = stuetzeVon(eintrag);
+    if (!jeStuetze.has(stuetze)) jeStuetze.set(stuetze, []);
+    jeStuetze.get(stuetze).push(eintrag);
   }
 
-  if (block.length > 0) {
-    ergebnis.push({ eintraege: block, stuetzen: [...stuetzenImBlock] });
+  const ergebnis = [];
+  for (const [stuetze, liste] of jeStuetze) {
+    for (let i = 0; i < liste.length; i += maxZellen) {
+      ergebnis.push({ eintraege: liste.slice(i, i + maxZellen), stuetzen: [stuetze] });
+    }
   }
   return ergebnis;
 }

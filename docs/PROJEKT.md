@@ -269,9 +269,19 @@ Raster:
    sind, teilen sich Nachbarn ihre Stützpunkte, und die Blöcke werden groß.
 4. `Umweg = t(davor → Station) + t(Station → danach) − t(davor → danach)`.
 
-Für 104 Stationen auf 321 km sind das fünf Anfragen. Wo TomTom den Umweg schon
-mitgeliefert hat, bleibt sein Wert stehen; gerechnet wird nur, was fehlt, und
-nur bis 5 km neben der Route, dem Anschlag des Abstandsreglers.
+**TomTom rechnet die Matrix je Zelle ab, nicht je Anfrage.** Gemessen am
+29.09.2026: Zwei Probeläufe mit je rund 750 Zellen und 60 Suchanfragen, und
+beim dritten kam `InsufficientFunds`. Deshalb ein Stützpunkt je Block, auch
+wenn das mehr Anfragen sind: Jede Station kostet dann genau eine Zelle je
+Richtung, für 104 Stationen etwa 215 Zellen statt 750. Wo TomTom den Umweg
+schon mitgeliefert hat, bleibt sein Wert stehen; gerechnet wird nur, was
+fehlt, und nur bis 5 km neben der Route, dem Anschlag des Abstandsreglers.
+
+Die Alternative wäre je Station eine Route mit Zwischenziel: eine Anfrage je
+Station, exakt, aber hundert Anfragen nacheinander statt fünfzehn. Für die
+Fahransicht, die nur die nächsten Stationen braucht, kann das die bessere Wahl
+sein. Entschieden wird das mit der Verbrauchsübersicht im TomTom-Dashboard,
+die sagt, was eine Zelle wirklich kostet.
 
 **Die dritte Matrix ist Pflicht, das war eine Lehre.** Die erste Fassung nahm
 die Zeit von Stützpunkt zu Stützpunkt anteilig aus der Gesamtfahrzeit der

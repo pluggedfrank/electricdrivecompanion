@@ -1544,8 +1544,22 @@ test('die Bloecke bleiben unter der Zellengrenze', () => {
     assert.ok(zellen <= matrix.MAX_ZELLEN, `${zellen} Zellen in einem Block`);
   }
 
-  // Und es sollen wenige Anfragen sein, sonst lohnt der ganze Aufwand nicht.
-  assert.ok(teile.length <= 6, `${teile.length} Anfragen für 150 Stationen`);
+  // Keine Zelle zu viel: TomTom rechnet je Zelle ab, und das Kreuzprodukt
+  // mehrerer Stuetzpunkte in einem Block hat am 29.09.2026 das Tageskontingent
+  // gekostet. Jede Station genau eine Zelle.
+  const zellen = teile.reduce((n, t) => n + t.stuetzen.length * t.eintraege.length, 0);
+  assert.equal(zellen, 150, 'eine Zelle je Station, nicht mehr');
+  for (const teil of teile) assert.equal(teil.stuetzen.length, 1);
+  // 150 Stationen auf 450 km sind 9 Stuetzpunkte, also 9 Anfragen.
+  assert.equal(teile.length, 9);
+});
+
+test('ein Stuetzpunkt mit mehr Stationen als Zellen wird geteilt', () => {
+  const eintraege = Array.from({ length: 450 }, (_, i) => ({ i }));
+  const teile = matrix.bloecke(eintraege, () => 0);
+  assert.equal(teile.length, 3);
+  assert.equal(teile[0].eintraege.length, 200);
+  assert.equal(teile[2].eintraege.length, 50);
 });
 
 test('die Bloecke enthalten die Originale, keine Kopien', () => {

@@ -883,6 +883,7 @@ async function main() {
 
   // 5b. Optional: Umwege ueber die Matrix
   let matrixAnfragen = 0;
+  let matrixZellen = 0;
   if (args.umwege) {
     heading('Umwege über Matrix-Routing');
 
@@ -893,6 +894,7 @@ async function main() {
       const mitVerkehr = Boolean(args.verkehr);
       const ergebnis = await berechneUmwege(apiKey, route, stationen, nurFehlende, mitVerkehr);
       matrixAnfragen = ergebnis.anfragen;
+      matrixZellen = ergebnis.zellen;
       const sekunden = ((Date.now() - begonnen) / 1000).toFixed(1);
 
       const gerechnet = ergebnis.zuordnungen.filter((z) => z.umweg != null);
@@ -971,6 +973,14 @@ async function main() {
       `${dim('. nur TomTom-Daten')}`
   );
   console.log(dim(`Verbrauch: ${used} Non-Tile-Anfragen (Freemium: 2.500 pro Tag)`));
+  if (matrixZellen > 0) {
+    // Die Matrix zaehlt anders: Am 29.09.2026 war das Kontingent nach zwei
+    // Laeufen mit je 750 Zellen erschoepft, bei nur 60 Anfragen je Lauf.
+    console.log(
+      dim(`Davon Matrix: ${matrixAnfragen} Anfragen mit ${matrixZellen} Zellen. ` +
+        'TomTom rechnet die Matrix je Zelle ab, nicht je Anfrage.')
+    );
+  }
 }
 
 main().catch((error) => {
