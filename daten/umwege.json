@@ -2,6 +2,336 @@
  "quelle": "TomTom Routing API, Route mit Zwischenziel gegen Route des Abschnitts",
  "hinweis": "Schluessel: Station|Richtungssektor|naechster Routenpunkt. Sekunden ohne Verkehrslage.",
  "eintraege": {
+  "bnetza:48.22137,11.33034|3|48.23,11.35": {
+   "sekunden": 477,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.22487,11.33307|3|48.24,11.35": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.22719,11.33502|3|48.24,11.35": {
+   "sekunden": 390,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.23685,11.35161|3|48.23,11.35": {
+   "sekunden": 405,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.23724,11.35307|3|48.23,11.35": {
+   "sekunden": 379,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.23858,11.35385|3|48.23,11.35": {
+   "sekunden": 389,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.25656,11.30098|3|48.26,11.30": {
+   "sekunden": 29,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.25945,11.30065|3|48.26,11.30": {
+   "sekunden": 683,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.27483,7.78526|5|48.28,7.78": {
+   "sekunden": 175,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.27674,7.78650|5|48.28,7.78": {
+   "sekunden": 199,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.28015,11.26921|3|48.28,11.27": {
+   "sekunden": 223,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.28097,7.77097|5|48.28,7.78": {
+   "sekunden": 191,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.28120,7.77750|4|48.28,7.78": {
+   "sekunden": 118,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.30884,7.79153|4|48.31,7.79": {
+   "sekunden": 676,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.30954,7.78886|4|48.31,7.79": {
+   "sekunden": 54,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.35318,7.80745|4|48.36,7.79": {
+   "sekunden": 589,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.35948,11.14432|3|48.35,11.13": {
+   "sekunden": 479,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.35948,11.14432|7|48.36,11.13": {
+   "sekunden": 373,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.38997,11.06580|3|48.39,11.07": {
+   "sekunden": 305,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.38997,11.06580|7|48.39,11.07": {
+   "sekunden": 405,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39001,11.06351|3|48.39,11.07": {
+   "sekunden": 310,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39001,11.06351|7|48.39,11.07": {
+   "sekunden": 411,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39071,11.06417|3|48.39,11.07": {
+   "sekunden": 284,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39071,11.06417|7|48.39,11.07": {
+   "sekunden": 385,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39131,11.06176|3|48.39,11.06": {
+   "sekunden": 354,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39131,11.06176|7|48.39,11.06": {
+   "sekunden": 455,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39271,10.93344|2|48.41,10.94": {
+   "sekunden": 526,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39271,10.93344|6|48.41,10.94": {
+   "sekunden": 646,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39367,10.92539|2|48.41,10.93": {
+   "sekunden": 596,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39367,10.92539|6|48.41,10.93": {
+   "sekunden": 699,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39373,11.07054|3|48.39,11.07": {
+   "sekunden": 469,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39373,11.07054|7|48.39,11.07": {
+   "sekunden": 414,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39721,10.88088|2|48.41,10.88": {
+   "sekunden": 507,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39721,10.88088|6|48.41,10.88": {
+   "sekunden": 585,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39890,10.86802|2|48.41,10.87": {
+   "sekunden": 449,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.39890,10.86802|6|48.41,10.87": {
+   "sekunden": 527,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40102,10.88091|2|48.41,10.88": {
+   "sekunden": 332,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40102,10.88091|6|48.41,10.88": {
+   "sekunden": 410,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40444,10.87993|2|48.41,10.88": {
+   "sekunden": 405,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40444,10.87993|6|48.41,10.88": {
+   "sekunden": 483,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40562,10.87778|2|48.41,10.88": {
+   "sekunden": 417,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40562,10.87778|6|48.41,10.88": {
+   "sekunden": 495,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40643,10.95224|2|48.40,10.95": {
+   "sekunden": 456,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40643,10.95224|6|48.40,10.95": {
+   "sekunden": 315,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40720,10.95071|2|48.40,10.95": {
+   "sekunden": 404,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40720,10.95071|6|48.40,10.95": {
+   "sekunden": 263,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40743,10.95220|2|48.40,10.95": {
+   "sekunden": 320,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40743,10.95220|6|48.40,10.95": {
+   "sekunden": 179,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40770,10.59929|2|48.41,10.60": {
+   "sekunden": 238,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40770,10.59929|6|48.41,10.60": {
+   "sekunden": 133,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40873,10.87149|2|48.41,10.87": {
+   "sekunden": 535,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.40873,10.87149|6|48.41,10.87": {
+   "sekunden": 645,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41161,10.91490|2|48.41,10.91": {
+   "sekunden": 485,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41161,10.91490|6|48.41,10.91": {
+   "sekunden": 107,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41182,10.44028|2|48.41,10.44": {
+   "sekunden": 281,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41182,10.44028|6|48.41,10.44": {
+   "sekunden": 368,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41183,10.87693|2|48.41,10.88": {
+   "sekunden": 549,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41183,10.87693|6|48.41,10.88": {
+   "sekunden": 674,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41205,10.91278|2|48.41,10.91": {
+   "sekunden": 449,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41205,10.91278|6|48.41,10.91": {
+   "sekunden": 72,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41352,10.42931|2|48.41,10.43": {
+   "sekunden": 376,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41352,10.42931|6|48.41,10.43": {
+   "sekunden": 335,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41384,10.85470|2|48.42,10.85": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.41384,10.85470|6|48.42,10.85": {
+   "sekunden": 362,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.42500,10.87532|2|48.41,10.88": {
+   "sekunden": 568,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.42500,10.87532|6|48.41,10.88": {
+   "sekunden": 493,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.42775,11.58115|4|48.43,11.59": {
    "sekunden": 430,
    "verkehr": false,
@@ -17,8 +347,138 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.42926,10.29735|2|48.43,10.30": {
+   "sekunden": 335,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.42926,10.29735|6|48.43,10.30": {
+   "sekunden": 393,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.42967,11.58086|4|48.43,11.59": {
    "sekunden": 353,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.43376,10.29334|2|48.43,10.29": {
+   "sekunden": 508,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.43376,10.29334|6|48.43,10.29": {
+   "sekunden": 397,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.44860,10.09748|1|48.46,10.09": {
+   "sekunden": 457,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.44860,10.09748|5|48.46,10.09": {
+   "sekunden": 1008,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.45311,7.89759|0|48.45,7.90": {
+   "sekunden": 782,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.45311,7.89759|4|48.45,7.90": {
+   "sekunden": 908,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.45436,9.97320|2|48.46,9.97": {
+   "sekunden": 334,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.45436,9.97320|6|48.46,9.97": {
+   "sekunden": 435,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.45681,10.02998|2|48.46,10.03": {
+   "sekunden": 239,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.45681,10.02998|6|48.46,10.03": {
+   "sekunden": 172,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46356,7.92980|0|48.46,7.91": {
+   "sekunden": 345,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46356,7.92980|4|48.46,7.91": {
+   "sekunden": 471,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46357,9.94783|2|48.46,9.95": {
+   "sekunden": 340,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46357,9.94783|6|48.46,9.94": {
+   "sekunden": 276,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46401,7.92864|0|48.46,7.91": {
+   "sekunden": 437,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46401,7.92864|4|48.46,7.91": {
+   "sekunden": 562,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46582,9.94691|2|48.46,9.94": {
+   "sekunden": 314,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46582,9.94691|6|48.46,9.94": {
+   "sekunden": 250,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46598,7.87986|0|48.47,7.91": {
+   "sekunden": 686,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46598,7.87986|4|48.47,7.90": {
+   "sekunden": 548,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46981,7.93150|0|48.47,7.90": {
+   "sekunden": 534,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.46981,7.93150|4|48.47,7.90": {
+   "sekunden": 659,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.47316,7.92475|0|48.47,7.90": {
+   "sekunden": 531,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.47316,7.92475|4|48.47,7.90": {
+   "sekunden": 656,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -37,8 +497,118 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.51461,9.75831|2|48.52,9.76": {
+   "sekunden": 287,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.51461,9.75831|6|48.52,9.76": {
+   "sekunden": 416,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.51626,9.75940|2|48.52,9.76": {
+   "sekunden": 214,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.51626,9.75940|6|48.52,9.76": {
+   "sekunden": 343,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.51640,9.75729|2|48.52,9.76": {
+   "sekunden": 244,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.51640,9.75729|6|48.52,9.76": {
+   "sekunden": 373,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.51828,11.56231|4|48.52,11.58": {
    "sekunden": 447,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.53847,7.91679|1|48.53,7.93": {
+   "sekunden": 468,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.53847,7.91679|5|48.53,7.93": {
+   "sekunden": 390,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.56287,7.95916|0|48.56,7.96": {
+   "sekunden": 83,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.56287,7.95916|4|48.56,7.96": {
+   "sekunden": 996,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.56303,7.95592|0|48.56,7.96": {
+   "sekunden": 965,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.56303,7.95592|4|48.56,7.96": {
+   "sekunden": 49,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.57890,9.66290|5|48.58,9.66": {
+   "sekunden": 372,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.57890,9.66290|7|48.58,9.67": {
+   "sekunden": 421,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.57981,9.65957|5|48.58,9.66": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.57981,9.65957|7|48.58,9.66": {
+   "sekunden": 374,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.60528,9.63288|7|48.61,9.63": {
+   "sekunden": 908,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.62156,9.52948|6|48.63,9.52": {
+   "sekunden": 898,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.62471,9.52721|6|48.63,9.52": {
+   "sekunden": 945,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.64118,8.03768|0|48.64,8.03": {
+   "sekunden": 310,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.64118,8.03768|4|48.64,8.03": {
+   "sekunden": 360,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.64238,9.45215|7|48.63,9.45": {
+   "sekunden": 561,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -89,6 +659,21 @@
   },
   "bnetza:48.71375,11.48144|4|48.71,11.48": {
    "sekunden": 498,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.71648,11.80028|2|48.71,11.80": {
+   "sekunden": 272,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.72442,8.11038|1|48.73,8.10": {
+   "sekunden": 408,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.73271,13.14396|3|48.73,13.14": {
+   "sekunden": 510,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -202,6 +787,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.75246,11.84817|1|48.75,11.86": {
+   "sekunden": 645,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.75292,11.45170|0|48.75,11.46": {
    "sekunden": 361,
    "verkehr": false,
@@ -222,6 +812,21 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.75350,8.13170|1|48.75,8.13": {
+   "sekunden": 76,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.75689,13.06596|3|48.76,13.07": {
+   "sekunden": 53,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.75762,13.06813|3|48.76,13.07": {
+   "sekunden": 733,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.75840,11.44360|0|48.76,11.46": {
    "sekunden": 507,
    "verkehr": false,
@@ -232,6 +837,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.76548,13.04662|3|48.77,13.05": {
+   "sekunden": 519,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.76626,11.43799|0|48.76,11.46": {
    "sekunden": 655,
    "verkehr": false,
@@ -239,6 +849,11 @@
   },
   "bnetza:48.76626,11.43799|4|48.76,11.46": {
    "sekunden": 664,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.76691,13.04349|3|48.77,13.05": {
+   "sekunden": 464,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -322,6 +937,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.81089,9.18143|3|48.81,9.18": {
+   "sekunden": 122,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.81128,11.47974|0|48.81,11.47": {
    "sekunden": 364,
    "verkehr": false,
@@ -329,6 +949,76 @@
   },
   "bnetza:48.81128,11.47974|4|48.81,11.47": {
    "sekunden": 471,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.81135,9.17714|3|48.81,9.18": {
+   "sekunden": 186,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.81794,9.17576|4|48.82,9.18": {
+   "sekunden": 0,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.81880,9.17544|4|48.82,9.18": {
+   "sekunden": 0,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.81970,9.16692|3|48.82,9.17": {
+   "sekunden": 485,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.82161,12.93813|3|48.82,12.94": {
+   "sekunden": 1120,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.82161,12.93813|7|48.82,12.94": {
+   "sekunden": 1089,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.82544,9.17289|3|48.83,9.17": {
+   "sekunden": 235,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.82853,12.95787|2|48.82,12.95": {
+   "sekunden": 634,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.82992,9.17668|3|48.83,9.17": {
+   "sekunden": 628,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.82999,9.16607|3|48.83,9.17": {
+   "sekunden": 511,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.83010,9.13156|3|48.84,9.14": {
+   "sekunden": 599,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.83136,12.96206|2|48.81,12.95": {
+   "sekunden": 791,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.83322,12.94693|3|48.82,12.94": {
+   "sekunden": 508,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.83322,12.94693|7|48.82,12.94": {
+   "sekunden": 479,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -352,6 +1042,101 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.84705,12.91056|3|48.84,12.90": {
+   "sekunden": 384,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.84705,12.91056|7|48.84,12.90": {
+   "sekunden": 407,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.85060,9.10547|0|48.85,9.12": {
+   "sekunden": 350,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.88939,9.16432|4|48.89,9.15": {
+   "sekunden": 569,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.89020,9.15320|4|48.89,9.15": {
+   "sekunden": 644,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.89393,12.80057|3|48.90,12.80": {
+   "sekunden": 266,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.89393,12.80057|7|48.90,12.80": {
+   "sekunden": 274,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.89717,9.15398|4|48.90,9.15": {
+   "sekunden": 811,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.90454,9.14354|4|48.90,9.15": {
+   "sekunden": 974,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.91353,12.72822|2|48.92,12.73": {
+   "sekunden": 320,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.91353,12.72822|6|48.92,12.73": {
+   "sekunden": 373,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.91650,12.73132|3|48.92,12.73": {
+   "sekunden": 317,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.91650,12.73132|6|48.92,12.73": {
+   "sekunden": 371,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.92144,9.15109|4|48.92,9.16": {
+   "sekunden": 500,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.92930,9.20241|5|48.94,9.19": {
+   "sekunden": 540,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.93126,12.70566|3|48.93,12.71": {
+   "sekunden": 50,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.93126,12.70566|7|48.93,12.71": {
+   "sekunden": 727,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.93158,12.70798|3|48.93,12.71": {
+   "sekunden": 722,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.93158,12.70798|7|48.93,12.71": {
+   "sekunden": 42,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.93307,11.46651|3|48.93,11.46": {
    "sekunden": 364,
    "verkehr": false,
@@ -362,6 +1147,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:48.93528,9.17779|5|48.93,9.18": {
+   "sekunden": 683,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:48.93598,11.46371|3|48.93,11.46": {
    "sekunden": 410,
    "verkehr": false,
@@ -369,6 +1159,201 @@
   },
   "bnetza:48.93598,11.46371|7|48.93,11.46": {
    "sekunden": 376,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.94758,12.54527|3|48.95,12.55": {
+   "sekunden": 297,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.94758,12.54527|7|48.95,12.55": {
+   "sekunden": 314,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.95608,9.24544|5|48.97,9.22": {
+   "sekunden": 703,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.95719,9.24402|5|48.97,9.22": {
+   "sekunden": 797,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.95789,9.24706|5|48.97,9.22": {
+   "sekunden": 737,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.96314,12.53944|3|48.96,12.54": {
+   "sekunden": 284,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.96314,12.53944|7|48.96,12.54": {
+   "sekunden": 267,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97414,12.06453|2|48.99,12.07": {
+   "sekunden": 332,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97414,12.06453|6|48.99,12.07": {
+   "sekunden": 426,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97524,12.06498|2|48.99,12.07": {
+   "sekunden": 333,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97524,12.06498|6|48.99,12.07": {
+   "sekunden": 426,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97934,12.06723|2|48.99,12.07": {
+   "sekunden": 588,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97934,12.06723|6|48.99,12.07": {
+   "sekunden": 681,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97951,12.06578|2|48.99,12.07": {
+   "sekunden": 502,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.97951,12.06578|6|48.99,12.07": {
+   "sekunden": 595,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98044,12.06747|2|48.99,12.07": {
+   "sekunden": 542,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98044,12.06747|6|48.99,12.07": {
+   "sekunden": 635,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98063,12.06428|2|48.99,12.07": {
+   "sekunden": 476,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98063,12.06428|6|48.99,12.07": {
+   "sekunden": 569,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98069,12.19285|2|49.00,12.20": {
+   "sekunden": 826,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98069,12.19285|6|49.00,12.20": {
+   "sekunden": 986,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98823,12.18936|2|49.00,12.19": {
+   "sekunden": 340,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98823,12.18936|6|49.00,12.19": {
+   "sekunden": 492,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98907,12.08608|2|48.99,12.09": {
+   "sekunden": 477,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.98907,12.08608|6|48.99,12.09": {
+   "sekunden": 530,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99250,12.12500|2|48.99,12.12": {
+   "sekunden": 330,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99250,12.12500|6|48.99,12.12": {
+   "sekunden": 465,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99319,12.10986|2|48.99,12.11": {
+   "sekunden": 543,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99319,12.10986|6|48.99,12.11": {
+   "sekunden": 396,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99365,12.42042|2|48.99,12.42": {
+   "sekunden": 808,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99365,12.42042|6|48.99,12.42": {
+   "sekunden": 38,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99440,12.03296|1|49.00,12.03": {
+   "sekunden": 231,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99440,12.03296|5|49.00,12.03": {
+   "sekunden": 248,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99440,12.11635|2|48.99,12.12": {
+   "sekunden": 596,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99440,12.11635|6|48.99,12.12": {
+   "sekunden": 593,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99491,12.15083|2|49.00,12.15": {
+   "sekunden": 416,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99491,12.15083|6|49.00,12.15": {
+   "sekunden": 304,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99553,12.23429|2|48.99,12.23": {
+   "sekunden": 271,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99553,12.23429|6|48.99,12.23": {
+   "sekunden": 238,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -389,6 +1374,136 @@
   },
   "bnetza:48.99882,11.37806|7|49.00,11.38": {
    "sekunden": 274,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99886,12.40554|2|49.00,12.40": {
+   "sekunden": 310,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99886,12.40554|6|49.00,12.40": {
+   "sekunden": 272,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99984,12.14836|2|49.00,12.15": {
+   "sekunden": 515,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:48.99984,12.14836|6|49.00,12.15": {
+   "sekunden": 329,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00098,12.36555|2|49.00,12.37": {
+   "sekunden": 325,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00098,12.36555|6|49.00,12.37": {
+   "sekunden": 308,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00126,12.19724|2|49.00,12.20": {
+   "sekunden": 370,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00126,12.19724|6|49.00,12.20": {
+   "sekunden": 339,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00191,12.36505|2|49.00,12.36": {
+   "sekunden": 240,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00191,12.36505|6|49.00,12.37": {
+   "sekunden": 222,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00239,12.10147|2|48.99,12.10": {
+   "sekunden": 757,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00239,12.10147|6|48.99,12.10": {
+   "sekunden": 610,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00426,12.06414|3|49.00,12.06": {
+   "sekunden": 648,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00426,12.06414|7|49.00,12.06": {
+   "sekunden": 550,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00456,12.06609|3|49.00,12.06": {
+   "sekunden": 730,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00456,12.06609|7|49.00,12.06": {
+   "sekunden": 632,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00952,12.06309|3|49.00,12.06": {
+   "sekunden": 583,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.00952,12.06309|7|49.00,12.06": {
+   "sekunden": 485,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.01114,12.07085|3|49.00,12.06": {
+   "sekunden": 753,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.01114,12.07085|7|49.00,12.06": {
+   "sekunden": 655,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.01298,12.15639|2|49.00,12.16": {
+   "sekunden": 841,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.01298,12.15639|6|49.00,12.16": {
+   "sekunden": 881,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.01864,12.05748|2|49.00,12.05": {
+   "sekunden": 833,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.01864,12.05748|6|49.00,12.05": {
+   "sekunden": 735,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.03050,11.94316|3|49.03,11.94": {
+   "sekunden": 298,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.03050,11.94316|7|49.03,11.94": {
+   "sekunden": 385,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -422,6 +1537,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.04429,9.26169|5|49.04,9.26": {
+   "sekunden": 74,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.04530,9.26620|5|49.05,9.27": {
+   "sekunden": 666,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.04559,11.33763|3|49.05,11.34": {
    "sekunden": 100,
    "verkehr": false,
@@ -429,6 +1554,71 @@
   },
   "bnetza:49.04559,11.33763|7|49.05,11.34": {
    "sekunden": 1178,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.05815,9.26691|4|49.06,9.27": {
+   "sekunden": 407,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.06539,11.88556|3|49.07,11.91": {
+   "sekunden": 626,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.06539,11.88556|7|49.07,11.91": {
+   "sekunden": 662,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.07787,9.30234|4|49.08,9.29": {
+   "sekunden": 602,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.08627,9.27507|4|49.08,9.29": {
+   "sekunden": 739,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.08862,11.88498|3|49.09,11.89": {
+   "sekunden": 208,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.08862,11.88498|7|49.09,11.89": {
+   "sekunden": 243,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.09118,11.88809|0|49.09,11.89": {
+   "sekunden": 214,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.09118,11.88809|4|49.09,11.89": {
+   "sekunden": 259,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.14287,9.30891|4|49.14,9.31": {
+   "sekunden": 436,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.14300,9.31010|4|49.14,9.31": {
+   "sekunden": 352,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.14363,9.30885|4|49.14,9.31": {
+   "sekunden": 424,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.14506,9.30761|4|49.14,9.31": {
+   "sekunden": 610,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -442,6 +1632,221 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.16363,9.21941|3|49.18,9.23": {
+   "sekunden": 446,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.16613,9.21678|3|49.18,9.23": {
+   "sekunden": 471,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.16613,9.21678|7|49.18,9.23": {
+   "sekunden": 524,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.16858,9.25308|3|49.17,9.25": {
+   "sekunden": 677,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.16858,9.25308|7|49.17,9.25": {
+   "sekunden": 676,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.16873,9.25929|3|49.17,9.26": {
+   "sekunden": 680,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.16873,9.25929|7|49.17,9.26": {
+   "sekunden": 44,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.17625,11.72882|2|49.18,11.73": {
+   "sekunden": 326,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.17625,11.72882|6|49.18,11.73": {
+   "sekunden": 345,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.17657,9.23086|3|49.18,9.23": {
+   "sekunden": 422,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.17657,9.23086|7|49.18,9.23": {
+   "sekunden": 475,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.18809,9.21861|2|49.18,9.22": {
+   "sekunden": 820,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.18809,9.21861|6|49.18,9.22": {
+   "sekunden": 756,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19317,9.22651|2|49.18,9.22": {
+   "sekunden": 792,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19317,9.22651|6|49.18,9.22": {
+   "sekunden": 676,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19432,9.22108|2|49.18,9.22": {
+   "sekunden": 911,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19432,9.22108|6|49.18,9.22": {
+   "sekunden": 839,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19555,9.22405|2|49.18,9.22": {
+   "sekunden": 935,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19555,9.22405|6|49.18,9.22": {
+   "sekunden": 855,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19911,9.23290|2|49.18,9.22": {
+   "sekunden": 463,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.19911,9.23290|6|49.18,9.22": {
+   "sekunden": 396,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.21064,9.07269|3|49.21,9.07": {
+   "sekunden": 328,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.21064,9.07269|7|49.21,9.07": {
+   "sekunden": 352,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.21083,9.06975|3|49.21,9.07": {
+   "sekunden": 217,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.21083,9.06975|7|49.21,9.07": {
+   "sekunden": 320,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.21194,9.07730|3|49.21,9.07": {
+   "sekunden": 357,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.21194,9.07730|7|49.21,9.07": {
+   "sekunden": 295,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.23897,8.88505|3|49.24,8.89": {
+   "sekunden": 477,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.23897,8.88505|6|49.24,8.89": {
+   "sekunden": 541,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24097,8.87980|2|49.24,8.88": {
+   "sekunden": 479,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24097,8.87980|6|49.24,8.88": {
+   "sekunden": 706,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24292,8.91606|3|49.23,8.90": {
+   "sekunden": 836,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24292,8.91606|7|49.23,8.90": {
+   "sekunden": 800,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24331,8.89359|3|49.24,8.89": {
+   "sekunden": 459,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24331,8.89359|7|49.24,8.89": {
+   "sekunden": 413,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24432,8.87889|2|49.24,8.88": {
+   "sekunden": 694,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24432,8.87889|6|49.24,8.88": {
+   "sekunden": 349,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24811,8.86153|3|49.25,8.86": {
+   "sekunden": 532,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24811,8.86153|7|49.25,8.86": {
+   "sekunden": 479,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24851,8.87829|2|49.24,8.88": {
+   "sekunden": 425,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.24851,8.87829|6|49.24,8.88": {
+   "sekunden": 380,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.25015,8.86631|3|49.25,8.86": {
+   "sekunden": 486,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.25015,8.86631|7|49.25,8.86": {
+   "sekunden": 419,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.25090,11.22854|0|49.25,11.22": {
    "sekunden": 343,
    "verkehr": false,
@@ -449,6 +1854,166 @@
   },
   "bnetza:49.25090,11.22854|4|49.25,11.22": {
    "sekunden": 909,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.25199,8.87173|2|49.25,8.87": {
+   "sekunden": 463,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.25199,8.87173|6|49.25,8.87": {
+   "sekunden": 461,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27256,8.69570|2|49.28,8.69": {
+   "sekunden": 418,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27256,8.69570|6|49.28,8.69": {
+   "sekunden": 465,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27321,8.69610|2|49.28,8.70": {
+   "sekunden": 461,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27321,8.69610|6|49.28,8.70": {
+   "sekunden": 504,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27377,8.69535|2|49.28,8.69": {
+   "sekunden": 290,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27377,8.69535|6|49.28,8.69": {
+   "sekunden": 337,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27412,8.69710|2|49.28,8.70": {
+   "sekunden": 556,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.27412,8.69710|6|49.28,8.70": {
+   "sekunden": 600,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.28174,8.72549|2|49.28,8.72": {
+   "sekunden": 778,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.28174,8.72549|6|49.28,8.72": {
+   "sekunden": 823,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.29290,8.65046|0|49.29,8.62": {
+   "sekunden": 642,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.29712,8.71711|2|49.28,8.72": {
+   "sekunden": 1042,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.29712,8.71711|6|49.28,8.72": {
+   "sekunden": 1061,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.29724,8.63018|0|49.30,8.63": {
+   "sekunden": 403,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.29724,8.63018|3|49.28,8.61": {
+   "sekunden": 1272,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.30202,8.63503|0|49.30,8.63": {
+   "sekunden": 410,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.30494,8.63213|0|49.31,8.63": {
+   "sekunden": 269,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.31143,8.55968|3|49.32,8.57": {
+   "sekunden": 975,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.31309,11.47491|7|49.32,11.48": {
+   "sekunden": 329,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.31335,11.57429|7|49.31,11.55": {
+   "sekunden": 661,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.31674,11.44977|7|49.32,11.46": {
+   "sekunden": 720,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.31710,8.57589|3|49.32,8.58": {
+   "sekunden": 854,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.32083,8.56794|3|49.32,8.57": {
+   "sekunden": 48,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.32948,7.05711|3|49.34,7.06": {
+   "sekunden": 225,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.33685,8.53341|4|49.34,8.56": {
+   "sekunden": 615,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.34624,7.04896|3|49.34,7.05": {
+   "sekunden": 315,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.34897,8.65420|0|49.35,8.63": {
+   "sekunden": 815,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.35012,6.99422|0|49.35,7.02": {
+   "sekunden": 486,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.35080,8.63224|0|49.35,8.63": {
+   "sekunden": 58,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.35259,6.98971|3|49.36,7.01": {
+   "sekunden": 922,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -472,6 +2037,66 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.36511,8.55274|4|49.36,8.55": {
+   "sekunden": 246,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.36941,8.53166|4|49.37,8.54": {
+   "sekunden": 750,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.37711,8.56066|4|49.38,8.54": {
+   "sekunden": 697,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.38169,11.34441|7|49.38,11.34": {
+   "sekunden": 516,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.38323,7.01140|5|49.39,7.01": {
+   "sekunden": 272,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.38330,11.34317|7|49.38,11.34": {
+   "sekunden": 233,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.38368,11.34078|6|49.38,11.34": {
+   "sekunden": 230,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.38397,11.34805|7|49.38,11.34": {
+   "sekunden": 370,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.38444,11.34885|7|49.38,11.34": {
+   "sekunden": 370,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.39195,8.56465|4|49.39,8.54": {
+   "sekunden": 455,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.39306,8.56407|4|49.39,8.54": {
+   "sekunden": 454,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.39340,8.63442|0|49.39,8.64": {
+   "sekunden": 833,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.39824,11.17568|0|49.40,11.20": {
    "sekunden": 740,
    "verkehr": false,
@@ -482,6 +2107,76 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.40647,8.65955|0|49.41,8.64": {
+   "sekunden": 810,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.40739,8.65676|0|49.41,8.64": {
+   "sekunden": 749,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.40808,8.65155|0|49.41,8.64": {
+   "sekunden": 724,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.40988,8.54181|4|49.41,8.55": {
+   "sekunden": 516,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.41090,8.54370|4|49.41,8.55": {
+   "sekunden": 400,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.41123,8.64666|0|49.41,8.64": {
+   "sekunden": 333,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.41345,8.54507|4|49.41,8.55": {
+   "sekunden": 444,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.41385,8.54334|4|49.41,8.55": {
+   "sekunden": 454,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.41560,8.54280|4|49.42,8.55": {
+   "sekunden": 477,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.42619,8.63961|0|49.43,8.64": {
+   "sekunden": 743,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.43729,8.52481|4|49.44,8.54": {
+   "sekunden": 474,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.45012,8.56185|4|49.45,8.54": {
+   "sekunden": 820,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.45482,8.51332|4|49.46,8.54": {
+   "sekunden": 527,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.46520,8.56261|4|49.47,8.54": {
+   "sekunden": 852,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.46882,11.20854|2|49.47,11.21": {
    "sekunden": 730,
    "verkehr": false,
@@ -489,6 +2184,21 @@
   },
   "bnetza:49.46882,11.20854|6|49.47,11.21": {
    "sekunden": 676,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.46944,8.56585|4|49.47,8.54": {
+   "sekunden": 1052,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.47377,8.53940|4|49.47,8.54": {
+   "sekunden": 690,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.47469,8.53758|4|49.47,8.54": {
+   "sekunden": 677,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -522,6 +2232,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.49905,8.55692|4|49.50,8.56": {
+   "sekunden": 698,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.50369,11.28584|1|49.50,11.29": {
    "sekunden": 372,
    "verkehr": false,
@@ -532,6 +2247,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.50737,8.63768|0|49.51,8.64": {
+   "sekunden": 279,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.51674,11.31195|1|49.52,11.31": {
    "sekunden": 364,
    "verkehr": false,
@@ -539,6 +2259,11 @@
   },
   "bnetza:49.51674,11.31195|5|49.52,11.31": {
    "sekunden": 452,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.51677,8.53938|4|49.52,8.56": {
+   "sekunden": 312,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -562,6 +2287,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.52650,8.57323|4|49.53,8.56": {
+   "sekunden": 292,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.52661,8.57046|4|49.53,8.56": {
+   "sekunden": 609,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.52702,11.06729|3|49.53,11.07": {
    "sekunden": 708,
    "verkehr": false,
@@ -569,6 +2304,21 @@
   },
   "bnetza:49.52702,11.06729|7|49.53,11.07": {
    "sekunden": 38,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.52776,8.56186|4|49.53,8.56": {
+   "sekunden": 579,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.52778,8.65680|0|49.52,8.64": {
+   "sekunden": 788,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.52802,8.56573|4|49.53,8.56": {
+   "sekunden": 666,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -589,6 +2339,21 @@
   },
   "bnetza:49.54527,11.03036|7|49.54,11.03": {
    "sekunden": 289,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.54860,8.63431|0|49.55,8.63": {
+   "sekunden": 395,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.54917,8.65206|0|49.55,8.63": {
+   "sekunden": 386,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.55664,8.65176|0|49.56,8.63": {
+   "sekunden": 492,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -632,6 +2397,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.59278,8.63994|0|49.59,8.63": {
+   "sekunden": 290,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.59399,8.63247|0|49.59,8.63": {
+   "sekunden": 500,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.60280,6.98806|3|49.60,6.98": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.60280,6.98806|7|49.60,6.98": {
+   "sekunden": 291,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.61880,11.40841|1|49.62,11.41": {
    "sekunden": 180,
    "verkehr": false,
@@ -652,6 +2437,36 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.63760,8.61807|0|49.64,8.61": {
+   "sekunden": 584,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.64312,8.62435|0|49.64,8.61": {
+   "sekunden": 438,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.64315,8.55200|4|49.64,8.55": {
+   "sekunden": 56,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.64399,8.62554|0|49.64,8.61": {
+   "sekunden": 673,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.64430,8.55409|4|49.64,8.55": {
+   "sekunden": 577,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.65361,8.55572|4|49.65,8.55": {
+   "sekunden": 514,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.66285,11.47082|1|49.66,11.47": {
    "sekunden": 219,
    "verkehr": false,
@@ -662,6 +2477,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.66380,8.54357|4|49.66,8.55": {
+   "sekunden": 500,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.66416,11.47072|1|49.66,11.47": {
    "sekunden": 235,
    "verkehr": false,
@@ -669,6 +2489,61 @@
   },
   "bnetza:49.66416,11.47072|4|49.67,11.47": {
    "sekunden": 258,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.67195,8.59438|0|49.67,8.60": {
+   "sekunden": 394,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.67230,8.60220|0|49.67,8.60": {
+   "sekunden": 306,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.67285,8.59717|0|49.67,8.60": {
+   "sekunden": 271,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.67541,8.61590|0|49.67,8.60": {
+   "sekunden": 472,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.67629,8.61173|0|49.68,8.60": {
+   "sekunden": 382,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.68213,8.60346|0|49.68,8.60": {
+   "sekunden": 432,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.69020,6.89701|3|49.69,6.90": {
+   "sekunden": 68,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.69020,6.89701|7|49.69,6.90": {
+   "sekunden": 970,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.69070,6.89960|3|49.69,6.90": {
+   "sekunden": 1187,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.69070,6.89960|7|49.69,6.90": {
+   "sekunden": 1204,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.69673,8.61472|0|49.70,8.60": {
+   "sekunden": 644,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -972,6 +2847,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.78344,6.81402|2|49.78,6.81": {
+   "sekunden": 79,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.78344,6.81402|6|49.78,6.81": {
+   "sekunden": 816,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.78503,6.81877|2|49.78,6.82": {
+   "sekunden": 761,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.78503,6.81877|6|49.78,6.82": {
+   "sekunden": 23,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.78565,10.34177|2|49.78,10.34": {
    "sekunden": 532,
    "verkehr": false,
@@ -979,6 +2874,26 @@
   },
   "bnetza:49.78565,10.34177|6|49.78,10.34": {
    "sekunden": 502,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.80578,8.64239|0|49.81,8.63": {
+   "sekunden": 586,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.81542,8.62031|0|49.82,8.63": {
+   "sekunden": 486,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.82012,6.74666|0|49.82,6.76": {
+   "sekunden": 838,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.82012,6.74666|4|49.82,6.76": {
+   "sekunden": 886,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -999,6 +2914,41 @@
   },
   "bnetza:49.83740,9.51640|7|49.84,9.52": {
    "sekunden": 48,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.85226,8.64506|7|49.84,8.63": {
+   "sekunden": 1151,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.85321,8.64419|7|49.84,8.63": {
+   "sekunden": 672,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.85440,8.62667|7|49.85,8.62": {
+   "sekunden": 784,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.86056,8.59078|0|49.86,8.60": {
+   "sekunden": 537,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.86588,6.80782|1|49.86,6.81": {
+   "sekunden": 555,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.86588,6.80782|5|49.86,6.81": {
+   "sekunden": 429,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.87186,8.62591|0|49.87,8.60": {
+   "sekunden": 485,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1032,6 +2982,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.89655,8.61013|0|49.90,8.61": {
+   "sekunden": 510,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.89680,8.61414|0|49.90,8.61": {
+   "sekunden": 464,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.89799,8.59722|0|49.90,8.61": {
+   "sekunden": 498,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.89808,8.59463|0|49.90,8.61": {
+   "sekunden": 463,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.89830,9.39435|3|49.90,9.39": {
    "sekunden": 1087,
    "verkehr": false,
@@ -1039,6 +3009,16 @@
   },
   "bnetza:49.89830,9.39435|7|49.90,9.39": {
    "sekunden": 84,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.89981,8.61568|0|49.90,8.61": {
+   "sekunden": 538,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.90304,8.60560|0|49.90,8.61": {
+   "sekunden": 634,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1059,6 +3039,16 @@
   },
   "bnetza:49.90920,11.60670|4|49.91,11.61": {
    "sekunden": 489,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.91211,10.00103|4|49.91,10.00": {
+   "sekunden": 353,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.91266,9.99993|4|49.91,10.00": {
+   "sekunden": 345,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1089,6 +3079,21 @@
   },
   "bnetza:49.93480,9.35378|7|49.93,9.35": {
    "sekunden": 304,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.94406,10.02046|5|49.94,10.02": {
+   "sekunden": 926,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.94465,10.01653|5|49.94,10.02": {
+   "sekunden": 76,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.94570,10.01676|5|49.94,10.02": {
+   "sekunden": 117,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1132,6 +3137,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:49.96988,6.86193|1|49.96,6.89": {
+   "sekunden": 720,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.96988,6.86193|5|49.96,6.89": {
+   "sekunden": 637,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:49.96995,11.61119|0|49.97,11.61": {
    "sekunden": 373,
    "verkehr": false,
@@ -1149,6 +3164,86 @@
   },
   "bnetza:49.97111,11.61643|4|49.97,11.61": {
    "sekunden": 859,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.97700,6.89000|1|49.97,6.90": {
+   "sekunden": 728,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.97700,6.89000|5|49.97,6.90": {
+   "sekunden": 917,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.97908,8.58154|0|49.98,8.60": {
+   "sekunden": 302,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.97931,10.09008|5|49.99,10.07": {
+   "sekunden": 944,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98080,6.90960|1|49.98,6.91": {
+   "sekunden": 449,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98080,6.90960|5|49.98,6.91": {
+   "sekunden": 758,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98193,6.90865|1|49.98,6.91": {
+   "sekunden": 498,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98193,6.90865|5|49.98,6.91": {
+   "sekunden": 807,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98430,6.89330|1|49.98,6.91": {
+   "sekunden": 555,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98430,6.89330|5|49.98,6.91": {
+   "sekunden": 864,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98740,6.90839|1|49.98,6.92": {
+   "sekunden": 448,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98740,6.90839|5|49.98,6.92": {
+   "sekunden": 996,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98860,6.90313|1|49.98,6.92": {
+   "sekunden": 594,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.98860,6.90313|5|49.98,6.92": {
+   "sekunden": 1144,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.99066,6.90636|1|49.98,6.92": {
+   "sekunden": 848,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:49.99066,6.90636|5|49.98,6.92": {
+   "sekunden": 1375,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1174,6 +3269,31 @@
   },
   "bnetza:50.00728,9.22601|6|50.00,9.23": {
    "sekunden": 398,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.01130,8.58500|0|50.01,8.59": {
+   "sekunden": 726,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.02651,8.58735|0|50.03,8.59": {
+   "sekunden": 228,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.03428,8.61388|0|50.04,8.60": {
+   "sekunden": 376,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.03769,8.62479|2|50.05,8.62": {
+   "sekunden": 464,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.05020,8.67538|5|50.06,8.65": {
+   "sekunden": 907,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1207,6 +3327,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.05526,8.58734|1|50.05,8.60": {
+   "sekunden": 268,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.05599,11.60919|0|50.06,11.62": {
    "sekunden": 419,
    "verkehr": false,
@@ -1214,6 +3339,26 @@
   },
   "bnetza:50.05599,11.60919|4|50.06,11.62": {
    "sekunden": 345,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.06849,6.88023|3|50.07,6.88": {
+   "sekunden": 57,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.06849,6.88023|7|50.07,6.88": {
+   "sekunden": 683,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.07018,6.88092|3|50.07,6.88": {
+   "sekunden": 681,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.07018,6.88092|7|50.07,6.88": {
+   "sekunden": 48,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1227,6 +3372,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.08848,8.63574|0|50.08,8.66": {
+   "sekunden": 492,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.18908,11.77699|1|50.19,11.77": {
    "sekunden": 678,
    "verkehr": false,
@@ -1234,6 +3384,26 @@
   },
   "bnetza:50.18908,11.77699|5|50.19,11.77": {
    "sekunden": 705,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.19634,9.93130|0|50.20,9.94": {
+   "sekunden": 401,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.19634,9.93130|4|50.20,9.94": {
+   "sekunden": 362,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.19807,9.95389|3|50.19,9.94": {
+   "sekunden": 360,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.19807,9.95389|7|50.19,9.94": {
+   "sekunden": 314,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1272,6 +3442,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.21398,6.97286|1|50.21,6.98": {
+   "sekunden": 421,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.21398,6.97286|5|50.21,6.98": {
+   "sekunden": 369,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.21693,8.25403|4|50.22,8.25": {
    "sekunden": 256,
    "verkehr": false,
@@ -1279,6 +3459,16 @@
   },
   "bnetza:50.22291,8.25428|4|50.22,8.25": {
    "sekunden": 514,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.22978,7.14250|1|50.22,7.15": {
+   "sekunden": 301,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.22978,7.14250|5|50.22,7.15": {
+   "sekunden": 269,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1292,6 +3482,46 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.25060,8.63682|4|50.25,8.66": {
+   "sekunden": 1199,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.25420,8.64380|4|50.25,8.66": {
+   "sekunden": 1049,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.25682,8.65643|4|50.26,8.66": {
+   "sekunden": 799,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.26572,7.22728|1|50.27,7.23": {
+   "sekunden": 59,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.26572,7.22728|5|50.27,7.23": {
+   "sekunden": 508,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.26692,7.22454|1|50.27,7.23": {
+   "sekunden": 518,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.26692,7.22454|5|50.27,7.23": {
+   "sekunden": 71,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.29446,8.69945|4|50.30,8.67": {
+   "sekunden": 692,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.29505,8.25412|0|50.29,8.24": {
    "sekunden": 400,
    "verkehr": false,
@@ -1302,6 +3532,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.29578,8.68675|4|50.30,8.67": {
+   "sekunden": 451,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.29601,8.25250|0|50.29,8.24": {
    "sekunden": 485,
    "verkehr": false,
@@ -1309,6 +3544,11 @@
   },
   "bnetza:50.29601,8.25250|4|50.29,8.24": {
    "sekunden": 564,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.29908,8.69300|5|50.31,8.68": {
+   "sekunden": 661,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1342,13 +3582,83 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.31207,9.79580|2|50.32,9.80": {
+   "sekunden": 574,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.31207,9.79580|6|50.32,9.80": {
+   "sekunden": 579,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.31926,7.23363|0|50.32,7.24": {
+   "sekunden": 230,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.31926,7.23363|4|50.32,7.24": {
+   "sekunden": 194,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32476,11.78441|0|50.32,11.79": {
+   "sekunden": 593,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.32476,11.78441|0|50.33,11.79": {
    "sekunden": 542,
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.32476,11.78441|4|50.32,11.79": {
+   "sekunden": 603,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.32476,11.78441|4|50.33,11.79": {
    "sekunden": 579,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32572,7.21381|0|50.32,7.24": {
+   "sekunden": 805,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32572,7.21381|4|50.32,7.24": {
+   "sekunden": 818,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32667,7.24426|1|50.32,7.25": {
+   "sekunden": 430,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32667,7.24426|5|50.32,7.25": {
+   "sekunden": 432,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32757,7.24182|1|50.32,7.25": {
+   "sekunden": 630,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32757,7.24182|5|50.32,7.25": {
+   "sekunden": 632,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32920,7.25064|1|50.33,7.25": {
+   "sekunden": 387,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.32920,7.25064|5|50.33,7.25": {
+   "sekunden": 390,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1359,6 +3669,16 @@
   },
   "bnetza:50.33413,8.23355|7|50.32,8.22": {
    "sekunden": 1254,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.35556,9.75398|3|50.35,9.75": {
+   "sekunden": 699,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.35556,9.75398|7|50.35,9.75": {
+   "sekunden": 659,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1419,6 +3739,16 @@
   },
   "bnetza:50.38122,8.08944|7|50.38,8.09": {
    "sekunden": 251,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.38216,7.26955|0|50.38,7.27": {
+   "sekunden": 236,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.38216,7.26955|4|50.38,7.27": {
+   "sekunden": 225,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1502,6 +3832,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.42001,9.73753|0|50.42,9.74": {
+   "sekunden": 67,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.42001,9.73753|4|50.42,9.74": {
+   "sekunden": 1196,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.42314,7.92815|0|50.42,7.93": {
    "sekunden": 26,
    "verkehr": false,
@@ -1509,6 +3849,36 @@
   },
   "bnetza:50.42314,7.92815|4|50.42,7.93": {
    "sekunden": 849,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.42817,8.68163|4|50.43,8.70": {
+   "sekunden": 458,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.42971,8.69007|4|50.43,8.70": {
+   "sekunden": 400,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.43104,8.66884|4|50.43,8.70": {
+   "sekunden": 636,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.43582,8.68091|4|50.44,8.70": {
+   "sekunden": 464,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.43735,12.08921|2|50.44,12.09": {
+   "sekunden": 589,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.43735,12.08921|6|50.44,12.09": {
+   "sekunden": 547,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1522,6 +3892,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.43927,12.08928|2|50.44,12.09": {
+   "sekunden": 495,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.43927,12.08928|6|50.44,12.09": {
+   "sekunden": 454,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.44028,7.83054|2|50.45,7.83": {
    "sekunden": 371,
    "verkehr": false,
@@ -1532,6 +3912,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.44047,7.22563|0|50.44,7.23": {
+   "sekunden": 789,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.44047,7.22563|4|50.44,7.22": {
+   "sekunden": 755,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.44109,7.83284|2|50.45,7.83": {
    "sekunden": 295,
    "verkehr": false,
@@ -1539,6 +3929,16 @@
   },
   "bnetza:50.44109,7.83284|6|50.45,7.83": {
    "sekunden": 356,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.44146,7.22397|0|50.44,7.23": {
+   "sekunden": 684,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.44146,7.22397|4|50.44,7.22": {
+   "sekunden": 63,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1602,6 +4002,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.45750,8.73333|0|50.46,8.72": {
+   "sekunden": 883,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.45750,8.73333|5|50.46,8.72": {
+   "sekunden": 719,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.45850,7.26053|0|50.46,7.23": {
+   "sekunden": 767,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.45850,7.26053|4|50.46,7.23": {
+   "sekunden": 760,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.47264,7.78887|0|50.47,7.76": {
    "sekunden": 1062,
    "verkehr": false,
@@ -1622,6 +4042,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.48813,9.70865|1|50.49,9.71": {
+   "sekunden": 394,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.48813,9.70865|5|50.49,9.71": {
+   "sekunden": 352,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.48953,7.75348|3|50.49,7.75": {
    "sekunden": 377,
    "verkehr": false,
@@ -1629,6 +4059,46 @@
   },
   "bnetza:50.48953,7.75348|7|50.49,7.75": {
    "sekunden": 341,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49145,8.65969|0|50.49,8.68": {
+   "sekunden": 625,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49145,8.65969|4|50.49,8.68": {
+   "sekunden": 553,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49269,8.65646|0|50.50,8.68": {
+   "sekunden": 550,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49269,8.65646|4|50.50,8.68": {
+   "sekunden": 478,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49634,12.18013|1|50.49,12.19": {
+   "sekunden": 507,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49634,12.18013|5|50.49,12.19": {
+   "sekunden": 479,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49748,12.17020|1|50.49,12.19": {
+   "sekunden": 720,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.49748,12.17020|5|50.49,12.19": {
+   "sekunden": 692,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1642,6 +4112,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.52185,8.59014|2|50.53,8.59": {
+   "sekunden": 343,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.52185,8.59014|6|50.53,8.59": {
+   "sekunden": 386,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.52295,7.67514|2|50.52,7.67": {
    "sekunden": 43,
    "verkehr": false,
@@ -1652,6 +4132,56 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.52325,9.73829|0|50.52,9.74": {
+   "sekunden": 1139,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.52325,9.73829|4|50.52,9.74": {
+   "sekunden": 914,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.53565,8.65756|2|50.52,8.65": {
+   "sekunden": 754,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.53565,8.65756|6|50.52,8.65": {
+   "sekunden": 683,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.53879,8.75437|1|50.53,8.77": {
+   "sekunden": 638,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.53879,8.75437|5|50.53,8.77": {
+   "sekunden": 604,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.53937,8.65020|2|50.52,8.64": {
+   "sekunden": 404,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.53937,8.65020|6|50.52,8.64": {
+   "sekunden": 333,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.54647,7.13503|3|50.55,7.15": {
+   "sekunden": 667,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.54647,7.13503|7|50.55,7.15": {
+   "sekunden": 851,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.54650,11.80346|3|50.54,11.80": {
    "sekunden": 495,
    "verkehr": false,
@@ -1659,6 +4189,16 @@
   },
   "bnetza:50.54650,11.80346|7|50.55,11.80": {
    "sekunden": 424,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.54666,9.70336|0|50.54,9.73": {
+   "sekunden": 793,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.54666,9.70336|4|50.54,9.73": {
+   "sekunden": 611,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1702,6 +4242,46 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.55286,8.53281|3|50.56,8.55": {
+   "sekunden": 796,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.55286,8.53281|7|50.56,8.55": {
+   "sekunden": 825,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.55300,9.72600|0|50.55,9.73": {
+   "sekunden": 401,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.55300,9.72600|4|50.55,9.73": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.55377,9.72738|0|50.55,9.73": {
+   "sekunden": 400,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.55377,9.72738|4|50.55,9.73": {
+   "sekunden": 326,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.55392,9.71199|0|50.56,9.73": {
+   "sekunden": 507,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.55392,9.71199|4|50.56,9.73": {
+   "sekunden": 473,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.55818,7.52736|3|50.56,7.53": {
    "sekunden": 461,
    "verkehr": false,
@@ -1742,6 +4322,36 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.57027,7.09167|2|50.57,7.09": {
+   "sekunden": 759,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.57027,7.09167|6|50.57,7.09": {
+   "sekunden": 652,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.57838,8.56657|0|50.57,8.55": {
+   "sekunden": 585,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.57838,8.56657|4|50.57,8.55": {
+   "sekunden": 650,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.58134,9.70655|3|50.58,9.71": {
+   "sekunden": 221,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.58134,9.70655|7|50.58,9.71": {
+   "sekunden": 269,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.58190,7.47894|2|50.58,7.48": {
    "sekunden": 657,
    "verkehr": false,
@@ -1752,6 +4362,71 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.58401,8.48065|2|50.60,8.49": {
+   "sekunden": 1113,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.58401,8.48065|6|50.60,8.49": {
+   "sekunden": 733,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.59578,8.81864|0|50.60,8.81": {
+   "sekunden": 320,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.59578,8.81864|4|50.60,8.81": {
+   "sekunden": 381,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.59778,8.82375|1|50.60,8.82": {
+   "sekunden": 334,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.59778,8.82375|5|50.60,8.82": {
+   "sekunden": 395,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.59817,8.82261|1|50.60,8.82": {
+   "sekunden": 327,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.59817,8.82261|5|50.60,8.82": {
+   "sekunden": 387,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.61279,7.05315|1|50.62,7.04": {
+   "sekunden": 794,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62063,8.36268|2|50.62,8.36": {
+   "sekunden": 54,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62063,8.36268|6|50.62,8.36": {
+   "sekunden": 1106,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62210,8.89720|1|50.62,8.89": {
+   "sekunden": 85,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62210,8.89720|5|50.62,8.90": {
+   "sekunden": 592,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.62260,7.43256|3|50.61,7.42": {
    "sekunden": 744,
    "verkehr": false,
@@ -1759,6 +4434,41 @@
   },
   "bnetza:50.62260,7.43256|7|50.61,7.42": {
    "sekunden": 674,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62267,8.89640|1|50.62,8.89": {
+   "sekunden": 44,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62267,8.89640|5|50.62,8.90": {
+   "sekunden": 789,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62337,8.89493|1|50.62,8.89": {
+   "sekunden": 786,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62337,8.89493|5|50.62,8.89": {
+   "sekunden": 40,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.62623,7.03862|1|50.62,7.05": {
+   "sekunden": 684,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.64544,8.98997|2|50.64,8.99": {
+   "sekunden": 484,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.64544,8.98997|6|50.64,8.99": {
+   "sekunden": 443,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1782,8 +4492,68 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.65258,8.32547|0|50.65,8.32": {
+   "sekunden": 686,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.65258,8.32547|4|50.65,8.32": {
+   "sekunden": 699,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.65812,8.32443|0|50.66,8.32": {
+   "sekunden": 360,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.65812,8.32443|4|50.66,8.32": {
+   "sekunden": 373,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.65967,9.67395|0|50.66,9.68": {
+   "sekunden": 300,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.65967,9.67395|4|50.66,9.68": {
+   "sekunden": 250,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.67446,8.28092|0|50.67,8.28": {
+   "sekunden": 457,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.67446,8.28092|4|50.68,8.28": {
+   "sekunden": 371,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.67532,8.27483|0|50.68,8.28": {
+   "sekunden": 347,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.67532,8.27483|4|50.68,8.28": {
+   "sekunden": 261,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.67545,7.29640|7|50.67,7.30": {
    "sekunden": 43,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.67583,8.27879|0|50.68,8.28": {
+   "sekunden": 391,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.67583,8.27879|4|50.68,8.28": {
+   "sekunden": 305,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1792,8 +4562,188 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.68051,12.59078|1|50.68,12.59": {
+   "sekunden": 412,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.68051,12.59078|5|50.68,12.59": {
+   "sekunden": 1075,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.68138,8.30464|1|50.69,8.29": {
+   "sekunden": 615,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.68138,8.30464|5|50.69,8.29": {
+   "sekunden": 610,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.68519,7.27479|7|50.69,7.28": {
    "sekunden": 222,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.68814,8.30609|0|50.69,8.30": {
+   "sekunden": 662,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.68814,8.30609|4|50.69,8.30": {
+   "sekunden": 525,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.68873,8.29588|1|50.69,8.29": {
+   "sekunden": 1029,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.68873,8.29588|5|50.69,8.29": {
+   "sekunden": 1074,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.69697,7.05681|1|50.70,7.06": {
+   "sekunden": 572,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.69965,12.76642|1|50.71,12.75": {
+   "sekunden": 303,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.69965,12.76642|5|50.71,12.75": {
+   "sekunden": 373,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.70486,7.05743|7|50.71,7.06": {
+   "sekunden": 384,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.71249,12.76148|1|50.71,12.76": {
+   "sekunden": 550,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.71249,12.76148|5|50.71,12.76": {
+   "sekunden": 607,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.71284,12.76279|1|50.71,12.76": {
+   "sekunden": 535,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.71284,12.76279|5|50.71,12.76": {
+   "sekunden": 597,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.71580,7.04492|0|50.71,7.06": {
+   "sekunden": 750,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.71604,7.04194|0|50.71,7.06": {
+   "sekunden": 829,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.71943,7.05642|1|50.72,7.07": {
+   "sekunden": 620,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.72393,7.06676|1|50.72,7.07": {
+   "sekunden": 467,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.72462,7.08944|0|50.72,7.08": {
+   "sekunden": 663,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.72464,12.77878|1|50.73,12.78": {
+   "sekunden": 302,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.72464,12.77878|5|50.73,12.78": {
+   "sekunden": 355,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.72483,8.28978|3|50.72,8.28": {
+   "sekunden": 750,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.72483,8.28978|7|50.72,8.28": {
+   "sekunden": 1303,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.72599,7.06715|7|50.73,7.08": {
+   "sekunden": 360,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73078,7.09969|0|50.73,7.08": {
+   "sekunden": 977,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73293,7.08199|7|50.73,7.08": {
+   "sekunden": 564,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73333,9.24084|1|50.73,9.24": {
+   "sekunden": 118,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73333,9.24084|5|50.73,9.24": {
+   "sekunden": 213,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73399,9.24151|2|50.74,9.24": {
+   "sekunden": 125,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73399,9.24151|6|50.74,9.24": {
+   "sekunden": 220,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73567,8.29052|0|50.74,8.27": {
+   "sekunden": 433,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73567,8.29052|4|50.74,8.27": {
+   "sekunden": 309,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73733,9.24735|2|50.74,9.25": {
+   "sekunden": 346,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73733,9.24735|6|50.74,9.25": {
+   "sekunden": 304,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1807,6 +4757,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.73745,9.24529|2|50.74,9.25": {
+   "sekunden": 376,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73745,9.24529|6|50.74,9.25": {
+   "sekunden": 334,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73754,8.28850|0|50.74,8.27": {
+   "sekunden": 550,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73754,8.28850|4|50.74,8.27": {
+   "sekunden": 560,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.73756,11.84555|1|50.74,11.85": {
    "sekunden": 368,
    "verkehr": false,
@@ -1817,6 +4787,231 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.73838,9.24674|2|50.74,9.25": {
+   "sekunden": 311,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73838,9.24674|6|50.74,9.25": {
+   "sekunden": 269,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73896,7.08106|0|50.74,7.07": {
+   "sekunden": 516,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73933,9.23663|1|50.73,9.24": {
+   "sekunden": 475,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.73933,9.23663|5|50.73,9.24": {
+   "sekunden": 472,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74030,7.09050|5|50.75,7.08": {
+   "sekunden": 505,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74065,7.10155|4|50.75,7.08": {
+   "sekunden": 824,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74122,7.07673|0|50.74,7.07": {
+   "sekunden": 411,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74169,8.22552|2|50.75,8.23": {
+   "sekunden": 571,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74169,8.22552|6|50.75,8.23": {
+   "sekunden": 495,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74186,7.07247|0|50.74,7.07": {
+   "sekunden": 581,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74237,7.07524|0|50.74,7.07": {
+   "sekunden": 568,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74239,8.28225|3|50.74,8.27": {
+   "sekunden": 446,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74239,8.28225|7|50.74,8.27": {
+   "sekunden": 372,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74264,8.22121|2|50.75,8.22": {
+   "sekunden": 441,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74264,8.22121|6|50.75,8.22": {
+   "sekunden": 417,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74283,8.20716|3|50.75,8.22": {
+   "sekunden": 623,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74283,8.20716|7|50.75,8.22": {
+   "sekunden": 643,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74396,7.08003|5|50.75,7.08": {
+   "sekunden": 277,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74765,8.25546|3|50.75,8.25": {
+   "sekunden": 385,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74765,8.25546|7|50.75,8.25": {
+   "sekunden": 311,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.74778,7.08260|4|50.75,7.08": {
+   "sekunden": 556,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75062,8.27696|3|50.74,8.27": {
+   "sekunden": 640,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75062,8.27696|7|50.74,8.27": {
+   "sekunden": 567,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75169,8.27773|3|50.74,8.27": {
+   "sekunden": 601,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75169,8.27773|7|50.74,8.27": {
+   "sekunden": 527,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75250,7.05918|6|50.75,7.06": {
+   "sekunden": 617,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75273,9.27277|2|50.74,9.28": {
+   "sekunden": 938,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75273,9.27277|6|50.74,9.28": {
+   "sekunden": 896,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75278,9.27810|2|50.74,9.28": {
+   "sekunden": 1084,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75278,9.27810|6|50.74,9.28": {
+   "sekunden": 1042,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75324,7.01511|7|50.76,7.03": {
+   "sekunden": 749,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.75401,7.08949|3|50.75,7.08": {
+   "sekunden": 601,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.76142,7.05699|7|50.75,7.05": {
+   "sekunden": 774,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.76203,7.02952|7|50.76,7.03": {
+   "sekunden": 413,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.76531,8.15889|3|50.76,8.15": {
+   "sekunden": 332,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.76531,8.15889|7|50.76,8.15": {
+   "sekunden": 248,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.77800,9.58734|3|50.78,9.58": {
+   "sekunden": 264,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.77800,9.58734|7|50.78,9.59": {
+   "sekunden": 224,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.79527,12.88042|1|50.80,12.86": {
+   "sekunden": 812,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.79527,12.88042|5|50.80,12.86": {
+   "sekunden": 886,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.80249,12.85192|1|50.80,12.86": {
+   "sekunden": 461,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.80249,12.85192|5|50.80,12.86": {
+   "sekunden": 391,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.80316,12.85908|0|50.80,12.86": {
+   "sekunden": 422,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.80316,12.85908|4|50.80,12.86": {
+   "sekunden": 498,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.80324,11.89429|0|50.80,11.90": {
    "sekunden": 276,
    "verkehr": false,
@@ -1824,6 +5019,351 @@
   },
   "bnetza:50.80324,11.89429|4|50.80,11.90": {
    "sekunden": 230,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.80558,12.85716|0|50.81,12.86": {
+   "sekunden": 523,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.80558,12.85716|4|50.81,12.86": {
+   "sekunden": 457,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81133,6.99234|7|50.81,6.99": {
+   "sekunden": 308,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81142,6.99092|7|50.81,6.99": {
+   "sekunden": 262,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81268,12.84207|0|50.82,12.86": {
+   "sekunden": 707,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81268,12.84207|4|50.82,12.86": {
+   "sekunden": 637,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81644,12.88371|0|50.81,12.86": {
+   "sekunden": 493,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81644,12.88371|4|50.81,12.86": {
+   "sekunden": 568,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81687,8.08576|2|50.82,8.09": {
+   "sekunden": 439,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81687,8.08576|6|50.82,8.09": {
+   "sekunden": 445,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81744,8.10980|3|50.81,8.10": {
+   "sekunden": 735,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.81744,8.10980|7|50.81,8.10": {
+   "sekunden": 667,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.82864,6.96272|0|50.83,6.96": {
+   "sekunden": 713,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83068,6.95666|0|50.83,6.96": {
+   "sekunden": 558,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83081,6.96222|0|50.83,6.96": {
+   "sekunden": 694,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83238,9.57142|1|50.83,9.58": {
+   "sekunden": 319,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83238,9.57142|5|50.83,9.58": {
+   "sekunden": 239,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83244,9.57318|1|50.83,9.58": {
+   "sekunden": 391,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83244,9.57318|5|50.83,9.58": {
+   "sekunden": 455,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83376,9.57116|1|50.83,9.58": {
+   "sekunden": 301,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83376,9.57116|5|50.83,9.58": {
+   "sekunden": 269,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83417,9.57397|1|50.83,9.58": {
+   "sekunden": 288,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83417,9.57397|4|50.83,9.58": {
+   "sekunden": 301,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83417,9.57397|5|50.83,9.58": {
+   "sekunden": 303,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83659,9.66916|2|50.85,9.67": {
+   "sekunden": 794,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83659,9.66916|6|50.85,9.67": {
+   "sekunden": 752,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83869,7.96485|3|50.85,7.99": {
+   "sekunden": 958,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.83869,7.96485|7|50.85,7.99": {
+   "sekunden": 875,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.84557,7.98694|3|50.85,7.99": {
+   "sekunden": 814,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.84557,7.98694|7|50.85,7.99": {
+   "sekunden": 731,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85237,9.72568|2|50.85,9.72": {
+   "sekunden": 223,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85237,9.72568|6|50.85,9.73": {
+   "sekunden": 264,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85314,6.97584|0|50.85,6.97": {
+   "sekunden": 523,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85566,9.72271|2|50.85,9.72": {
+   "sekunden": 518,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85566,9.72271|6|50.85,9.72": {
+   "sekunden": 453,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85645,8.01138|0|50.86,7.99": {
+   "sekunden": 616,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85645,8.01138|4|50.86,7.99": {
+   "sekunden": 698,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85694,12.87492|1|50.86,12.87": {
+   "sekunden": 346,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85694,12.87492|5|50.86,12.87": {
+   "sekunden": 422,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85750,8.00990|0|50.86,7.99": {
+   "sekunden": 654,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85750,8.00990|4|50.86,7.99": {
+   "sekunden": 736,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85817,12.86917|1|50.86,12.87": {
+   "sekunden": 314,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85817,12.86917|5|50.86,12.87": {
+   "sekunden": 390,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85846,9.72283|2|50.85,9.72": {
+   "sekunden": 448,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85846,9.72283|6|50.85,9.72": {
+   "sekunden": 383,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.85912,6.97165|0|50.86,6.97": {
+   "sekunden": 639,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86189,9.72036|2|50.85,9.72": {
+   "sekunden": 455,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86189,9.72036|6|50.85,9.72": {
+   "sekunden": 390,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86253,9.72253|2|50.85,9.72": {
+   "sekunden": 455,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86253,9.72253|6|50.85,9.72": {
+   "sekunden": 390,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86368,9.70698|2|50.85,9.71": {
+   "sekunden": 941,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86368,9.70698|6|50.85,9.71": {
+   "sekunden": 877,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86410,12.90220|2|50.87,12.90": {
+   "sekunden": 552,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86410,12.90220|6|50.87,12.90": {
+   "sekunden": 602,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86415,12.86769|1|50.86,12.87": {
+   "sekunden": 434,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86415,12.86769|5|50.86,12.87": {
+   "sekunden": 367,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86571,11.77255|2|50.87,11.77": {
+   "sekunden": 247,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.86571,11.77255|6|50.87,11.77": {
+   "sekunden": 281,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87226,10.82958|2|50.88,10.83": {
+   "sekunden": 294,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87597,11.61639|6|50.88,11.62": {
+   "sekunden": 450,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87713,11.62177|6|50.88,11.62": {
+   "sekunden": 422,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87760,7.94575|2|50.88,7.95": {
+   "sekunden": 1020,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87760,7.94575|7|50.88,7.95": {
+   "sekunden": 27,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87800,11.62480|6|50.88,11.63": {
+   "sekunden": 568,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87983,7.93543|3|50.88,7.94": {
+   "sekunden": 78,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.87983,7.93543|7|50.88,7.94": {
+   "sekunden": 1007,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.88375,11.59440|5|50.88,11.60": {
+   "sekunden": 537,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.88458,11.61750|6|50.88,11.62": {
+   "sekunden": 612,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.88619,11.85000|0|50.88,11.85": {
+   "sekunden": 929,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1847,6 +5387,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.88759,10.93518|2|50.89,10.94": {
+   "sekunden": 407,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.88843,10.93514|2|50.89,10.94": {
+   "sekunden": 491,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.88984,11.87151|0|50.89,11.85": {
    "sekunden": 426,
    "verkehr": false,
@@ -1854,6 +5404,41 @@
   },
   "bnetza:50.88984,11.87151|4|50.89,11.85": {
    "sekunden": 637,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.89344,12.94602|1|50.89,12.95": {
+   "sekunden": 192,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.89344,12.94602|5|50.89,12.94": {
+   "sekunden": 810,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.89389,12.94750|1|50.89,12.95": {
+   "sekunden": 60,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.89389,12.94750|5|50.90,12.95": {
+   "sekunden": 679,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.89730,10.72615|2|50.90,10.73": {
+   "sekunden": 224,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.89838,10.72563|2|50.90,10.73": {
+   "sekunden": 254,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.89967,10.84682|1|50.89,10.86": {
+   "sekunden": 631,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1867,6 +5452,56 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.90492,7.88672|3|50.91,7.91": {
+   "sekunden": 779,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90492,7.88672|7|50.92,7.91": {
+   "sekunden": 762,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90647,9.87846|1|50.91,9.88": {
+   "sekunden": 695,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90647,9.87846|5|50.91,9.88": {
+   "sekunden": 43,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90695,12.97808|1|50.91,12.98": {
+   "sekunden": 243,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90695,12.97808|5|50.91,12.98": {
+   "sekunden": 286,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90727,9.88107|1|50.91,9.88": {
+   "sekunden": 38,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90727,9.88107|5|50.91,9.88": {
+   "sekunden": 688,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90800,12.97611|1|50.91,12.98": {
+   "sekunden": 248,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.90800,12.97611|5|50.91,12.98": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:50.90807,11.84339|0|50.91,11.84": {
    "sekunden": 0,
    "verkehr": false,
@@ -1874,6 +5509,76 @@
   },
   "bnetza:50.90807,11.84339|4|50.91,11.84": {
    "sekunden": 327,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91196,7.91190|3|50.91,7.91": {
+   "sekunden": 430,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91196,7.91190|7|50.91,7.91": {
+   "sekunden": 415,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91275,9.57687|3|50.91,9.57": {
+   "sekunden": 251,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91275,9.57687|7|50.91,9.57": {
+   "sekunden": 216,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91276,7.91007|3|50.91,7.91": {
+   "sekunden": 521,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91276,7.91007|7|50.91,7.91": {
+   "sekunden": 505,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91648,9.57092|3|50.91,9.57": {
+   "sekunden": 394,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.91648,9.57092|7|50.91,9.57": {
+   "sekunden": 359,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.92240,10.55281|2|50.92,10.55": {
+   "sekunden": 400,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.92240,10.55281|6|50.92,10.55": {
+   "sekunden": 354,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.95421,10.02157|3|50.96,10.03": {
+   "sekunden": 330,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.95421,10.02157|7|50.96,10.03": {
+   "sekunden": 356,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.96826,13.10546|1|50.98,13.09": {
+   "sekunden": 665,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.96826,13.10546|5|50.97,13.09": {
+   "sekunden": 738,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1917,6 +5622,116 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:50.98280,7.84649|0|50.98,7.84": {
+   "sekunden": 492,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.98280,7.84649|4|50.98,7.84": {
+   "sekunden": 597,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.98819,7.84207|0|50.99,7.84": {
+   "sekunden": 464,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.98819,7.84207|4|50.99,7.84": {
+   "sekunden": 567,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.98998,7.84106|0|50.99,7.84": {
+   "sekunden": 437,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.98998,7.84106|4|50.99,7.84": {
+   "sekunden": 540,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.99407,10.29262|1|51.01,10.28": {
+   "sekunden": 504,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.99407,10.29262|5|51.01,10.28": {
+   "sekunden": 621,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.99840,10.35449|2|51.02,10.35": {
+   "sekunden": 970,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.99840,10.35449|6|51.02,10.35": {
+   "sekunden": 679,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.99896,7.83850|0|51.00,7.83": {
+   "sekunden": 432,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:50.99896,7.83850|4|51.00,7.83": {
+   "sekunden": 537,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00043,10.35721|2|51.02,10.35": {
+   "sekunden": 1110,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00043,10.35721|6|51.02,10.35": {
+   "sekunden": 794,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00481,9.47927|1|51.00,9.48": {
+   "sekunden": 216,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00531,9.48134|1|51.00,9.48": {
+   "sekunden": 273,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00653,10.17579|2|51.01,10.18": {
+   "sekunden": 350,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00653,10.17579|6|51.01,10.18": {
+   "sekunden": 360,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00676,9.47278|1|51.00,9.48": {
+   "sekunden": 378,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00690,10.18078|2|51.01,10.18": {
+   "sekunden": 59,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.00690,10.18078|6|51.01,10.18": {
+   "sekunden": 563,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.03702,13.29762|2|51.04,13.30": {
+   "sekunden": 306,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.03986,11.93771|0|51.04,11.94": {
    "sekunden": 282,
    "verkehr": false,
@@ -1937,6 +5752,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.07875,7.69703|3|51.08,7.70": {
+   "sekunden": 831,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.07875,7.69703|7|51.08,7.70": {
+   "sekunden": 45,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.08590,9.48580|0|51.09,9.48": {
+   "sekunden": 400,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.08719,9.48516|0|51.09,9.48": {
+   "sekunden": 183,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.08765,11.96121|0|51.09,11.96": {
    "sekunden": 349,
    "verkehr": false,
@@ -1944,6 +5779,16 @@
   },
   "bnetza:51.08765,11.96121|4|51.09,11.96": {
    "sekunden": 434,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.10141,7.67975|0|51.10,7.68": {
+   "sekunden": 294,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.10141,7.67975|4|51.10,7.68": {
+   "sekunden": 392,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -1964,6 +5809,26 @@
   },
   "bnetza:51.10561,11.95729|4|51.10,11.96": {
    "sekunden": 728,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.10580,7.65525|3|51.11,7.67": {
+   "sekunden": 458,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.10580,7.65525|7|51.11,7.67": {
+   "sekunden": 519,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.10614,7.65981|3|51.11,7.67": {
+   "sekunden": 421,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.10614,7.65981|7|51.11,7.67": {
+   "sekunden": 467,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2072,13 +5937,43 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.20274,9.46852|0|51.20,9.47": {
+   "sekunden": 134,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.20784,7.65588|0|51.21,7.67": {
+   "sekunden": 606,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.21178,9.48605|0|51.21,9.47": {
+   "sekunden": 720,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.21194,9.44996|0|51.21,9.47": {
+   "sekunden": 549,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.22790,7.20392|4|51.23,7.23": {
    "sekunden": 1061,
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.22859,7.65142|7|51.23,7.66": {
+   "sekunden": 475,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.23453,7.21264|4|51.23,7.23": {
    "sekunden": 993,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.23844,7.67593|7|51.23,7.66": {
+   "sekunden": 430,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2089,6 +5984,11 @@
   },
   "bnetza:51.26561,7.24531|5|51.27,7.25": {
    "sekunden": 159,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.26826,9.52291|1|51.27,9.52": {
+   "sekunden": 788,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2109,6 +6009,11 @@
   },
   "bnetza:51.27264,7.22128|5|51.26,7.24": {
    "sekunden": 836,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.27323,9.50209|1|51.27,9.52": {
+   "sekunden": 1217,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2139,6 +6044,11 @@
   },
   "bnetza:51.28251,7.25638|4|51.28,7.26": {
    "sekunden": 256,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.28810,7.56914|6|51.29,7.57": {
+   "sekunden": 1094,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2189,6 +6099,11 @@
   },
   "bnetza:51.32459,12.16924|5|51.32,12.17": {
    "sekunden": 40,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.33246,7.52107|0|51.33,7.53": {
+   "sekunden": 1649,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2332,6 +6247,41 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.42326,6.77883|4|51.42,6.80": {
+   "sekunden": 902,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.42814,6.78758|5|51.42,6.80": {
+   "sekunden": 973,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.42991,6.79472|5|51.43,6.80": {
+   "sekunden": 994,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.42996,6.78006|5|51.42,6.80": {
+   "sekunden": 1021,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.43110,6.83299|4|51.43,6.81": {
+   "sekunden": 1012,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.43745,6.77624|3|51.44,6.80": {
+   "sekunden": 591,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.44013,6.78263|3|51.44,6.80": {
+   "sekunden": 959,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.44407,7.57244|1|51.46,7.56": {
    "sekunden": 891,
    "verkehr": false,
@@ -2362,6 +6312,21 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.46652,6.78856|5|51.46,6.80": {
+   "sekunden": 717,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.46664,13.86816|1|51.47,13.86": {
+   "sekunden": 279,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.46664,13.86816|5|51.47,13.86": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.46721,7.59444|1|51.47,7.59": {
    "sekunden": 41,
    "verkehr": false,
@@ -2379,6 +6344,11 @@
   },
   "bnetza:51.46775,7.59696|5|51.47,7.60": {
    "sekunden": 1051,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.46811,6.78400|5|51.46,6.80": {
+   "sekunden": 674,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2402,6 +6372,71 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.46952,13.86922|1|51.47,13.87": {
+   "sekunden": 608,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.46952,13.86922|5|51.47,13.87": {
+   "sekunden": 659,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.47079,13.86843|1|51.47,13.87": {
+   "sekunden": 399,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.47079,13.86843|5|51.47,13.87": {
+   "sekunden": 428,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.47353,13.86456|1|51.47,13.87": {
+   "sekunden": 451,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.47353,13.86456|5|51.47,13.87": {
+   "sekunden": 480,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.47575,6.84186|4|51.47,6.82": {
+   "sekunden": 874,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.48630,6.79427|4|51.48,6.81": {
+   "sekunden": 621,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.49032,6.80672|4|51.49,6.82": {
+   "sekunden": 687,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.49180,6.83802|4|51.50,6.82": {
+   "sekunden": 636,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.49286,6.83739|4|51.50,6.82": {
+   "sekunden": 561,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.49411,6.82822|4|51.50,6.82": {
+   "sekunden": 632,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.49703,6.83450|4|51.50,6.82": {
+   "sekunden": 693,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.50339,7.61683|1|51.49,7.63": {
    "sekunden": 1002,
    "verkehr": false,
@@ -2422,6 +6457,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.51602,6.82080|3|51.51,6.82": {
+   "sekunden": 361,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.51907,13.89808|0|51.52,13.91": {
+   "sekunden": 558,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.51907,13.89808|4|51.52,13.91": {
+   "sekunden": 535,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.52199,6.83055|5|51.53,6.82": {
+   "sekunden": 737,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.53105,7.67108|0|51.53,7.66": {
    "sekunden": 557,
    "verkehr": false,
@@ -2429,6 +6484,11 @@
   },
   "bnetza:51.53105,7.67108|4|51.53,7.66": {
    "sekunden": 530,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.53120,6.84202|6|51.54,6.84": {
+   "sekunden": 878,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2462,6 +6522,41 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.53668,13.91041|0|51.54,13.91": {
+   "sekunden": 112,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.53668,13.91041|4|51.54,13.91": {
+   "sekunden": 188,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.53670,6.88097|6|51.54,6.88": {
+   "sekunden": 600,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.53758,13.91133|0|51.54,13.91": {
+   "sekunden": 112,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.53758,13.91133|4|51.54,13.91": {
+   "sekunden": 188,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.53794,6.86401|6|51.54,6.86": {
+   "sekunden": 328,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.53981,6.88737|6|51.54,6.89": {
+   "sekunden": 630,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.55357,12.19651|0|51.55,12.19": {
    "sekunden": 439,
    "verkehr": false,
@@ -2477,6 +6572,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.55870,6.94215|4|51.56,6.93": {
+   "sekunden": 758,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.56716,7.67435|0|51.57,7.67": {
    "sekunden": 581,
    "verkehr": false,
@@ -2484,6 +6584,16 @@
   },
   "bnetza:51.56716,7.67435|4|51.57,7.67": {
    "sekunden": 738,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.56778,13.92783|0|51.57,13.93": {
+   "sekunden": 661,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.56778,13.92783|5|51.57,13.93": {
+   "sekunden": 95,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2557,6 +6667,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.58901,7.64445|6|51.60,7.64": {
+   "sekunden": 734,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.59376,7.53220|5|51.58,7.54": {
+   "sekunden": 699,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.59757,7.74127|2|51.61,7.74": {
    "sekunden": 569,
    "verkehr": false,
@@ -2572,8 +6692,23 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.60411,6.92469|4|51.61,6.94": {
+   "sekunden": 544,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.61107,6.92918|0|51.61,6.94": {
    "sekunden": 330,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.61107,6.92918|4|51.61,6.94": {
+   "sekunden": 369,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.61521,7.64267|6|51.60,7.65": {
+   "sekunden": 1206,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2587,6 +6722,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.61751,7.65926|6|51.60,7.66": {
+   "sekunden": 1314,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.61763,7.85398|2|51.63,7.85": {
    "sekunden": 566,
    "verkehr": false,
@@ -2594,6 +6734,11 @@
   },
   "bnetza:51.61763,7.85398|6|51.63,7.85": {
    "sekunden": 642,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.61780,7.65658|6|51.60,7.66": {
+   "sekunden": 1311,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2657,8 +6802,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.75418,6.98826|4|51.76,6.97": {
+   "sekunden": 623,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.75429,6.96355|0|51.75,6.97": {
    "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.75429,6.96355|4|51.75,6.97": {
+   "sekunden": 248,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -2862,6 +7017,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.84977,13.90699|3|51.85,13.91": {
+   "sekunden": 328,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.84977,13.90699|7|51.85,13.91": {
+   "sekunden": 403,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.85247,12.34155|1|51.85,12.34": {
    "sekunden": 530,
    "verkehr": false,
@@ -2922,6 +7087,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.88879,13.83719|2|51.89,13.84": {
+   "sekunden": 44,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.88879,13.83719|6|51.89,13.84": {
+   "sekunden": 804,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.88910,12.40324|1|51.89,12.40": {
    "sekunden": 175,
    "verkehr": false,
@@ -2932,8 +7107,33 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:51.91191,13.79653|3|51.91,13.79": {
+   "sekunden": 733,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.91191,13.79653|7|51.91,13.80": {
+   "sekunden": 64,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:51.94365,7.01619|0|51.94,7.04": {
    "sekunden": 694,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.94365,7.01619|4|51.94,7.04": {
+   "sekunden": 647,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.94907,13.78789|0|51.95,13.77": {
+   "sekunden": 363,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.94907,13.78789|4|51.95,13.77": {
+   "sekunden": 417,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3002,8 +7202,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.00308,7.05154|4|52.00,7.05": {
+   "sekunden": 904,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.00485,7.05081|0|52.00,7.05": {
    "sekunden": 907,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.00485,7.05081|4|52.00,7.05": {
+   "sekunden": 38,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3017,8 +7227,43 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.02799,8.57573|6|52.04,8.57": {
+   "sekunden": 445,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.03262,8.55221|6|52.03,8.55": {
+   "sekunden": 265,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.03290,8.55344|6|52.03,8.55": {
+   "sekunden": 295,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.03311,8.55645|6|52.03,8.56": {
+   "sekunden": 112,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.03444,8.56457|6|52.03,8.56": {
+   "sekunden": 250,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.03929,8.56794|6|52.04,8.57": {
+   "sekunden": 316,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.04768,7.06347|0|52.05,7.06": {
    "sekunden": 313,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.04768,7.06347|4|52.05,7.06": {
+   "sekunden": 348,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3027,13 +7272,38 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.06109,8.64410|3|52.06,8.64": {
+   "sekunden": 246,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.06109,8.64410|4|52.06,8.66": {
    "sekunden": 476,
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.10337,11.60195|3|52.12,11.61": {
+   "sekunden": 435,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.11416,7.07897|0|52.11,7.09": {
    "sekunden": 464,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.11416,7.07897|4|52.11,7.09": {
+   "sekunden": 411,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.12344,13.63808|0|52.12,13.65": {
+   "sekunden": 237,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.12344,13.63808|4|52.12,13.65": {
+   "sekunden": 163,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3047,6 +7317,31 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.12777,11.59978|4|52.13,11.62": {
+   "sekunden": 408,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.12874,11.59840|4|52.13,11.62": {
+   "sekunden": 315,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.12907,11.59645|4|52.13,11.62": {
+   "sekunden": 332,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.13212,13.62035|0|52.13,13.65": {
+   "sekunden": 536,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.13212,13.62035|4|52.13,13.65": {
+   "sekunden": 462,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.13232,12.75013|1|52.13,12.75": {
    "sekunden": 776,
    "verkehr": false,
@@ -3054,6 +7349,31 @@
   },
   "bnetza:52.13232,12.75013|5|52.13,12.75": {
    "sekunden": 72,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.14030,11.60060|5|52.13,11.62": {
+   "sekunden": 491,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.14113,11.62337|4|52.14,11.63": {
+   "sekunden": 300,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.15000,11.63923|4|52.15,11.63": {
+   "sekunden": 658,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.15290,11.62886|4|52.15,11.63": {
+   "sekunden": 369,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.15924,11.60753|4|52.16,11.63": {
+   "sekunden": 609,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3067,6 +7387,121 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.16244,11.60883|4|52.16,11.63": {
+   "sekunden": 453,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.16551,11.62564|4|52.17,11.63": {
+   "sekunden": 493,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.16659,11.61168|1|52.18,11.60": {
+   "sekunden": 625,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.16659,11.61168|4|52.17,11.63": {
+   "sekunden": 449,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.16659,11.61168|5|52.18,11.60": {
+   "sekunden": 651,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17050,11.57076|1|52.17,11.57": {
+   "sekunden": 567,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17050,11.57076|5|52.17,11.57": {
+   "sekunden": 593,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17074,11.48489|3|52.17,11.49": {
+   "sekunden": 231,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17074,11.48489|7|52.17,11.49": {
+   "sekunden": 321,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17408,11.49475|3|52.17,11.49": {
+   "sekunden": 446,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17408,11.49475|7|52.17,11.49": {
+   "sekunden": 339,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17536,11.49449|3|52.17,11.49": {
+   "sekunden": 462,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17536,11.49449|7|52.17,11.49": {
+   "sekunden": 355,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17540,11.49195|3|52.17,11.49": {
+   "sekunden": 657,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17540,11.49195|7|52.17,11.49": {
+   "sekunden": 549,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17545,11.62910|1|52.19,11.62": {
+   "sekunden": 330,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17545,11.62910|4|52.18,11.63": {
+   "sekunden": 305,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17545,11.62910|5|52.19,11.62": {
+   "sekunden": 418,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17681,11.62721|1|52.19,11.62": {
+   "sekunden": 497,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17681,11.62721|4|52.18,11.63": {
+   "sekunden": 182,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17681,11.62721|5|52.19,11.62": {
+   "sekunden": 585,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17770,11.49018|3|52.17,11.49": {
+   "sekunden": 566,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.17770,11.49018|7|52.17,11.49": {
+   "sekunden": 459,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.19790,8.80660|0|52.19,8.83": {
    "sekunden": 840,
    "verkehr": false,
@@ -3077,6 +7512,41 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.20448,11.67195|1|52.21,11.66": {
+   "sekunden": 401,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.20448,11.67195|5|52.21,11.66": {
+   "sekunden": 509,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.20529,11.67164|1|52.21,11.66": {
+   "sekunden": 541,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.20529,11.67164|5|52.21,11.66": {
+   "sekunden": 649,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.20758,13.60756|7|52.21,13.61": {
+   "sekunden": 892,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.20926,11.13271|2|52.21,11.13": {
+   "sekunden": 243,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.20926,11.13271|6|52.21,11.13": {
+   "sekunden": 156,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.20998,8.87260|2|52.21,8.87": {
    "sekunden": 299,
    "verkehr": false,
@@ -3084,6 +7554,16 @@
   },
   "bnetza:52.20998,8.87260|6|52.21,8.87": {
    "sekunden": 399,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.21055,11.67050|1|52.21,11.67": {
+   "sekunden": 261,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.21055,11.67050|5|52.21,11.67": {
+   "sekunden": 368,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3147,6 +7627,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.21489,11.07978|2|52.22,11.08": {
+   "sekunden": 92,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.21489,11.07978|6|52.22,11.08": {
+   "sekunden": 727,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.21523,11.79397|2|52.23,11.80": {
+   "sekunden": 465,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.21523,11.79397|6|52.23,11.80": {
+   "sekunden": 508,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.22367,9.22187|1|52.22,9.22": {
    "sekunden": 926,
    "verkehr": false,
@@ -3162,8 +7662,28 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.22377,7.13902|5|52.22,7.14": {
+   "sekunden": 606,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.22381,11.01884|3|52.23,11.03": {
+   "sekunden": 681,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.22381,11.01884|7|52.23,11.03": {
+   "sekunden": 588,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.22516,7.13863|1|52.23,7.14": {
    "sekunden": 610,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.22516,7.13863|5|52.23,7.14": {
+   "sekunden": 37,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3187,6 +7707,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.23285,11.02271|3|52.23,11.02": {
+   "sekunden": 354,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.23285,11.02271|7|52.23,11.02": {
+   "sekunden": 391,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.23379,9.24690|2|52.23,9.25": {
    "sekunden": 665,
    "verkehr": false,
@@ -3194,6 +7724,56 @@
   },
   "bnetza:52.23379,9.24690|6|52.23,9.25": {
    "sekunden": 420,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.23692,12.05986|2|52.23,12.06": {
+   "sekunden": 265,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.23692,12.05986|6|52.23,12.06": {
+   "sekunden": 223,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.23738,11.00152|3|52.24,11.01": {
+   "sekunden": 390,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.23738,11.00152|7|52.24,11.01": {
+   "sekunden": 539,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.24046,10.99581|3|52.25,11.01": {
+   "sekunden": 494,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.24046,10.99581|7|52.25,11.01": {
+   "sekunden": 653,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.24120,10.98857|3|52.25,11.00": {
+   "sekunden": 614,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.24120,10.98857|7|52.25,11.00": {
+   "sekunden": 638,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.24779,12.25000|2|52.25,12.25": {
+   "sekunden": 272,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.24779,12.25000|6|52.25,12.25": {
+   "sekunden": 327,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3227,6 +7807,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.28829,12.46492|1|52.29,12.46": {
+   "sekunden": 243,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.28829,12.46492|5|52.29,12.46": {
+   "sekunden": 291,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.29488,13.43379|2|52.31,13.43": {
    "sekunden": 652,
    "verkehr": false,
@@ -3257,8 +7847,48 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.30492,10.84172|3|52.31,10.84": {
+   "sekunden": 96,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.30492,10.84172|7|52.31,10.84": {
+   "sekunden": 700,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.30671,10.84365|3|52.31,10.84": {
+   "sekunden": 686,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.30671,10.84365|7|52.31,10.84": {
+   "sekunden": 72,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.30822,13.31313|2|52.31,13.31": {
    "sekunden": 264,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.30830,10.50599|2|52.32,10.51": {
+   "sekunden": 803,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.30830,10.50599|6|52.32,10.51": {
+   "sekunden": 875,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.30877,10.51054|2|52.32,10.51": {
+   "sekunden": 592,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.30877,10.51054|6|52.31,10.52": {
+   "sekunden": 656,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3272,8 +7902,88 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.31002,10.50842|2|52.32,10.51": {
+   "sekunden": 649,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31002,10.50842|6|52.32,10.51": {
+   "sekunden": 712,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31061,10.63471|2|52.31,10.63": {
+   "sekunden": 420,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31061,10.63471|6|52.31,10.63": {
+   "sekunden": 404,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31075,10.50645|2|52.32,10.51": {
+   "sekunden": 471,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31075,10.50645|6|52.32,10.51": {
+   "sekunden": 502,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31107,10.50298|2|52.32,10.51": {
+   "sekunden": 590,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31107,10.50298|6|52.32,10.51": {
+   "sekunden": 595,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31128,10.82518|2|52.31,10.83": {
+   "sekunden": 285,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31128,10.82518|6|52.31,10.82": {
+   "sekunden": 249,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31156,10.82389|2|52.31,10.82": {
+   "sekunden": 278,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31156,10.82389|6|52.31,10.82": {
+   "sekunden": 242,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31314,10.63514|2|52.31,10.64": {
+   "sekunden": 488,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31314,10.63514|6|52.31,10.63": {
+   "sekunden": 471,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.31411,13.02798|3|52.30,13.02": {
    "sekunden": 790,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31601,10.55854|2|52.31,10.56": {
+   "sekunden": 377,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.31601,10.55854|6|52.31,10.56": {
+   "sekunden": 382,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3307,8 +8017,63 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.32221,10.47826|2|52.32,10.48": {
+   "sekunden": 208,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.32221,10.47826|6|52.32,10.48": {
+   "sekunden": 344,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.32731,10.47776|2|52.32,10.48": {
+   "sekunden": 480,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.32731,10.47776|6|52.32,10.48": {
+   "sekunden": 362,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.32876,7.24659|0|52.33,7.26": {
    "sekunden": 341,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.32876,7.24659|4|52.33,7.26": {
+   "sekunden": 321,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33009,10.23483|2|52.34,10.24": {
+   "sekunden": 339,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33009,10.23483|6|52.34,10.24": {
+   "sekunden": 444,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33010,10.23290|2|52.34,10.24": {
+   "sekunden": 406,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33010,10.23290|6|52.34,10.24": {
+   "sekunden": 511,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33238,10.25999|2|52.34,10.26": {
+   "sekunden": 399,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33238,10.25999|6|52.34,10.26": {
+   "sekunden": 433,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3352,8 +8117,68 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.33803,10.41854|2|52.34,10.42": {
+   "sekunden": 639,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33803,10.41854|6|52.34,10.42": {
+   "sekunden": 552,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33819,10.24450|2|52.34,10.24": {
+   "sekunden": 369,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.33819,10.24450|6|52.34,10.25": {
+   "sekunden": 346,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.34017,10.24770|2|52.34,10.25": {
+   "sekunden": 361,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.34017,10.24770|6|52.34,10.25": {
+   "sekunden": 348,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.34075,10.26004|2|52.34,10.26": {
+   "sekunden": 442,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.34075,10.26004|6|52.34,10.26": {
+   "sekunden": 393,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.34674,12.76295|2|52.34,12.76": {
+   "sekunden": 398,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.34674,12.76295|6|52.34,12.76": {
+   "sekunden": 368,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.35675,13.52807|0|52.36,13.55": {
    "sekunden": 881,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.35870,10.11896|2|52.36,10.12": {
+   "sekunden": 503,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.35870,10.11896|6|52.36,10.12": {
+   "sekunden": 582,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3362,8 +8187,28 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.35903,7.26191|4|52.36,7.26": {
+   "sekunden": 312,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.35928,7.26431|0|52.36,7.26": {
    "sekunden": 266,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.35928,7.26431|4|52.36,7.26": {
+   "sekunden": 361,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.36086,10.12051|2|52.36,10.12": {
+   "sekunden": 221,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.36086,10.12051|6|52.36,10.12": {
+   "sekunden": 342,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3392,8 +8237,68 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.38290,9.97330|2|52.39,9.97": {
+   "sekunden": 386,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38290,9.97330|6|52.39,9.97": {
+   "sekunden": 488,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38528,9.95313|2|52.39,9.95": {
+   "sekunden": 284,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38528,9.95313|6|52.39,9.95": {
+   "sekunden": 333,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38643,9.99892|2|52.39,10.00": {
+   "sekunden": 66,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38643,9.99892|6|52.39,10.00": {
+   "sekunden": 560,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38722,9.99938|2|52.39,10.00": {
+   "sekunden": 0,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38722,9.99938|6|52.39,10.00": {
+   "sekunden": 494,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.38870,13.49808|7|52.40,13.52": {
    "sekunden": 584,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38870,9.99667|2|52.39,10.00": {
+   "sekunden": 603,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38870,9.99667|6|52.39,10.00": {
+   "sekunden": 109,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38998,9.85324|3|52.40,9.87": {
+   "sekunden": 1305,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.38998,9.85324|7|52.40,9.87": {
+   "sekunden": 1336,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3429,6 +8334,26 @@
   },
   "bnetza:52.40973,9.66410|6|52.43,9.66": {
    "sekunden": 1079,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.41306,9.73455|2|52.43,9.73": {
+   "sekunden": 622,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.41306,9.73455|6|52.43,9.73": {
+   "sekunden": 685,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.41455,9.82634|3|52.42,9.84": {
+   "sekunden": 399,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.41455,9.82634|7|52.42,9.84": {
+   "sekunden": 450,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3472,6 +8397,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.41935,9.83234|3|52.42,9.83": {
+   "sekunden": 322,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.41935,9.83234|7|52.42,9.83": {
+   "sekunden": 453,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.41959,9.83348|3|52.42,9.83": {
+   "sekunden": 300,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.41959,9.83348|7|52.42,9.83": {
+   "sekunden": 446,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.42064,9.57396|2|52.42,9.57": {
    "sekunden": 263,
    "verkehr": false,
@@ -3479,6 +8424,46 @@
   },
   "bnetza:52.42064,9.57396|6|52.42,9.57": {
    "sekunden": 266,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42327,9.83514|3|52.42,9.83": {
+   "sekunden": 882,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42327,9.83514|7|52.42,9.83": {
+   "sekunden": 745,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42385,9.73230|2|52.43,9.73": {
+   "sekunden": 203,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42385,9.73230|6|52.43,9.73": {
+   "sekunden": 264,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42429,9.83760|3|52.42,9.83": {
+   "sekunden": 766,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42429,9.83760|7|52.42,9.83": {
+   "sekunden": 629,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42435,9.78191|2|52.43,9.78": {
+   "sekunden": 612,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42435,9.78191|6|52.43,9.78": {
+   "sekunden": 679,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3497,6 +8482,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.42609,9.82633|3|52.43,9.83": {
+   "sekunden": 824,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42609,9.82633|7|52.43,9.83": {
+   "sekunden": 686,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42676,9.83027|3|52.42,9.83": {
+   "sekunden": 684,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42676,9.83027|7|52.42,9.83": {
+   "sekunden": 545,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.42684,9.61823|2|52.42,9.62": {
    "sekunden": 641,
    "verkehr": false,
@@ -3509,6 +8514,16 @@
   },
   "bnetza:52.42798,13.51922|7|52.43,13.52": {
    "sekunden": 369,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42824,9.84417|3|52.42,9.83": {
+   "sekunden": 781,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.42824,9.84417|7|52.42,9.83": {
+   "sekunden": 644,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3547,6 +8562,16 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.43457,9.75665|2|52.43,9.76": {
+   "sekunden": 466,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.43457,9.75665|6|52.43,9.76": {
+   "sekunden": 395,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.43507,13.46718|7|52.44,13.48": {
    "sekunden": 849,
    "verkehr": false,
@@ -3557,8 +8582,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.43943,9.69739|2|52.43,9.70": {
+   "sekunden": 919,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.43943,9.69739|2|52.45,9.70": {
    "sekunden": 562,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.43943,9.69739|6|52.43,9.70": {
+   "sekunden": 854,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3572,8 +8607,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.43995,9.74415|2|52.43,9.74": {
+   "sekunden": 660,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.43995,9.74415|5|52.45,9.72": {
    "sekunden": 872,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.43995,9.74415|6|52.43,9.74": {
+   "sekunden": 658,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3582,8 +8627,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.44103,9.72525|2|52.43,9.72": {
+   "sekunden": 608,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.44103,9.72525|5|52.45,9.72": {
    "sekunden": 647,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.44103,9.72525|6|52.43,9.72": {
+   "sekunden": 543,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3592,8 +8647,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.44271,9.72278|2|52.43,9.72": {
+   "sekunden": 597,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.44271,9.72278|5|52.45,9.72": {
    "sekunden": 615,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.44271,9.72278|6|52.43,9.72": {
+   "sekunden": 533,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3602,8 +8667,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.44352,9.72269|2|52.43,9.72": {
+   "sekunden": 590,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.44352,9.72269|5|52.45,9.72": {
    "sekunden": 594,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.44352,9.72269|6|52.43,9.72": {
+   "sekunden": 526,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3617,8 +8692,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.44507,9.73178|2|52.43,9.73": {
+   "sekunden": 782,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.44507,9.73178|5|52.45,9.72": {
    "sekunden": 806,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.44507,9.73178|6|52.43,9.73": {
+   "sekunden": 718,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3677,6 +8762,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.48249,7.21792|3|52.48,7.21": {
+   "sekunden": 270,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.48249,7.21792|7|52.48,7.21": {
    "sekunden": 229,
    "verkehr": false,
@@ -3692,8 +8782,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.52788,7.19651|4|52.53,7.20": {
+   "sekunden": 86,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.52832,7.19985|0|52.53,7.20": {
    "sekunden": 87,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.52832,7.19985|4|52.53,7.20": {
+   "sekunden": 634,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3714,6 +8814,91 @@
   },
   "bnetza:52.55408,9.78652|4|52.55,9.79": {
    "sekunden": 605,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.55647,13.42361|4|52.56,13.43": {
+   "sekunden": 359,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.55831,13.43125|4|52.56,13.43": {
+   "sekunden": 377,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.56222,13.45705|4|52.56,13.43": {
+   "sekunden": 666,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.56450,13.44691|4|52.56,13.43": {
+   "sekunden": 541,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.56806,13.42800|4|52.57,13.43": {
+   "sekunden": 197,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.57003,13.40430|4|52.57,13.43": {
+   "sekunden": 548,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.57185,13.42955|4|52.57,13.43": {
+   "sekunden": 138,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.58071,13.40082|4|52.58,13.43": {
+   "sekunden": 1116,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.58162,13.41021|4|52.58,13.43": {
+   "sekunden": 1048,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.58179,13.43222|5|52.58,13.43": {
+   "sekunden": 450,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.58283,13.41295|4|52.58,13.43": {
+   "sekunden": 761,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.58895,13.42910|5|52.59,13.44": {
+   "sekunden": 999,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.58919,13.46673|4|52.59,13.44": {
+   "sekunden": 1162,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.60754,13.42822|3|52.62,13.44": {
+   "sekunden": 666,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.60812,13.42962|3|52.62,13.44": {
+   "sekunden": 634,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.64445,13.44689|4|52.64,13.43": {
+   "sekunden": 622,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.66217,13.37869|3|52.67,13.40": {
+   "sekunden": 620,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3767,8 +8952,23 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.68671,13.28249|2|52.70,13.29": {
+   "sekunden": 567,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.70411,13.26906|2|52.70,13.27": {
+   "sekunden": 374,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.70826,13.10742|2|52.71,13.11": {
    "sekunden": 375,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.70968,13.26708|2|52.70,13.27": {
+   "sekunden": 601,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3787,8 +8987,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.75019,7.16385|4|52.75,7.16": {
+   "sekunden": 362,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.75567,7.16406|0|52.76,7.16": {
    "sekunden": 351,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.75567,7.16406|4|52.76,7.16": {
+   "sekunden": 384,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3797,8 +9007,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.78871,7.17064|4|52.79,7.17": {
+   "sekunden": 545,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.79740,7.17347|1|52.80,7.17": {
    "sekunden": 544,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.79740,7.17347|5|52.80,7.17": {
+   "sekunden": 43,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3822,6 +9042,26 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.84877,9.55668|3|52.85,9.56": {
+   "sekunden": 392,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.84877,9.55668|7|52.85,9.56": {
+   "sekunden": 433,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.84898,9.55520|3|52.85,9.56": {
+   "sekunden": 366,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.84898,9.55520|7|52.85,9.56": {
+   "sekunden": 407,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.85189,9.69263|1|52.85,9.70": {
    "sekunden": 389,
    "verkehr": false,
@@ -3829,6 +9069,16 @@
   },
   "bnetza:52.85189,9.69263|5|52.85,9.70": {
    "sekunden": 257,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.85269,9.59634|3|52.84,9.58": {
+   "sekunden": 592,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.85269,9.59634|7|52.84,9.58": {
+   "sekunden": 360,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3842,8 +9092,43 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.85773,9.57581|3|52.85,9.57": {
+   "sekunden": 574,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.85773,9.57581|7|52.85,9.57": {
+   "sekunden": 517,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.85802,9.59065|3|52.84,9.58": {
+   "sekunden": 803,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.85802,9.59065|7|52.84,9.58": {
+   "sekunden": 622,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.85930,9.58350|3|52.85,9.57": {
+   "sekunden": 473,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.85930,9.58350|7|52.85,9.57": {
+   "sekunden": 417,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.87194,7.23975|1|52.88,7.23": {
    "sekunden": 354,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.87194,7.23975|5|52.88,7.23": {
+   "sekunden": 408,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3854,6 +9139,26 @@
   },
   "bnetza:52.87326,9.70064|5|52.86,9.71": {
    "sekunden": 784,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.88304,9.47448|2|52.88,9.48": {
+   "sekunden": 1406,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.88304,9.47448|6|52.88,9.47": {
+   "sekunden": 52,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.88621,9.45328|3|52.89,9.46": {
+   "sekunden": 32,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.88621,9.45328|7|52.89,9.46": {
+   "sekunden": 1395,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3887,6 +9192,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.93982,9.31714|6|52.93,9.31": {
+   "sekunden": 481,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.94497,9.88173|1|52.95,9.88": {
    "sekunden": 330,
    "verkehr": false,
@@ -3907,6 +9217,21 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.94840,9.23335|7|52.95,9.25": {
+   "sekunden": 526,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.94932,9.23503|7|52.95,9.25": {
+   "sekunden": 574,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.95015,9.23433|7|52.96,9.25": {
+   "sekunden": 400,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.98349,9.92552|0|52.98,9.93": {
    "sekunden": 710,
    "verkehr": false,
@@ -3922,6 +9247,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.98518,7.24807|4|52.99,7.25": {
+   "sekunden": 416,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:52.99711,9.92121|0|53.00,9.93": {
    "sekunden": 420,
    "verkehr": false,
@@ -3932,8 +9262,23 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:52.99856,9.18116|7|53.00,9.18": {
+   "sekunden": 704,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.00061,9.17951|7|53.00,9.18": {
+   "sekunden": 664,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.06439,7.24852|0|53.06,7.24": {
    "sekunden": 310,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06439,7.24852|4|53.06,7.24": {
+   "sekunden": 334,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3942,13 +9287,28 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.06480,7.24682|4|53.07,7.24": {
+   "sekunden": 262,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.06555,7.24413|0|53.07,7.24": {
    "sekunden": 332,
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.06555,7.24413|4|53.07,7.24": {
+   "sekunden": 357,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.06712,7.24294|0|53.07,7.24": {
    "sekunden": 338,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06712,7.24294|4|53.07,7.24": {
+   "sekunden": 365,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3967,8 +9327,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.06772,7.24174|4|53.07,7.24": {
+   "sekunden": 426,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.06850,7.24265|0|53.07,7.24": {
    "sekunden": 409,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06850,7.24265|4|53.07,7.24": {
+   "sekunden": 434,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -3977,8 +9347,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.08624,7.24192|4|53.09,7.24": {
+   "sekunden": 659,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.08650,7.23939|0|53.09,7.24": {
    "sekunden": 670,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.08650,7.23939|4|53.09,7.24": {
+   "sekunden": 60,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -4067,6 +9447,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.13496,7.28336|4|53.14,7.27": {
+   "sekunden": 408,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.14724,12.39870|3|53.15,12.40": {
    "sekunden": 389,
    "verkehr": false,
@@ -4082,8 +9467,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.17109,7.29489|4|53.17,7.29": {
+   "sekunden": 415,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.18304,7.26512|1|53.18,7.29": {
    "sekunden": 552,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.18304,7.26512|5|53.18,7.29": {
+   "sekunden": 457,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -4097,6 +9492,11 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.23112,7.42851|5|53.24,7.41": {
+   "sekunden": 357,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.23209,10.07850|0|53.23,10.08": {
    "sekunden": 58,
    "verkehr": false,
@@ -4107,8 +9507,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.24781,7.45914|5|53.26,7.45": {
+   "sekunden": 595,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.25974,7.45553|1|53.26,7.45": {
    "sekunden": 348,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.25974,7.45553|5|53.26,7.45": {
+   "sekunden": 412,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -4117,8 +9527,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.26771,7.45689|5|53.26,7.46": {
+   "sekunden": 242,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.30192,10.04854|0|53.30,10.07": {
    "sekunden": 428,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.31186,7.45675|3|53.31,7.46": {
+   "sekunden": 236,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -4157,8 +9577,18 @@
    "verkehr": false,
    "datum": "2026-09-29"
   },
+  "bnetza:53.43877,11.48959|0|53.44,11.50": {
+   "sekunden": 480,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
   "bnetza:53.43877,11.48959|2|53.43,11.49": {
    "sekunden": 355,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.43877,11.48959|4|53.44,11.50": {
+   "sekunden": 394,
    "verkehr": false,
    "datum": "2026-09-29"
   },
@@ -4264,6 +9694,411 @@
   },
   "bnetza:53.51053,10.85287|6|53.51,10.85": {
    "sekunden": 936,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.53409,11.46959|0|53.53,11.47": {
+   "sekunden": 34,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.53409,11.46959|4|53.53,11.47": {
+   "sekunden": 1434,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.53810,11.46847|0|53.54,11.47": {
+   "sekunden": 1434,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.53810,11.46847|4|53.54,11.47": {
+   "sekunden": 38,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.59740,9.92110|4|53.60,9.92": {
+   "sekunden": 832,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.60786,9.90578|3|53.61,9.92": {
+   "sekunden": 760,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.61435,9.90582|4|53.62,9.91": {
+   "sekunden": 294,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.62051,9.91046|5|53.62,9.91": {
+   "sekunden": 780,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.62125,9.90745|5|53.62,9.91": {
+   "sekunden": 396,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.62490,9.90991|5|53.62,9.92": {
+   "sekunden": 452,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.62569,9.93746|4|53.63,9.92": {
+   "sekunden": 497,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.62930,9.92887|4|53.63,9.92": {
+   "sekunden": 481,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.63241,9.90984|4|53.63,9.92": {
+   "sekunden": 419,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.63446,9.91148|4|53.63,9.92": {
+   "sekunden": 464,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.67869,9.96669|4|53.68,9.94": {
+   "sekunden": 1231,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.68715,11.48838|0|53.69,11.51": {
+   "sekunden": 325,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.68715,11.48838|4|53.69,11.51": {
+   "sekunden": 72,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.74283,9.94337|4|53.74,9.95": {
+   "sekunden": 347,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.74383,9.93978|4|53.74,9.95": {
+   "sekunden": 234,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.74627,9.94232|4|53.75,9.95": {
+   "sekunden": 502,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.75010,9.93451|4|53.75,9.95": {
+   "sekunden": 390,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.79859,10.40498|5|53.79,10.42": {
+   "sekunden": 457,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.80071,10.40222|5|53.79,10.42": {
+   "sekunden": 533,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.80387,9.93883|4|53.80,9.93": {
+   "sekunden": 328,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.81459,10.87795|2|53.82,10.88": {
+   "sekunden": 60,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.81459,10.87795|6|53.82,10.88": {
+   "sekunden": 683,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.81593,10.87869|2|53.82,10.88": {
+   "sekunden": 678,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.81593,10.87869|6|53.82,10.88": {
+   "sekunden": 56,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.81871,10.47953|6|53.82,10.48": {
+   "sekunden": 34,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.82279,9.93872|4|53.82,9.92": {
+   "sekunden": 995,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.82329,10.50372|2|53.82,10.50": {
+   "sekunden": 299,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.82329,10.50372|6|53.82,10.50": {
+   "sekunden": 295,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.82352,10.50215|2|53.82,10.50": {
+   "sekunden": 281,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.82352,10.50215|6|53.82,10.50": {
+   "sekunden": 277,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.82992,11.21046|2|53.83,11.21": {
+   "sekunden": 304,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.82992,11.21046|6|53.83,11.21": {
+   "sekunden": 353,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.83249,10.65115|3|53.83,10.65": {
+   "sekunden": 284,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.83249,10.65115|7|53.83,10.65": {
+   "sekunden": 229,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.83842,10.95009|1|53.82,10.96": {
+   "sekunden": 491,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.83842,10.95009|5|53.83,10.96": {
+   "sekunden": 467,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.84079,9.94906|5|53.85,9.93": {
+   "sekunden": 570,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.84095,9.94740|5|53.84,9.93": {
+   "sekunden": 503,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.84368,10.66578|3|53.83,10.65": {
+   "sekunden": 794,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.84368,10.66578|7|53.83,10.65": {
+   "sekunden": 739,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.84488,9.94276|5|53.85,9.93": {
+   "sekunden": 392,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.84593,9.93610|5|53.85,9.93": {
+   "sekunden": 635,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.85227,11.45700|2|53.86,11.46": {
+   "sekunden": 721,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.85227,11.45700|6|53.86,11.46": {
+   "sekunden": 669,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.86082,11.43942|2|53.86,11.44": {
+   "sekunden": 208,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.86082,11.43942|6|53.86,11.44": {
+   "sekunden": 258,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.87116,11.44735|2|53.86,11.44": {
+   "sekunden": 424,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.87116,11.44735|6|53.86,11.44": {
+   "sekunden": 372,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.87444,11.44880|2|53.86,11.44": {
+   "sekunden": 554,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.87444,11.44880|6|53.86,11.44": {
+   "sekunden": 502,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.87837,11.42815|2|53.86,11.42": {
+   "sekunden": 785,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.87837,11.42815|6|53.86,11.43": {
+   "sekunden": 734,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.88117,11.43922|2|53.86,11.43": {
+   "sekunden": 1130,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.88117,11.43922|6|53.86,11.43": {
+   "sekunden": 1078,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.90898,11.75674|2|53.91,11.76": {
+   "sekunden": 53,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.91078,11.75857|2|53.91,11.76": {
+   "sekunden": 939,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.99912,9.92951|0|54.00,9.93": {
+   "sekunden": 228,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.99912,9.92951|4|54.00,9.93": {
+   "sekunden": 185,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.01414,9.93328|0|54.01,9.93": {
+   "sekunden": 76,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.01414,9.93328|4|54.01,9.93": {
+   "sekunden": 406,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.07003,9.94153|0|54.07,9.92": {
+   "sekunden": 1447,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.07003,9.94153|4|54.07,9.92": {
+   "sekunden": 1450,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.09280,9.93002|0|54.09,9.93": {
+   "sekunden": 1642,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.09280,9.93002|4|54.09,9.93": {
+   "sekunden": 1630,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.18038,9.94362|3|54.18,9.95": {
+   "sekunden": 165,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.18038,9.94362|7|54.18,9.95": {
+   "sekunden": 200,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.36335,9.67103|3|54.36,9.67": {
+   "sekunden": 46,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.36335,9.67103|7|54.36,9.67": {
+   "sekunden": 589,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.40010,9.64313|3|54.40,9.64": {
+   "sekunden": 763,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.40010,9.64313|7|54.40,9.64": {
+   "sekunden": 231,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.47668,9.54447|7|54.48,9.54": {
+   "sekunden": 409,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.47779,9.54484|7|54.48,9.54": {
+   "sekunden": 413,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.50358,9.54369|7|54.49,9.52": {
+   "sekunden": 790,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.51897,9.46454|7|54.53,9.48": {
+   "sekunden": 643,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.61592,9.44230|0|54.62,9.44": {
+   "sekunden": 1268,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.63655,9.44002|0|54.64,9.44": {
+   "sekunden": 48,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:54.66270,9.39962|0|54.67,9.43": {
+   "sekunden": 590,
    "verkehr": false,
    "datum": "2026-09-29"
   }
