@@ -286,6 +286,33 @@ neben der A31, kosten 1 und 15 Minuten, weil die zweite auf der Gegenfahrbahn
 liegt und man bis zur nächsten Abfahrt und zurück muss. Weder Luftlinie noch
 TomToms Wert wussten das.
 
+## Umwegtabelle
+
+Der Umweg zu einer Station hängt nur von Straße und Fahrtrichtung ab, nicht
+von der Fahrt. Deshalb wird er einmal gerechnet und in `daten/umwege.json`
+nachgeschlagen; die Tabelle liegt im App-Bundle, dazu kommt ein Gerätecache
+für alles, was die App selbst rechnet. Schlüssel: Station, Richtungssektor
+(acht), nächster Routenpunkt auf zwei Nachkommastellen.
+
+Zwei Regeln, beide aus Fehlern gelernt:
+- **Nur innere Abschnitte.** Im ersten und letzten Abschnitt einer Fahrt ist
+  die Grundstrecke der Weg aus dem Quartier, nicht die Fernstraße. Der führt
+  je nach Minute an einer Station vorbei oder nicht; elf Nullen standen so in
+  der ersten Tabelle.
+- **Historische Verkehrslage** (nächster Dienstag, 10 Uhr). Live-Verkehr nahm
+  im Test für die Grundstrecke eine Stauumfahrung (58 statt 50 km), ganz ohne
+  Verkehrsdaten wechselt der Planer zwischen gleich schnellen Straßen.
+
+**Stand 29.09.2026:** 2.020 Einträge für 1.204 Standorte ab 150 kW, aus 29
+Fernkorridoren in beide Richtungen (`daten/korridore.json`). Median 7,8
+Minuten, 4 echte Nullen (Raststätten), 35 über 20 Minuten. Gerechnet auf
+GitHub mit dem Workflow `Probelauf`, rund 5.000 Anfragen an die Routing API,
+etwa ein Viertel des Monatskontingents, einmalig.
+
+Nachfüllen: Workflow `Probelauf` mit `korridore-abfahren.mjs` oder
+`register-probe.mjs --from=… --to=…`. Der Workflow committet die Tabelle
+selbst. Voraussetzung ist das Repository-Secret `TOMTOM_API_KEY`.
+
 **Der Weg dorthin, als Lehre:** Zuerst sollte die Matrix-Routing-API das
 rechnen, mit Stützpunkten und drei Matrizen. Zwei Fehler kamen dabei heraus
 (Blöcke, die Kopien statt Originale hielten; eine Abschnittszeit aus dem
