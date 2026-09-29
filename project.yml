@@ -32,14 +32,15 @@ targets:
     sources:
       - path: LadeRoute
       # Das Ladesaeulenregister als Stationsquelle, aus daten/ statt aus einer
-      # Kopie im App-Ordner: Die Datei entsteht mit register-schnelllader.mjs
-      # und soll nur einmal im Repo liegen. Der 150-kW-Export ist optional,
-      # die App nimmt ihn, wenn er da ist, sonst den 300-kW-Export.
+      # Kopie im App-Ordner: Die Dateien entstehen mit register-schnelllader.mjs
+      # und sollen nur einmal im Repo liegen. Die App nimmt den 150-kW-Export,
+      # der die 300-kW-Standorte enthaelt; der 300-kW-Export bleibt als
+      # Rueckfall dabei. "optional" reicht nicht: xcodegen erzeugt das Projekt
+      # dann zwar, aber die Kopierphase verlangt die Datei trotzdem.
       - path: daten/standorte-300kw.json
         buildPhase: resources
       - path: daten/standorte-150kw.json
         buildPhase: resources
-        optional: true
     configFiles:
       Debug: Secrets.xcconfig
       Release: Secrets.xcconfig
