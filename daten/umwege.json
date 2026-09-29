@@ -1,5 +1,216 @@
 {
  "quelle": "TomTom Routing API, Route mit Zwischenziel gegen Route des Abschnitts",
  "hinweis": "Schluessel: Station|Richtungssektor|naechster Routenpunkt. Sekunden ohne Verkehrslage.",
- "eintraege": {}
+ "eintraege": {
+  "bnetza:51.55870,6.94215|0|51.56,6.93": {
+   "sekunden": 819,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.60411,6.92469|0|51.61,6.94": {
+   "sekunden": 563,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.61107,6.92918|0|51.61,6.94": {
+   "sekunden": 330,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.75418,6.98826|0|51.76,6.97": {
+   "sekunden": 576,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.75429,6.96355|0|51.75,6.97": {
+   "sekunden": 324,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:51.94365,7.01619|0|51.94,7.04": {
+   "sekunden": 694,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.00308,7.05154|0|52.00,7.05": {
+   "sekunden": 37,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.00485,7.05081|0|52.00,7.05": {
+   "sekunden": 907,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.04768,7.06347|0|52.05,7.06": {
+   "sekunden": 313,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.11416,7.07897|0|52.11,7.09": {
+   "sekunden": 464,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.22377,7.13902|1|52.22,7.14": {
+   "sekunden": 35,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.22516,7.13863|1|52.23,7.14": {
+   "sekunden": 610,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.32876,7.24659|0|52.33,7.26": {
+   "sekunden": 341,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.35903,7.26191|0|52.36,7.26": {
+   "sekunden": 195,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.35928,7.26431|0|52.36,7.26": {
+   "sekunden": 266,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.48249,7.21792|7|52.48,7.21": {
+   "sekunden": 229,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.52788,7.19651|0|52.53,7.20": {
+   "sekunden": 632,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.52832,7.19985|0|52.53,7.20": {
+   "sekunden": 87,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.75019,7.16385|0|52.75,7.16": {
+   "sekunden": 336,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.75567,7.16406|0|52.76,7.16": {
+   "sekunden": 351,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.78871,7.17064|0|52.79,7.17": {
+   "sekunden": 46,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.79740,7.17347|1|52.80,7.17": {
+   "sekunden": 544,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.87194,7.23975|1|52.88,7.23": {
+   "sekunden": 354,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:52.98518,7.24807|0|52.99,7.25": {
+   "sekunden": 436,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06439,7.24852|0|53.06,7.24": {
+   "sekunden": 310,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06480,7.24682|0|53.07,7.24": {
+   "sekunden": 237,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06555,7.24413|0|53.07,7.24": {
+   "sekunden": 332,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06712,7.24294|0|53.07,7.24": {
+   "sekunden": 338,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06772,7.24174|0|53.07,7.24": {
+   "sekunden": 398,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.06850,7.24265|0|53.07,7.24": {
+   "sekunden": 409,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.08624,7.24192|0|53.09,7.24": {
+   "sekunden": 47,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.08650,7.23939|0|53.09,7.24": {
+   "sekunden": 670,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.13496,7.28336|0|53.14,7.27": {
+   "sekunden": 377,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.17109,7.29489|0|53.17,7.29": {
+   "sekunden": 450,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.18304,7.26512|1|53.18,7.29": {
+   "sekunden": 552,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.23112,7.42851|1|53.24,7.42": {
+   "sekunden": 333,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.24781,7.45914|1|53.26,7.45": {
+   "sekunden": 534,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.25974,7.45553|1|53.26,7.45": {
+   "sekunden": 348,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.26771,7.45689|2|53.26,7.46": {
+   "sekunden": 271,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.31186,7.45675|7|53.31,7.46": {
+   "sekunden": 260,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.38875,7.21063|6|53.39,7.21": {
+   "sekunden": 336,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  },
+  "bnetza:53.40954,7.19944|1|53.40,7.21": {
+   "sekunden": 306,
+   "verkehr": false,
+   "datum": "2026-09-29"
+  }
+ }
 }
