@@ -22,6 +22,8 @@ import * as sites from '../lib/sites.mjs';
 import * as redaktion from '../lib/redaktion.mjs';
 import * as ladeplanung from '../lib/ladeplanung.mjs';
 import * as matrix from '../lib/matrix.mjs';
+import * as registerquelle from '../lib/registerquelle.mjs';
+import * as umwege from '../lib/umwege.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -1635,4 +1637,109 @@ test('der Umweg ist die Differenz zur ohnehin gefahrenen Strecke', () => {
   // Unterschied entscheidet darüber, ob die App filtert oder durchlässt.
   assert.equal(matrix.umwegSekunden(null, 300, 240), null);
   assert.equal(matrix.umwegSekunden(300, null, 240), null);
+});
+
+
+// ------------------------------------------------------------- Register als Quelle
+
+test('alsStation macht aus einem Registerstandort eine Station', () => {
+  const s = registerquelle.alsStation({
+    lat: 51.25601, lon: 6.68901, operator: 'Shell Deutschland GmbH', maxPowerKW: 300,
+    deviceCount: 2, pointCount: 4, address: 'Kiesgräble 2', postalCode: '89129', city: 'Langenau',
+  });
+  assert.equal(s.id, 'bnetza:51.25601,6.68901');
+  assert.equal(s.name, 'Shell Deutschland');
+  assert.equal(s.operatorName, 'Shell Deutschland GmbH');
+  assert.equal(s.address, 'Kiesgräble 2, 89129 Langenau');
+  assert.equal(s.maxPowerKW, 300);
+  assert.equal(s.detourSeconds, null);
+});
+
+test('kurzerBetreiber laesst Rechtsformen weg und sonst nichts', () => {
+  assert.equal(registerquelle.kurzerBetreiber('EnBW mobility+ AG und Co.KG'), 'EnBW mobility+');
+  assert.equal(registerquelle.kurzerBetreiber('Fastned Deutschland GmbH & Co. KG'), 'Fastned Deutschland');
+  assert.equal(registerquelle.kurzerBetreiber('Stadtwerke Düsseldorf AG'), 'Stadtwerke Düsseldorf');
+  assert.equal(registerquelle.kurzerBetreiber('Ionity GmbH'), 'Ionity');
+  assert.equal(registerquelle.kurzerBetreiber('Aral pulse'), 'Aral pulse');
+  assert.equal(registerquelle.kurzerBetreiber(''), 'Ladestation');
+});
+
+test('entlangDerRoute behaelt nur den Korridor und sortiert in Fahrtrichtung', () => {
+  // Eine echte Route hat alle paar hundert Meter einen Punkt. Mit nur drei
+  // Punkten auf 70 km faende die Projektion keinen innerhalb des Korridors.
+  const route = Array.from({ length: 101 }, (_, i) => ({ lat: 51.0, lon: 6.0 + i / 100 }));
+  const stationen = [
+    { id: 'weit', lat: 51.2, lon: 6.5 },   // 22 km neben der Route
+    { id: 'hinten', lat: 51.001, lon: 6.9 },
+    { id: 'vorn', lat: 51.001, lon: 6.1 },
+  ].map((s) => ({ ...s, name: s.id }));
+  const ergebnis = registerquelle.entlangDerRoute(stationen, route, 2000);
+  assert.deepEqual(ergebnis.map((s) => s.id), ['vorn', 'hinten']);
+  assert.ok(ergebnis[0].progressMeters < ergebnis[1].progressMeters);
+});
+
+// ------------------------------------------------------------- Umwege ueber Routen
+
+test('planeAnfragen: eine Grundstrecke je Abschnitt, eine Via-Route je Station', () => {
+  const stuetzen = [
+    { lat: 51, lon: 6, progressMeters: 0 },
+    { lat: 51, lon: 6.7, progressMeters: 50_000 },
+    { lat: 51, lon: 7.4, progressMeters: 100_000 },
+  ];
+  const stationen = [
+    { id: 'a', lat: 51.01, lon: 6.2, progressMeters: 14_000 },
+    { id: 'b', lat: 51.01, lon: 6.4, progressMeters: 28_000 },
+    { id: 'c', lat: 51.01, lon: 7.0, progressMeters: 72_000 },
+    { id: 'ohneLage', lat: 51, lon: 6 },
+  ];
+  const plan = umwege.planeAnfragen(stuetzen, stationen);
+  assert.equal(plan.grundstrecken.length, 2, 'zwei Abschnitte mit Stationen');
+  assert.equal(plan.viaStrecken.length, 3, 'ohne Lage keine Anfrage');
+  assert.deepEqual(plan.viaStrecken[0].punkte.map((p) => p.lon), [6, 6.2, 6.7]);
+  assert.equal(plan.viaStrecken[2].schluessel, plan.grundstrecken[1].schluessel);
+});
+
+test('berechneUmwege schreibt den Umweg in die Station und zaehlt Anfragen', async () => {
+  const stuetzen = [
+    { lat: 51, lon: 6, progressMeters: 0 },
+    { lat: 51, lon: 6.7, progressMeters: 50_000 },
+  ];
+  const stationen = [
+    { id: 'a', lat: 51.01, lon: 6.2, progressMeters: 14_000, detourSeconds: null },
+    { id: 'b', lat: 51.01, lon: 6.4, progressMeters: 28_000, detourSeconds: null },
+  ];
+  // Die Routenfunktion ist eine Tabelle: Grundstrecke 1800 s, ueber a 2100 s,
+  // ueber b 1750 s (die Route ueber b ist kuerzer als die Grundstrecke, das
+  // ist Rauschen und muss null werden, nicht minus fuenfzig).
+  const zeiten = { 2: 1800, '6.2': 2100, '6.4': 1750 };
+  const routeSekunden = async (punkte) =>
+    punkte.length === 2 ? zeiten[2] : zeiten[String(punkte[1].lon)];
+
+  const fortschritte = [];
+  const ergebnis = await umwege.berechneUmwege(routeSekunden, stuetzen, stationen, {
+    onFortschritt: (n, von) => fortschritte.push([n, von]),
+  });
+
+  assert.equal(stationen[0].detourSeconds, 300);
+  assert.equal(stationen[0].detourGerechnet, true);
+  assert.equal(stationen[1].detourSeconds, 0);
+  assert.deepEqual(ergebnis, { anfragen: 3, gerechnet: 2, fehler: 0, abschnitte: 1 });
+  assert.deepEqual(fortschritte, [[1, 2], [2, 2]]);
+});
+
+test('berechneUmwege: scheitert die Grundstrecke, bleiben die Stationen ohne Wert', async () => {
+  const stuetzen = [
+    { lat: 51, lon: 6, progressMeters: 0 },
+    { lat: 51, lon: 6.7, progressMeters: 50_000 },
+  ];
+  const stationen = [{ id: 'a', lat: 51.01, lon: 6.2, progressMeters: 14_000, detourSeconds: null }];
+  const routeSekunden = async (punkte) => {
+    if (punkte.length === 2) throw new Error('403');
+    return 2100;
+  };
+  const ergebnis = await umwege.berechneUmwege(routeSekunden, stuetzen, stationen);
+  assert.equal(stationen[0].detourSeconds, null);
+  assert.equal(ergebnis.gerechnet, 0);
+  assert.equal(ergebnis.fehler, 1);
+  assert.equal(ergebnis.anfragen, 1, 'ohne Grundstrecke keine Via-Anfrage verschwenden');
 });
