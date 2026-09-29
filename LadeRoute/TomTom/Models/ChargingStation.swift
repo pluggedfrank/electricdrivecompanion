@@ -15,7 +15,11 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     /// Kategorieangaben des POI, wie TomTom sie liefert.
     let categories: [String]
     /// ID für die Live-Belegungsabfrage. Fehlt bei Stationen ohne Live-Anbindung.
-    let availabilityID: String?
+    ///
+    /// Beschreibbar, weil Registerstandorte sie erst beim Antippen bekommen:
+    /// Das Register kennt keine TomTom-Kennung, eine Umkreissuche an der
+    /// Stelle holt sie nach.
+    var availabilityID: String?
     /// Fahrzeit vom Verlassen der Route bis zum Wiederauffahren.
     ///
     /// Von der Along-Route-Suche mitgeliefert, oder, wo sie fehlt, über die
@@ -24,6 +28,8 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     let detourMeters: Double?
     /// Kommt der Umweg aus der eigenen Rechnung statt von TomTom?
     var detourIsComputed = false
+    /// Stammt die Station aus dem Ladesäulenregister statt von TomTom?
+    var isFromRegister = false
     /// Seitlicher Abstand zur Route. Aus der Antwort, sofern vorhanden, sonst
     /// aus der eigenen Projektion.
     var distanceFromRouteMeters: Double?

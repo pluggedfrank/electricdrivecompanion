@@ -242,65 +242,62 @@ liefert die Gegenprobe.
 Für ein Magazin ist eigene Logik ohnehin eher ein Vorteil als ein Notbehelf:
 Warum genau dieser Stopp vorgeschlagen wird, lässt sich dann erklären.
 
+## Stationsquelle: das Ladesäulenregister
+
+Seit dem 29.09.2026 kommen die Stationen aus dem Ladesäulenregister der
+Bundesnetzagentur, nicht mehr aus der TomTom-Suche. Der Grund steht im
+TomTom-Dashboard: Die Search API hat im Freemium 2.500 Anfragen **im Monat**,
+nicht am Tag, und eine Routenplanung mit Along-Route- und Umkreissuche kostet
+rund fünfzig. Nach drei Wochen Entwicklung standen 2.295 auf der Uhr.
+
+Das Register liegt als Export im Repo (`daten/standorte-300kw.json`, 4.668
+Standorte; der 150-kW-Export kommt dazu), wird ins Bundle kopiert und kostet
+null Anfragen. Es deckt Deutschland vollständig ab, was die TomTom-Suche nie
+tat (93 Prozent nach der zweiten Runde, 51 nach der ersten). Lizenz CC BY 4.0,
+die Nennung "Bundesnetzagentur.de" steht in der Liste.
+
+Was dem Register fehlt, holt TomTom auf Abruf: die Zielsuche beim Tippen und
+die Live-Belegung beim Antippen einer Station (dafür eine Umkreissuche mit
+250 m Radius, die die TomTom-Kennung nachholt, dann die Belegung). Die
+TomTom-Suche bleibt als Rückfall, wenn das Register nichts hat: außerhalb
+Deutschlands oder bei einer Leistungsstufe unter der des Exports.
+
 ## Umwege für alle Stationen
 
-Der Umweg ist die Fahrzeit vom Verlassen der Route bis zum Wiederauffahren. Die
-Along-Route-Suche liefert ihn mit, die Umkreissuche nicht, und die bringt den
-größeren Teil der Treffer. In der App wirkt der Umwegregler dadurch nur auf ein
-Viertel der Liste; für den Rest steht die Luftlinie da, und die sagt über die
-Fahrzeit fast nichts. Eine Säule 200 Meter neben der Autobahn kann zehn
-Kilometer Umweg bedeuten, wenn die nächste Abfahrt weit weg ist.
+Der Umweg ist die Mehrzeit, wenn das Navi über die Station routet. Gerechnet
+wird er je Station als **Route mit Zwischenziel** über die Routing API:
 
-Je Station eine eigene Route zu rechnen wäre exakt und bei zweihundert
-Stationen zu teuer. Die **Matrix-Routing-API** rechnet viele Verbindungen auf
-einmal, und sie steht im Selbstbedienungskatalog.
+1. Auf der Route alle 50 km einen Stützpunkt setzen.
+2. Für jede Station den Stützpunkt davor und den dahinter.
+3. Eine Route davor, Station, dahinter, und je Abschnitt einmal die Route
+   davor, dahinter.
+4. Umweg = Fahrzeit über die Station minus Fahrzeit des Abschnitts.
 
-**Der Haken an einer Matrix:** Sie rechnet das Kreuzprodukt. Zweihundert
-Stationen einzeln gegen ihren jeweiligen Ausfahrtspunkt wären 200 mal 200
-Zellen, um 200 Werte zu bekommen. Und die API nimmt ohnehin nur 200 Zellen je
-Anfrage (gemessen: 200 gehen durch, 300 nicht). Der Ausweg ist ein grobes
-Raster:
+Eine Anfrage je Station plus eine je Abschnitt, aus dem Routing-Kontingent
+von 20.000 im Monat. 67 Standorte auf 324 km sind 74 Anfragen in dreißig
+Sekunden. Die Werte kommen einzeln an, in Fahrtrichtung, und die Liste zeigt
+den Fortschritt.
 
-1. Auf der Route alle 50 km einen Stützpunkt setzen. Bei 321 km sind das 8.
-2. Für jede Station den Stützpunkt davor und den dahinter bestimmen.
-3. Drei Matrizen: Stützpunkte gegen Stationen, Stationen gegen Stützpunkte,
-   und Stützpunkt gegen den nächsten Stützpunkt. Die Stationen werden dafür
-   in Blöcke unter 200 Zellen geteilt; weil sie entlang der Route sortiert
-   sind, teilen sich Nachbarn ihre Stützpunkte, und die Blöcke werden groß.
-4. `Umweg = t(davor → Station) + t(Station → danach) − t(davor → danach)`.
+**Geprüft am 29.09.2026** gegen TomToms eigene Umwege aus der Along-Route-Suche:
+In der Stadt gleichauf (Hansaallee 10 zu 9 Minuten, Mercedesstraße 5 zu 4).
+An zwei Stellen besser: Die Raststätte Ratingen Hohenstein kostet 0 Minuten,
+TomTom behauptete 4,5. Und die beiden Fastned-Anlagen in Gescher, 42 und 48 m
+neben der A31, kosten 1 und 15 Minuten, weil die zweite auf der Gegenfahrbahn
+liegt und man bis zur nächsten Abfahrt und zurück muss. Weder Luftlinie noch
+TomToms Wert wussten das.
 
-**TomTom rechnet die Matrix je Zelle ab, nicht je Anfrage.** Gemessen am
-29.09.2026: Zwei Probeläufe mit je rund 750 Zellen und 60 Suchanfragen, und
-beim dritten kam `InsufficientFunds`. Das Kontingent ist monatlich, 2.500 Zellen, die
-Matrix ist im Freemium damit unbrauchbar. Deshalb ein Stützpunkt je Block, auch
-wenn das mehr Anfragen sind: Jede Station kostet dann genau eine Zelle je
-Richtung, für 104 Stationen etwa 215 Zellen statt 750. Wo TomTom den Umweg
-schon mitgeliefert hat, bleibt sein Wert stehen; gerechnet wird nur, was
-fehlt, und nur bis 5 km neben der Route, dem Anschlag des Abstandsreglers.
+**Der Weg dorthin, als Lehre:** Zuerst sollte die Matrix-Routing-API das
+rechnen, mit Stützpunkten und drei Matrizen. Zwei Fehler kamen dabei heraus
+(Blöcke, die Kopien statt Originale hielten; eine Abschnittszeit aus dem
+Dreisatz, die zwölf Minuten Sockel erzeugte), und am Ende stellte sich heraus,
+dass TomTom die Matrix je Zelle abrechnet, 2.500 im Monat. Zwei Probeläufe,
+und das Kontingent war weg. `tools/lib/matrix.mjs` und `DetourMatrix.swift`
+bleiben als Beleg und für einen späteren Tarif; die Stützpunkt- und
+Klammerlogik daraus wird weiter benutzt.
 
-Die Alternative wäre je Station eine Route mit Zwischenziel: eine Anfrage je
-Station, exakt, aber hundert Anfragen nacheinander statt fünfzehn. Für die
-Fahransicht, die nur die nächsten Stationen braucht, kann das die bessere Wahl
-sein. Entschieden wird das mit der Verbrauchsübersicht im TomTom-Dashboard,
-die sagt, was eine Zelle wirklich kostet.
-
-**Die dritte Matrix ist Pflicht, das war eine Lehre.** Die erste Fassung nahm
-die Zeit von Stützpunkt zu Stützpunkt anteilig aus der Gesamtfahrzeit der
-Route, mit der Begründung, der Fehler hebe sich zwischen Hin- und Rückweg auf.
-Er hebt sich nicht auf. 321 km in 182 min sind rechnerisch 106 km/h überall,
-auch auf den ersten 50 km durch Düsseldorf; der Abschnitt geriet um zwölf
-Minuten zu kurz, und genau die zwölf Minuten standen dann als Umweg an jeder
-Station darin. Alle drei Zeiten müssen aus derselben Rechnung kommen, sonst
-misst die Differenz vor allem den Unterschied der Quellen.
-
-Der Probelauf (`node tools/tomtom-probe.mjs --umwege=alle`) rechnet auch die
-Stationen nach, für die TomTom einen Umweg mitliefert, und zeigt die Abweichung.
-Das ist die Kontrolle, ohne jemanden fragen zu müssen. In der App steckt
-dasselbe Verfahren in `DetourMatrix.swift` und `DetourCalculator.swift`.
-
-**Das Format steht, gemessen am 10.09.2026.** Beide Domains der Dokumentation
-sind von der Entwicklungsumgebung aus gesperrt; `tools/matrix-probe.mjs` hat es
-stattdessen an der API selbst abgefragt.
+**Das Matrix-Format, für den Fall eines späteren Tarifs, gemessen am 10.09.2026.**
+Beide Domains der Dokumentation sind von der Entwicklungsumgebung aus gesperrt;
+`tools/matrix-probe.mjs` hat es stattdessen an der API selbst abgefragt.
 
 ```
 POST https://api.tomtom.com/routing/matrix/2?key=…

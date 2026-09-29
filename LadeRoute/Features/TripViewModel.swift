@@ -14,6 +14,7 @@ final class TripViewModel: ObservableObject {
     init(
         apiKey: String,
         editorialStore: EditorialStore = .loadBundled(),
+        registerStore: RegisterStore = .loadBundled(),
         // nil und nicht VehicleProfileStore(): Ein Vorgabewert im
         // Parameterkopf wird außerhalb des Actors ausgewertet, und der Speicher
         // ist @MainActor. Angelegt wird er deshalb hier drinnen.
@@ -21,6 +22,7 @@ final class TripViewModel: ObservableObject {
     ) {
         self.apiKey = apiKey
         self.editorialStore = editorialStore
+        self.registerStore = registerStore
         self.vehicleStore = vehicleStore ?? VehicleProfileStore()
         api = TomTomAPIClient(apiKey: apiKey)
         detourCalculator = DetourCalculator(api: api)
@@ -116,13 +118,35 @@ final class TripViewModel: ObservableObject {
     /// Minute auf die vollständige Liste zu warten.
     @Published private(set) var isWideningSearch = false
 
-    /// Läuft gerade die dritte Runde, die Umwege über die Matrix-API?
+    /// Läuft gerade die Umwegrechnung, eine Route je Station?
     ///
-    /// Nach der Umkreissuche haben drei Viertel der Treffer keinen Umweg,
-    /// nur die Luftlinie. Drei Matrizen, ein Dutzend Anfragen, und jede
-    /// Station hat einen. Solange das läuft, greift der Umwegregler erst
-    /// auf einen Teil der Liste.
+    /// Registerstandorte haben keinen Umweg, nur die Luftlinie. Eine Route
+    /// mit Zwischenziel je Station, in Fahrtrichtung, gut dreißig Sekunden
+    /// für eine Fahrt durchs Ruhrgebiet. Solange das läuft, greift der
+    /// Umwegregler erst auf einen Teil der Liste.
     @Published private(set) var isComputingDetours = false
+    /// Wie weit die Umwegrechnung ist: erledigt von gesamt.
+    @Published private(set) var detourProgress: (done: Int, total: Int)?
+
+    /// Woher die Stationen kommen.
+    ///
+    /// Das Register ist die Regel. TomTom nur, wenn das Register nichts hat:
+    /// außerhalb Deutschlands, oder wenn eine Leistungsstufe unter der des
+    /// Exports gewählt ist.
+    enum StationSource: Equatable {
+        case register
+        case tomtom
+    }
+
+    @Published private(set) var stationSource: StationSource = .register
+
+    /// Die Pflichtnennung der Quelle, CC BY 4.0.
+    var stationSourceNote: String {
+        switch stationSource {
+        case .register: return "Standorte: \(registerStore.sourceName), CC BY 4.0, \(registerStore.attribution)"
+        case .tomtom: return "Standorte: TomTom Search"
+        }
+    }
 
     /// Wie weit darf eine Station seitlich der Route liegen?
     ///
@@ -231,7 +255,10 @@ final class TripViewModel: ObservableObject {
     func reapplyFilters() {
         guard route != nil else { return }
 
-        if powerTier.rawValue < Self.fetchTier.rawValue, fetchedTier != powerTier {
+        // Unter die Stufe des Registers geht es nur über TomTom, und über
+        // die Untergrenze der TomTom-Suche nur mit einer neuen Suche.
+        let grenze = stationSource == .register ? registerStore.minPowerKW : Self.fetchTier.rawValue
+        if powerTier.rawValue < grenze, fetchedTier != powerTier {
             starteSuche(nurStationen: true)
             return
         }
@@ -284,6 +311,27 @@ final class TripViewModel: ObservableObject {
         guard let route else { return }
 
         phase = .searchingStations
+
+        // Das Register zuerst: keine Anfrage, keine Wartezeit, ganz
+        // Deutschland. Nur wenn es nichts hat, TomTom.
+        let wanted = powerTier.minPowerKW ?? 0
+        if wanted >= registerStore.minPowerKW {
+            let ausRegister = registerStore.stations(
+                along: route.geometry,
+                maxDistanceMeters: Self.keepDistanceMeters
+            )
+            if !ausRegister.isEmpty {
+                stationSource = .register
+                fetchedTier = powerTier
+                fetchedStations = editorialStore.annotate(ausRegister)
+                applyLocalFilters()
+                phase = .ready
+                await computeDetours(route: route, nummer: nummer)
+                return
+            }
+        }
+
+        stationSource = .tomtom
         var options = AlongRouteSearchOptions()
         // Der weiteste Wert, den der Regler zulässt. Der Umweg wird örtlich
         // gefiltert; die Messung hat gezeigt, dass maxDetourTime den Korridor
@@ -374,12 +422,16 @@ final class TripViewModel: ObservableObject {
         }
     }
 
-    /// Dritte Runde: Umwege für alles, was noch keinen hat.
+    /// Umwege für alles, was noch keinen hat, eine Route je Station.
     ///
     /// Nur für Stationen, die der Abstandsregler überhaupt zeigen kann. Was
     /// weiter als sein Anschlag entfernt liegt, bleibt im Bestand, bekommt aber
     /// keine Anfrage: Bei zehn Kilometern Korridor wären das dreimal so viele
-    /// Stationen für Werte, die nie jemand sieht.
+    /// Anfragen für Werte, die nie jemand sieht.
+    ///
+    /// Die Werte kommen einzeln an, in Fahrtrichtung, und werden nach jeder
+    /// Antwort eingetragen: Wer die Liste sieht, sieht die vorderen Umwege
+    /// nach Sekunden und muss nicht auf die hinteren warten.
     private func computeDetours(route: TomTomSDKRoute.Route, nummer: Int) async {
         let kandidaten = fetchedStations
             .map(\.station)
@@ -388,13 +440,20 @@ final class TripViewModel: ObservableObject {
         guard !kandidaten.isEmpty else { return }
 
         isComputingDetours = true
-        defer { isComputingDetours = false }
+        detourProgress = (0, kandidaten.count)
+        defer {
+            isComputingDetours = false
+            detourProgress = nil
+        }
 
         do {
             let ergebnis = try await detourCalculator.detours(
                 for: kandidaten,
                 routeGeometry: route.geometry,
-                routeDurationSeconds: route.summary.travelTime.converted(to: .seconds).value
+                progress: { [weak self] done, total in
+                    guard let self, self.gilt(nummer) else { return }
+                    self.detourProgress = (done, total)
+                }
             )
             guard gilt(nummer) else { return }
 
@@ -405,10 +464,10 @@ final class TripViewModel: ObservableObject {
                 fetchedStations[index].station.detourIsComputed = true
             }
             applyLocalFilters()
-            print("Umwege: \(ergebnis.detourSeconds.count) von \(kandidaten.count) in \(ergebnis.requestCount) Anfragen, \(ergebnis.cellCount) Zellen")
+            print("Umwege: \(ergebnis.detourSeconds.count) von \(kandidaten.count) in \(ergebnis.requestCount) Anfragen, \(ergebnis.failureCount) Fehler")
         } catch {
-            // Die Liste steht bereits. Ohne diese Runde fehlt nur der Umweg an
-            // den Umkreistreffern, und dort steht dann weiter die Luftlinie.
+            // Die Liste steht bereits. Ohne diese Runde fehlt nur der Umweg,
+            // und dort steht dann weiter die Luftlinie.
             print("Umwege nicht berechnet: \(error.localizedDescription)")
         }
     }
@@ -425,7 +484,20 @@ final class TripViewModel: ObservableObject {
         // sonst wieder wegwerfen.
         guard let index = fetchedStations.firstIndex(where: { $0.id == stationID }) else { return }
         guard fetchedStations[index].availability == nil else { return }
-        guard let availabilityID = fetchedStations[index].station.availabilityID else { return }
+
+        // Registerstandorte kennen keine TomTom-Kennung. Eine Umkreissuche an
+        // der Stelle holt sie nach, einmal, und merkt sie sich im Bestand.
+        if fetchedStations[index].station.availabilityID == nil,
+           fetchedStations[index].station.isFromRegister {
+            let punkt = fetchedStations[index].station.coordinate
+            if let treffer = try? await api.nearestChargingStation(to: punkt),
+               let current = fetchedStations.firstIndex(where: { $0.id == stationID }) {
+                fetchedStations[current].station.availabilityID = treffer.availabilityID
+            }
+        }
+
+        guard let current = fetchedStations.firstIndex(where: { $0.id == stationID }) else { return }
+        guard let availabilityID = fetchedStations[current].station.availabilityID else { return }
 
         do {
             let availability = try await api.availability(for: availabilityID)
@@ -578,4 +650,5 @@ final class TripViewModel: ObservableObject {
     private let detourCalculator: DetourCalculator
     private let routePlanner: RoutePlannerService
     private let editorialStore: EditorialStore
+    private let registerStore: RegisterStore
 }

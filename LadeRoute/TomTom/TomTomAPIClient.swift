@@ -323,6 +323,66 @@ actor TomTomAPIClient {
         return response.results.compactMap(Place.init(result:))
     }
 
+    /// Fahrzeit einer Route über die angegebenen Punkte, in Sekunden.
+    ///
+    /// Für die Umwegrechnung: Route Stützpunkt, Station, Stützpunkt gegen
+    /// Route Stützpunkt, Stützpunkt. Das ist exakt die Mehrzeit, die ein Navi
+    /// beim Umrouten über die Station ansagen würde, und es kostet eine
+    /// Anfrage aus dem Routing-Kontingent (20.000 im Monat), nicht Zellen aus
+    /// dem der Matrix (2.500).
+    ///
+    /// Mit Verkehrslage, denn gefahren wird jetzt. Der Probelauf rechnet ohne,
+    /// damit derselbe Aufruf dieselbe Strecke liefert.
+    func travelTimeSeconds(
+        via points: [CLLocationCoordinate2D],
+        withTraffic: Bool = true
+    ) async throws -> Double {
+        guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
+        guard points.count >= 2 else { throw TomTomAPIError.emptyRoute }
+
+        let path = points.map { "\($0.latitude),\($0.longitude)" }.joined(separator: ":")
+        var components = URLComponents(string: "\(Self.baseURL)/routing/1/calculateRoute/\(path)/json")
+        components?.queryItems = [
+            URLQueryItem(name: "key", value: apiKey),
+            URLQueryItem(name: "routeType", value: "fastest"),
+            URLQueryItem(name: "traffic", value: withTraffic ? "true" : "false"),
+            URLQueryItem(name: "travelMode", value: "car"),
+        ]
+        guard let url = components?.url else { throw TomTomAPIError.invalidURL }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 20
+
+        let data = try await perform(request)
+        do {
+            let response = try JSONDecoder().decode(CalculateRouteResponse.self, from: data)
+            guard let route = response.routes.first else { throw TomTomAPIError.emptyRoute }
+            return route.summary.travelTimeInSeconds
+        } catch let error as TomTomAPIError {
+            throw error
+        } catch {
+            throw TomTomAPIError.decoding(underlying: error)
+        }
+    }
+
+    /// Die TomTom-Station, die an dieser Stelle steht.
+    ///
+    /// Für Registerstandorte: Das Register kennt keine TomTom-Kennung, und
+    /// ohne sie gibt es keine Live-Belegung. Eine Umkreissuche mit kleinem
+    /// Radius holt sie nach, beim Antippen und nicht für alle Treffer auf
+    /// einmal; jede kostet eine Search-Anfrage.
+    func nearestChargingStation(
+        to point: CLLocationCoordinate2D,
+        radiusMeters: Double = 250
+    ) async throws -> ChargingStation? {
+        var options = AlongRouteSearchOptions()
+        options.nearbyRadiusMeters = radiusMeters
+        options.nearbyLimit = 5
+        options.minPowerKW = nil
+        let found = try await searchNearby(point: point, options: options)
+        return found.min { GeoUtils.distance($0.coordinate, point) < GeoUtils.distance($1.coordinate, point) }
+    }
+
     /// Fahrzeiten von jedem Start zu jedem Ziel, als Tabelle [start][ziel].
     ///
     /// Die Matrix-API rechnet das Kreuzprodukt und nimmt höchstens 200 Zellen

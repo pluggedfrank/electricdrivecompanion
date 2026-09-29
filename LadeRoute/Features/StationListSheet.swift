@@ -191,7 +191,7 @@ struct StationListSheet: View {
                         Text("·")
                         HStack(spacing: 4) {
                             ProgressView().scaleEffect(0.55).frame(width: 10, height: 10)
-                            Text(trip.isWideningSearch ? "suche im Umkreis" : "rechne Umwege")
+                            Text(fortschrittText)
                         }
                     }
                 }
@@ -267,8 +267,25 @@ struct StationListSheet: View {
                 .textCase(nil)
                 .fixedSize(horizontal: false, vertical: true)
             }
+
+            // Pflicht, nicht Zierde: Die Daten stehen unter CC BY 4.0, und
+            // die Lizenz verlangt die Nennung dort, wo die Daten erscheinen.
+            Section {
+                Text(trip.stationSourceNote)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.faint)
+                    .textCase(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Was in der Kopfzeile neben dem Kreisel steht.
+    private var fortschrittText: String {
+        if trip.isWideningSearch { return "suche im Umkreis" }
+        if let p = trip.detourProgress, p.total > 0 { return "rechne Umwege \(p.done)/\(p.total)" }
+        return "rechne Umwege"
     }
 
     /// Was der Umwegregler gerade kann.
@@ -285,8 +302,12 @@ struct StationListSheet: View {
                 + "\(bekannt) von \(gesamt) Stationen bekannt. Wo keiner bekannt ist, "
                 + "greift der Regler nicht."
         }
-        return "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, für alle "
-            + "\(gesamt) Stationen. \(trip.detourComputedCount) davon über Matrix-Routing "
+        if trip.detourComputedCount == gesamt {
+            return "Mehrzeit, wenn das Navi über die Station routet, für alle "
+                + "\(gesamt) Stationen als eigene Route gerechnet."
+        }
+        return "Mehrzeit, wenn das Navi über die Station routet, für alle "
+            + "\(gesamt) Stationen. \(trip.detourComputedCount) davon als eigene Route "
             + "gerechnet, der Rest von TomTom mitgeliefert."
     }
 
