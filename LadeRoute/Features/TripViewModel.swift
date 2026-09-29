@@ -229,6 +229,9 @@ final class TripViewModel: ObservableObject {
         // gleich wieder Stationen in ein Modell, das nichts mehr anzeigen soll.
         suchlauf?.cancel()
         suchlauf = nil
+        umwegLauf?.cancel()
+        umwegLauf = nil
+        umwegVersucht = []
         streckenNummer += 1
 
         route = nil
@@ -263,6 +266,7 @@ final class TripViewModel: ObservableObject {
             return
         }
         applyLocalFilters()
+        starteUmwege()
     }
 
     // MARK: Ablauf
@@ -326,7 +330,7 @@ final class TripViewModel: ObservableObject {
                 fetchedStations = editorialStore.annotate(ausRegister)
                 applyLocalFilters()
                 phase = .ready
-                await computeDetours(route: route, nummer: nummer)
+                starteUmwege()
                 return
             }
         }
@@ -363,7 +367,7 @@ final class TripViewModel: ObservableObject {
 
         await widenSearch(route: route, options: options, nummer: nummer)
         guard gilt(nummer) else { return }
-        await computeDetours(route: route, nummer: nummer)
+        starteUmwege()
     }
 
     /// Zweite Runde: Umkreissuchen entlang der Strecke.
@@ -422,29 +426,53 @@ final class TripViewModel: ObservableObject {
         }
     }
 
-    /// Umwege für alles, was noch keinen hat, eine Route je Station.
+    /// Rechnet Umwege für das, was die Liste gerade zeigt und noch keinen hat.
     ///
-    /// Nur für Stationen, die der Abstandsregler überhaupt zeigen kann. Was
-    /// weiter als sein Anschlag entfernt liegt, bleibt im Bestand, bekommt aber
-    /// keine Anfrage: Bei zehn Kilometern Korridor wären das dreimal so viele
-    /// Anfragen für Werte, die nie jemand sieht.
+    /// Nicht für den ganzen Bestand: Auf Meerbusch nach Kiel standen 498
+    /// Stationen bis fünf Kilometer neben der Route, die Liste zeigte 216 bis
+    /// zwei. Die anderen 282 Anfragen hätten Werte geliefert, die niemand
+    /// sieht, und ein Vierzigstel des Monatskontingents gekostet. Wer den
+    /// Abstandsregler weiter aufzieht, löst über reapplyFilters() die
+    /// Nachrechnung der neu sichtbaren Stationen aus.
     ///
-    /// Die Werte kommen einzeln an, in Fahrtrichtung, und werden nach jeder
-    /// Antwort eingetragen: Wer die Liste sieht, sieht die vorderen Umwege
-    /// nach Sekunden und muss nicht auf die hinteren warten.
-    private func computeDetours(route: TomTomSDKRoute.Route, nummer: Int) async {
-        let kandidaten = fetchedStations
+    /// Ein eigener Lauf, nicht Teil des Suchlaufs: Er kann jederzeit neu
+    /// starten, wenn sich die Anzeige ändert, und läuft nie doppelt.
+    private func starteUmwege() {
+        guard let route, !isComputingDetours else { return }
+        let kandidaten = stations
             .map(\.station)
-            .filter { $0.detourSeconds == nil }
-            .filter { ($0.distanceFromRouteMeters ?? .infinity) <= Self.detourDistanceMeters }
+            .filter { $0.detourSeconds == nil && !umwegVersucht.contains($0.id) }
         guard !kandidaten.isEmpty else { return }
 
+        let nummer = streckenNummer
+        umwegLauf = Task { [weak self] in
+            guard let self else { return }
+            await self.computeDetours(route: route, nummer: nummer, kandidaten: kandidaten)
+            // Was inzwischen sichtbar wurde, gleich hinterher.
+            guard self.gilt(nummer) else { return }
+            self.starteUmwege()
+        }
+    }
+
+    /// Eine Route je Station, in Fahrtrichtung, die Werte einzeln eingetragen:
+    /// Wer die Liste sieht, sieht die vorderen Umwege nach Sekunden und muss
+    /// nicht auf die hinteren warten.
+    private func computeDetours(
+        route: TomTomSDKRoute.Route,
+        nummer: Int,
+        kandidaten: [ChargingStation]
+    ) async {
         isComputingDetours = true
         detourProgress = (0, kandidaten.count)
         defer {
             isComputingDetours = false
             detourProgress = nil
         }
+
+        // Als versucht gemerkt, bevor es losgeht: Eine Station, für die die
+        // Routing API nichts liefert, soll nicht bei jeder Reglerbewegung
+        // wieder eine Anfrage kosten.
+        for station in kandidaten { umwegVersucht.insert(station.id) }
 
         do {
             let ergebnis = try await detourCalculator.detours(
@@ -471,10 +499,6 @@ final class TripViewModel: ObservableObject {
             print("Umwege nicht berechnet: \(error.localizedDescription)")
         }
     }
-
-    /// Bis zu diesem Abstand werden Umwege gerechnet: der Anschlag des
-    /// Abstandsreglers in der Liste.
-    private static let detourDistanceMeters: Double = 5_000
 
     /// Live-Belegung erst beim Antippen holen, nicht für alle Treffer auf einmal.
     /// Das spart im Freemium-Kontingent den Löwenanteil der Anfragen.
@@ -536,6 +560,8 @@ final class TripViewModel: ObservableObject {
     /// die eigene noch die aktuelle ist.
     private func starteSuche(nurStationen: Bool = false) {
         suchlauf?.cancel()
+        umwegLauf?.cancel()
+        umwegVersucht = []
         streckenNummer += 1
         let nummer = streckenNummer
 
@@ -637,6 +663,10 @@ final class TripViewModel: ObservableObject {
     /// Alles, was die Suche gefunden hat. `stations` ist die gefilterte Sicht.
     /// Laufender Suchlauf, damit ein neues Ziel ihn abbrechen kann.
     private var suchlauf: Task<Void, Never>?
+    /// Laufende Umwegrechnung, getrennt vom Suchlauf.
+    private var umwegLauf: Task<Void, Never>?
+    /// Für welche Stationen schon eine Anfrage rausging, mit oder ohne Ergebnis.
+    private var umwegVersucht: Set<String> = []
     /// Zählt die Strecken. Ergebnisse einer älteren zählen nicht mehr.
     private var streckenNummer = 0
     private var fetchedStations: [AnnotatedStation] = []

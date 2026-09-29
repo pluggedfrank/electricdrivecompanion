@@ -167,7 +167,10 @@ struct StationListSheet: View {
             .map { stopp in
                 let km = Int((stopp.progressMeters / 1000).rounded())
                 let minuten = Int((stopp.chargingSeconds / 60).rounded())
-                let name = stopp.station.operatorName ?? stopp.station.name
+                // Der Anzeigename, nicht der Betreiber aus dem Datensatz: Der
+                // heisst "EWE Go GmbH", die Liste sagt "EWE Go", und der Plan
+                // soll dieselbe Sprache sprechen.
+                let name = stopp.station.name
                 return "km \(km) \(name), \(minuten) min"
             }
             .joined(separator: "  ·  ")
