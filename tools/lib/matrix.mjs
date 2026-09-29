@@ -143,8 +143,8 @@ export function klammer(stuetzen, progressMeters) {
  * auszukommen, fuenf je Route. Nur rechnet die Matrix das Kreuzprodukt: Ein
  * Block mit drei Stuetzpunkten und sechzig Stationen kostet 180 Zellen, von
  * denen sechzig gebraucht werden. Und TomTom rechnet je Zelle ab, nicht je
- * Anfrage. Am 29.09.2026 war das Tageskontingent nach zwei Probelaeufen mit
- * je rund 750 Zellen aufgebraucht: "InsufficientFunds".
+ * Anfrage. Am 29.09.2026 war das Monatskontingent von 2.500 Zellen nach zwei
+ * Probelaeufen mit je rund 750 Zellen aufgebraucht: "InsufficientFunds".
  *
  * Mit einem Stuetzpunkt je Block kostet jede Station genau eine Zelle je
  * Richtung. Das sind mehr Anfragen, etwa eine je Stuetzpunkt und Richtung,

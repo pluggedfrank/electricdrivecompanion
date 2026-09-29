@@ -139,7 +139,7 @@ async function planRoute(apiKey, from, to, mitVerkehr = false) {
         ' und im Dashboard, ob der Key noch existiert.',
       403: '\nDie Routing API ist fuer diesen Key nicht freigeschaltet.' +
         ' Im Dashboard unter Products nachtragen.',
-      429: '\nTageskontingent aufgebraucht.',
+      429: '\nMonatskontingent aufgebraucht.',
     }[response.status] ?? '';
     throw new Error(`Routing antwortet mit ${response.status}: ${body}${hint}`);
   }
@@ -360,7 +360,7 @@ async function diagnose(apiKey, route, baseOptions) {
     );
     console.log(dim('  401 -> Key ungueltig oder Search API nicht freigeschaltet'));
     console.log(dim('  403 -> Produkt fehlt in der Key-Konfiguration'));
-    console.log(dim('  429 -> Tageskontingent aufgebraucht'));
+    console.log(dim('  429 -> Monatskontingent aufgebraucht'));
   }
   if (!best || best.count === 0) {
     console.log(red('Keine Variante liefert Treffer.'));
@@ -972,7 +972,9 @@ async function main() {
     `\n${dim('Legende:')} ${red('*')} mit eigenem Test   ${green('o')} erfasst   ` +
       `${dim('. nur TomTom-Daten')}`
   );
-  console.log(dim(`Verbrauch: ${used} Non-Tile-Anfragen (Freemium: 2.500 pro Tag)`));
+  // Monatlich, nicht taeglich, und je API getrennt: Search 2.500, Routing
+  // 20.000, Matrix 2.500 Zellen. Abgelesen im Dashboard am 29.09.2026.
+  console.log(dim(`Verbrauch: ${used} Anfragen, davon ${anfragen + Math.min(availabilityCount, annotated.length)} an die Search API (Freemium: 2.500 im Monat)`));
   if (matrixZellen > 0) {
     // Die Matrix zaehlt anders: Am 29.09.2026 war das Kontingent nach zwei
     // Laeufen mit je 750 Zellen erschoepft, bei nur 60 Anfragen je Lauf.

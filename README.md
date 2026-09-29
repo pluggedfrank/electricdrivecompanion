@@ -18,7 +18,7 @@ Ladestations-Wissen?** Die Ansage, ohne die es kein Navi ist, fehlt noch.
 
 | Baustein | Quelle | Kontingent |
 |---|---|---|
-| Karte, Standort, Kameraführung | Maps SDK for iOS | Tiles, 50.000 pro Tag frei |
+| Karte, Standort, Kameraführung | Maps SDK for iOS | Tiles, 200.000 im Monat frei |
 | Route planen und zeichnen | Routing über SDK | Non-Tile |
 | Ladestationen entlang der Strecke | Search API, `searchAlongRoute` | Non-Tile |
 | Live-Belegung der Ladepunkte | Search API, `chargingAvailability` | Non-Tile |
@@ -196,14 +196,26 @@ Ein kompletter Durchlauf Meerbusch nach Norddeich, rund 330 km:
 | Ladestationen suchen, 7 Abschnitte | 7 |
 | Live-Belegung, nur bei Antippen | 1 pro Station |
 
-Also etwa 8 bis 15 Non-Tile-Anfragen pro geplanter Fahrt. Bei 2.500 pro Tag sind
-das immer noch über 150 Routen täglich. Für die Evaluierung ist das weit mehr als
-genug. Deshalb wird die Belegung auch erst beim Antippen geholt und nicht für
-alle Treffer auf einmal: das wäre der teuerste Teil.
+Das war die Rechnung vom Anfang. Mit den Umkreissuchen sind es rund 50
+Suchanfragen je Fahrt, und **die Kontingente sind monatlich, nicht täglich**,
+je API getrennt. Abgelesen im TomTom-Dashboard am 29.09.2026:
+
+| API | frei im Monat | kostet je Fahrt |
+|---|---|---|
+| Search (Along-Route, Umkreis, Belegung, Zielsuche) | 2.500 | rund 50 |
+| Routing (`calculateRoute`) | 20.000 | 1, plus 1 je Umweg-Kontrolle |
+| Matrix Routing | 2.500 Zellen | 215 nach dem Umbau, 750 davor |
+| Map Display Tiles | 200.000 | je nach Kartennutzung |
+
+Die Search API ist damit der Engpass: fünfzig Fahrten im Monat, Probeläufe
+eingerechnet. Die Matrix ist im Freemium unbrauchbar. Die Routing API dagegen
+ist reichlich, und über sie lässt sich der Umweg je Station als Route mit
+Zwischenziel rechnen. Deshalb wird die Belegung auch erst beim Antippen geholt
+und nicht für alle Treffer auf einmal.
 
 ## Das Tempolimit, das wie ein kaputter Key aussieht
 
-Neben dem Tageskontingent deckelt TomTom die Anfragen pro Sekunde. Wird zu
+Neben dem Monatskontingent deckelt TomTom die Anfragen pro Sekunde. Wird zu
 schnell gefeuert, kommt **HTTP 401 mit "missing valid authentication
 credentials"** zurück, obwohl der Key gültig ist und dieselbe Anfrage eine
 Sekunde später anstandslos durchgeht.

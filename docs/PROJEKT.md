@@ -271,7 +271,8 @@ Raster:
 
 **TomTom rechnet die Matrix je Zelle ab, nicht je Anfrage.** Gemessen am
 29.09.2026: Zwei Probeläufe mit je rund 750 Zellen und 60 Suchanfragen, und
-beim dritten kam `InsufficientFunds`. Deshalb ein Stützpunkt je Block, auch
+beim dritten kam `InsufficientFunds`. Das Kontingent ist monatlich, 2.500 Zellen, die
+Matrix ist im Freemium damit unbrauchbar. Deshalb ein Stützpunkt je Block, auch
 wenn das mehr Anfragen sind: Jede Station kostet dann genau eine Zelle je
 Richtung, für 104 Stationen etwa 215 Zellen statt 750. Wo TomTom den Umweg
 schon mitgeliefert hat, bleibt sein Wert stehen; gerechnet wird nur, was

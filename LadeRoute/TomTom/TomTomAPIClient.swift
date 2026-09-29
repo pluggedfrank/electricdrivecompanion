@@ -34,7 +34,7 @@ enum TomTomAPIError: LocalizedError {
             case 403:
                 return "TomTom lehnt den Key ab (403). Fehlt das Produkt in der Key-Konfiguration?"
             case 429:
-                return "Tageskontingent erreicht (429). Das Freemium-Limit greift."
+                return "Monatskontingent erreicht (429). Das Freemium-Limit dieser API greift."
             default:
                 return "TomTom antwortet mit Status \(status): \(body.prefix(200))"
             }

@@ -1545,7 +1545,7 @@ test('die Bloecke bleiben unter der Zellengrenze', () => {
   }
 
   // Keine Zelle zu viel: TomTom rechnet je Zelle ab, und das Kreuzprodukt
-  // mehrerer Stuetzpunkte in einem Block hat am 29.09.2026 das Tageskontingent
+  // mehrerer Stuetzpunkte in einem Block hat am 29.09.2026 das Monatskontingent
   // gekostet. Jede Station genau eine Zelle.
   const zellen = teile.reduce((n, t) => n + t.stuetzen.length * t.eintraege.length, 0);
   assert.equal(zellen, 150, 'eine Zelle je Station, nicht mehr');
