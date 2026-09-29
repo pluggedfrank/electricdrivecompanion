@@ -15,6 +15,7 @@ final class TripViewModel: ObservableObject {
         apiKey: String,
         editorialStore: EditorialStore = .loadBundled(),
         registerStore: RegisterStore = .loadBundled(),
+        detourTable: DetourTable = .loadBundled(),
         // nil und nicht VehicleProfileStore(): Ein Vorgabewert im
         // Parameterkopf wird außerhalb des Actors ausgewertet, und der Speicher
         // ist @MainActor. Angelegt wird er deshalb hier drinnen.
@@ -23,6 +24,7 @@ final class TripViewModel: ObservableObject {
         self.apiKey = apiKey
         self.editorialStore = editorialStore
         self.registerStore = registerStore
+        self.detourTable = detourTable
         self.vehicleStore = vehicleStore ?? VehicleProfileStore()
         api = TomTomAPIClient(apiKey: apiKey)
         detourCalculator = DetourCalculator(api: api)
@@ -439,6 +441,23 @@ final class TripViewModel: ObservableObject {
     /// starten, wenn sich die Anzeige ändert, und läuft nie doppelt.
     private func starteUmwege() {
         guard let route, !isComputingDetours else { return }
+
+        // Erst nachschlagen: Was die Tabelle im Bundle oder der Gerätecache
+        // kennt, kostet keine Anfrage und ist sofort da.
+        let layout = DetourKey.RouteLayout(route.geometry)
+        var ausTabelle = 0
+        for index in fetchedStations.indices
+        where fetchedStations[index].station.detourSeconds == nil {
+            guard let bekannt = detourTable.lookup(fetchedStations[index].station, on: layout) else { continue }
+            fetchedStations[index].station.detourSeconds = bekannt
+            fetchedStations[index].station.detourIsComputed = true
+            ausTabelle += 1
+        }
+        if ausTabelle > 0 {
+            applyLocalFilters()
+            print("Umwege: \(ausTabelle) aus Tabelle und Cache (Bundle \(detourTable.bundledCount), Gerät \(detourTable.cachedCount))")
+        }
+
         let kandidaten = stations
             .map(\.station)
             .filter { $0.detourSeconds == nil && !umwegVersucht.contains($0.id) }
@@ -485,12 +504,15 @@ final class TripViewModel: ObservableObject {
             )
             guard gilt(nummer) else { return }
 
+            let layout = DetourKey.RouteLayout(route.geometry)
             for index in fetchedStations.indices
             where fetchedStations[index].station.detourSeconds == nil {
                 guard let umweg = ergebnis.detourSeconds[fetchedStations[index].id] else { continue }
                 fetchedStations[index].station.detourSeconds = umweg
                 fetchedStations[index].station.detourIsComputed = true
+                detourTable.remember(umweg, for: fetchedStations[index].station, on: layout)
             }
+            detourTable.persist()
             applyLocalFilters()
             print("Umwege: \(ergebnis.detourSeconds.count) von \(kandidaten.count) in \(ergebnis.requestCount) Anfragen, \(ergebnis.failureCount) Fehler")
         } catch {
@@ -681,4 +703,5 @@ final class TripViewModel: ObservableObject {
     private let routePlanner: RoutePlannerService
     private let editorialStore: EditorialStore
     private let registerStore: RegisterStore
+    private let detourTable: DetourTable
 }

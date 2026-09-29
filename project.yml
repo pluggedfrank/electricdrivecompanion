@@ -41,6 +41,9 @@ targets:
         buildPhase: resources
       - path: daten/standorte-150kw.json
         buildPhase: resources
+      # Die Umwegtabelle, gefuellt von Probelaeufen und Korridorfahrten.
+      - path: daten/umwege.json
+        buildPhase: resources
     configFiles:
       Debug: Secrets.xcconfig
       Release: Secrets.xcconfig
