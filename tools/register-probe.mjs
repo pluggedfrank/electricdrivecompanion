@@ -7,7 +7,16 @@
 //   node tools/register-probe.mjs --from=51.256,6.689 --to=53.6148,7.1621
 //   node tools/register-probe.mjs --corridor=2         Korridor in km
 //   node tools/register-probe.mjs --daten=daten/standorte-150kw.json
-//   node tools/register-probe.mjs --verkehr            mit Verkehrslage
+//   node tools/register-probe.mjs --verkehr            mit Verkehrslage von jetzt
+//   node tools/register-probe.mjs --ohne-verkehr       ganz ohne Verkehrsdaten
+//
+// Ohne Schalter rechnet der Lauf mit der historischen Verkehrslage fuer den
+// naechsten Dienstag um 10 Uhr. Das ist der Modus fuer die Tabelle: dieselbe
+// Strecke liefert in derselben Woche dieselbe Route, und die Zeiten sind die
+// eines normalen Werktags, nicht die des Nachmittags, an dem der Lauf lief.
+// Mit Verkehr von jetzt nahm die Grundstrecke im Test eine andere Strasse
+// (58 statt 50 km, Stauumfahrung), und ganz ohne Verkehr waehlt der Planer
+// zwischen zwei gleich schnellen Strassen je nach Minute.
 //   node tools/register-probe.mjs --ohne-umwege        nur die Liste, eine Anfrage
 //   node tools/register-probe.mjs --all-results        alle Zeilen
 //   node tools/register-probe.mjs --tabelle=daten/umwege.json   Umwegtabelle (Vorgabe)
@@ -87,13 +96,34 @@ function heading(text) {
 
 // --------------------------------------------------------------- Routing
 
-async function routeAntwort(apiKey, punkte, mitVerkehr) {
+/** Naechster Dienstag, 10 Uhr, als ISO-Zeit. */
+export function naechsterDienstagZehnUhr(jetzt = new Date()) {
+  const d = new Date(jetzt);
+  d.setDate(d.getDate() + (((9 - d.getDay()) % 7) || 7));
+  d.setHours(10, 0, 0, 0);
+  return d.toISOString();
+}
+
+/**
+ * Verkehrsmodus der Anfragen.
+ *   live:        traffic=true, jetzt
+ *   historisch:  traffic=true, departAt naechster Dienstag 10 Uhr
+ *   keiner:      traffic=false
+ */
+function verkehrsmodus(args) {
+  if (args.verkehr) return { name: 'live', traffic: true };
+  if (args['ohne-verkehr']) return { name: 'keiner', traffic: false };
+  return { name: 'historisch', traffic: true, departAt: naechsterDienstagZehnUhr() };
+}
+
+async function routeAntwort(apiKey, punkte, modus) {
   const pfad = punkte.map((p) => `${p.lat},${p.lon}`).join(':');
   const url = new URL(`${ev.BASE_URL}/routing/1/calculateRoute/${pfad}/json`);
   url.searchParams.set('key', apiKey);
   url.searchParams.set('routeType', 'fastest');
-  url.searchParams.set('traffic', mitVerkehr ? 'true' : 'false');
+  url.searchParams.set('traffic', modus.traffic ? 'true' : 'false');
   url.searchParams.set('travelMode', 'car');
+  if (modus.departAt) url.searchParams.set('departAt', modus.departAt);
 
   const response = await ev.requestWithRetry(fetch, url, {});
   if (!response.ok) {
@@ -111,8 +141,8 @@ async function routeAntwort(apiKey, punkte, mitVerkehr) {
   return route;
 }
 
-async function planRoute(apiKey, from, to, mitVerkehr) {
-  const route = await routeAntwort(apiKey, [from, to], mitVerkehr);
+async function planRoute(apiKey, from, to, modus) {
+  const route = await routeAntwort(apiKey, [from, to], modus);
   const points = (route.legs ?? []).flatMap((leg) =>
     (leg.points ?? []).map((p) => ({ lat: p.latitude, lon: p.longitude }))
   );
@@ -131,7 +161,8 @@ async function main() {
   const to = parseCoordinate(args.to, '--to');
   const korridorKm = numberArg(args, 'corridor');
   const show = numberArg(args, 'show');
-  const mitVerkehr = Boolean(args.verkehr);
+  const modus = verkehrsmodus(args);
+  const mitVerkehr = modus.name === 'live';
 
   // Register laden, bevor der Key abgefragt wird: Ein fehlender Export soll
   // nicht erst nach der Eingabe auffallen.
@@ -152,16 +183,18 @@ async function main() {
 
   // 1. Route
   heading('1. Route planen');
-  const route = await planRoute(apiKey, from, to, mitVerkehr);
+  const route = await planRoute(apiKey, from, to, modus);
   anfragen++;
   console.log(
     `${route.lengthKm.toFixed(0)} km, ${Math.round(route.durationMin)} min, ` +
       `${route.points.length} Punkte in der Geometrie`
   );
   console.log(
-    mitVerkehr
-      ? dim('mit Verkehrslage, wie in der App')
-      : dim('ohne Verkehrslage, damit derselbe Aufruf dieselbe Strecke liefert')
+    dim({
+      live: 'mit Verkehrslage von jetzt, wie in der App',
+      historisch: `historische Verkehrslage, Dienstag ${modus.departAt.slice(0, 16).replace('T', ' ')} Uhr, der Modus fuer die Tabelle`,
+      keiner: 'ohne Verkehrsdaten',
+    }[modus.name])
   );
 
   // 2. Stationen aus dem Register
@@ -216,7 +249,7 @@ async function main() {
 
     const routeSekunden = async (punkte) => {
       await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS);
-      const antwort = await routeAntwort(apiKey, punkte, mitVerkehr);
+      const antwort = await routeAntwort(apiKey, punkte, modus);
       return antwort.summary.travelTimeInSeconds;
     };
 
@@ -238,18 +271,23 @@ async function main() {
         (umwegErgebnis.fehler ? red(`, ${umwegErgebnis.fehler} Fehler`) : '')
     );
 
-    // Dann eintragen, was neu ist. Mit Verkehr gerechnete Werte kommen nur
-    // hinein, wo noch nichts steht; die Tabelle soll den Umweg der Strasse
-    // enthalten, nicht den des Nachmittags.
+    // Dann eintragen, was neu ist: nur innere Abschnitte, nicht die an Start
+    // und Ziel, dort haengt der Wert am Quartier statt an der Fernstrasse.
+    // Mit Verkehr von jetzt gerechnete Werte kommen nur hinein, wo noch
+    // nichts steht; die Tabelle soll den Umweg der Strasse enthalten, nicht
+    // den des Nachmittags.
     if (tabelle) {
       let neu = 0;
+      let aussen = 0;
       for (const s of offen) {
         if (s.detourSeconds == null) continue;
+        if (!s.umwegInnen) { aussen++; continue; }
         if (umwegtabelle.eintragen(tabelle, s, lage, s.detourSeconds, { mitVerkehr })) neu++;
       }
       if (neu > 0) umwegtabelle.speichere(tabellenPfad, tabelle);
       console.log(
-        dim(`${neu} neue Eintraege, Tabelle jetzt ${Object.keys(tabelle.eintraege).length}`)
+        dim(`${neu} neue Eintraege, Tabelle jetzt ${Object.keys(tabelle.eintraege).length}` +
+          (aussen ? `; ${aussen} im Start- oder Zielabschnitt bleiben draussen` : ''))
       );
     }
   }

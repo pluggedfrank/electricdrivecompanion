@@ -1728,6 +1728,20 @@ test('berechneUmwege schreibt den Umweg in die Station und zaehlt Anfragen', asy
   assert.deepEqual(fortschritte, [[1, 2], [2, 2]]);
 });
 
+test('berechneUmwege markiert, ob der Abschnitt innen liegt', async () => {
+  // Vier Stuetzpunkte: 0 ist der Start, 3 das Ziel. Nur 1->2 ist innen.
+  const stuetzen = [0, 50_000, 100_000, 150_000].map((m, i) => ({ lat: 51, lon: 6 + i, progressMeters: m }));
+  const stationen = [
+    { id: 'start', lat: 51, lon: 6.2, progressMeters: 10_000, detourSeconds: null },
+    { id: 'innen', lat: 51, lon: 7.2, progressMeters: 60_000, detourSeconds: null },
+    { id: 'ziel', lat: 51, lon: 8.2, progressMeters: 110_000, detourSeconds: null },
+  ];
+  const routeSekunden = async (p) => (p.length === 2 ? 1000 : 1100);
+  await umwege.berechneUmwege(routeSekunden, stuetzen, stationen);
+  assert.deepEqual(stationen.map((s) => s.umwegInnen), [false, true, false]);
+  assert.deepEqual(stationen.map((s) => s.detourSeconds), [100, 100, 100], 'gerechnet wird trotzdem');
+});
+
 test('berechneUmwege: scheitert die Grundstrecke, bleiben die Stationen ohne Wert', async () => {
   const stuetzen = [
     { lat: 51, lon: 6, progressMeters: 0 },

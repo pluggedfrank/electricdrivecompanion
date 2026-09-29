@@ -40,10 +40,19 @@ export function planeAnfragen(stuetzen, stationen) {
     punkte: [stuetzen[a.davor], stuetzen[a.dahinter]],
   }));
 
+  // "innen": beide Stuetzpunkte liegen auf der Route, nicht an Start oder
+  // Ziel. Der erste Abschnitt beginnt am Startpunkt der Fahrt, und dessen
+  // Grundstrecke ist keine Fernstrasse, sondern der Weg aus dem Quartier. Der
+  // fuehrt je nach Minute an einer Station vorbei oder nicht; der Umweg ist
+  // dann null oder fuenf Minuten, je nachdem. Fuer diese Fahrt stimmt beides,
+  // fuer die Tabelle taugt keins. Am 29.09.2026 standen elf Nullen in der
+  // Tabelle, alle aus den ersten 50 km.
+  const letzter = stuetzen.length - 1;
   const viaStrecken = zuordnungen.map((z) => ({
     station: z.station,
     schluessel: abschnittSchluessel(z.davor, z.dahinter),
     punkte: [stuetzen[z.davor], z.station, stuetzen[z.dahinter]],
+    innen: z.davor > 0 && z.dahinter < letzter,
   }));
 
   return { zuordnungen, grundstrecken, viaStrecken };
@@ -90,6 +99,7 @@ export async function berechneUmwege(routeSekunden, stuetzen, stationen, { onFor
       const ueberStation = await routeSekunden(via.punkte);
       via.station.detourSeconds = umwegAus(ueberStation, basis);
       via.station.detourGerechnet = true;
+      via.station.umwegInnen = via.innen;
       gerechnet++;
     } catch {
       fehler++;
