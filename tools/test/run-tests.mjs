@@ -24,6 +24,7 @@ import * as ladeplanung from '../lib/ladeplanung.mjs';
 import * as matrix from '../lib/matrix.mjs';
 import * as registerquelle from '../lib/registerquelle.mjs';
 import * as umwege from '../lib/umwege.mjs';
+import * as tabelle from '../lib/umwegtabelle.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -1742,4 +1743,72 @@ test('berechneUmwege: scheitert die Grundstrecke, bleiben die Stationen ohne Wer
   assert.equal(ergebnis.gerechnet, 0);
   assert.equal(ergebnis.fehler, 1);
   assert.equal(ergebnis.anfragen, 1, 'ohne Grundstrecke keine Via-Anfrage verschwenden');
+});
+
+
+// ------------------------------------------------------------- Umwegtabelle
+
+test('sektor teilt den Kreis in acht Richtungen, Nord in der Mitte des ersten', () => {
+  assert.equal(tabelle.sektor(0), 0);
+  assert.equal(tabelle.sektor(22), 0);
+  assert.equal(tabelle.sektor(23), 1);
+  assert.equal(tabelle.sektor(90), 2);
+  assert.equal(tabelle.sektor(180), 4);
+  assert.equal(tabelle.sektor(270), 6);
+  assert.equal(tabelle.sektor(300), 7);
+  assert.equal(tabelle.sektor(340), 0, 'ab 337,5 Grad ist es wieder Nord');
+  assert.equal(tabelle.sektor(359), 0);
+});
+
+test('kurs: nach Norden 0, nach Osten 90', () => {
+  assert.ok(Math.abs(tabelle.kurs({ lat: 51, lon: 7 }, { lat: 52, lon: 7 })) < 0.01);
+  assert.ok(Math.abs(tabelle.kurs({ lat: 51, lon: 7 }, { lat: 51, lon: 8 }) - 90) < 0.5);
+});
+
+test('der Schluessel ist fuer dieselbe Strasse in derselben Richtung gleich', () => {
+  const nachOsten = Array.from({ length: 101 }, (_, i) => ({ lat: 51.0, lon: 6.0 + i / 100 }));
+  const nachWesten = [...nachOsten].reverse();
+  const lageOst = tabelle.routenLage(nachOsten);
+  const lageWest = tabelle.routenLage(nachWesten);
+
+  // Dieselbe Station, einmal bei km 30 von Westen, einmal bei km 40 von Osten.
+  const station = { id: 'bnetza:51.00100,6.30000' };
+  const ost = tabelle.schluessel({ ...station, progressMeters: lageOst.kumuliert[30] }, lageOst);
+  const west = tabelle.schluessel({ ...station, progressMeters: lageWest.kumuliert[70] }, lageWest);
+
+  assert.equal(ost, 'bnetza:51.00100,6.30000|2|51.00,6.30');
+  assert.equal(west, 'bnetza:51.00100,6.30000|6|51.00,6.30');
+  assert.notEqual(ost, west, 'Gegenfahrbahn ist ein anderer Umweg');
+
+  // Eine zweite Fahrt auf derselben Strasse, anderer Start: derselbe Schluessel.
+  const spaeter = nachOsten.slice(10);
+  const lage2 = tabelle.routenLage(spaeter);
+  const ost2 = tabelle.schluessel({ ...station, progressMeters: lage2.kumuliert[20] }, lage2);
+  assert.equal(ost2, ost);
+});
+
+test('eintragen und nachschlagen, und Verkehr ueberschreibt nicht', () => {
+  const route = Array.from({ length: 11 }, (_, i) => ({ lat: 51.0, lon: 6.0 + i / 100 }));
+  const lage = tabelle.routenLage(route);
+  const station = { id: 's', progressMeters: lage.kumuliert[5] };
+  const t = tabelle.leereTabelle();
+
+  assert.equal(tabelle.nachschlagen(t, station, lage), null);
+  assert.ok(tabelle.eintragen(t, station, lage, 123.4, { datum: '2026-09-29' }));
+  assert.equal(tabelle.nachschlagen(t, station, lage), 123);
+
+  assert.equal(tabelle.eintragen(t, station, lage, 500, { mitVerkehr: true }), false);
+  assert.equal(tabelle.nachschlagen(t, station, lage), 123);
+
+  // Ohne Verkehr darf einen Wert mit Verkehr ersetzen.
+  const t2 = tabelle.leereTabelle();
+  tabelle.eintragen(t2, station, lage, 500, { mitVerkehr: true });
+  assert.ok(tabelle.eintragen(t2, station, lage, 120));
+  assert.equal(t2.eintraege[tabelle.schluessel(station, lage)].verkehr, false);
+});
+
+test('gerundet rundet kaufmaennisch auf zwei Stellen', () => {
+  assert.equal(tabelle.gerundet(51.005), '51.01');
+  assert.equal(tabelle.gerundet(6.294999), '6.29');
+  assert.equal(tabelle.gerundet(7), '7.00');
 });

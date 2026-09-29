@@ -1,0 +1,255 @@
+{
+ "hinweis": "Start-Ziel-Paare fuer korridore-abfahren.mjs. Jede Zeile wird in beide Richtungen gefahren. Koordinaten sind Stadtmitten, die Route dazwischen ist das, was zaehlt.",
+ "orte": {
+  "Hamburg": [
+   53.5511,
+   9.9937
+  ],
+  "Koeln": [
+   50.9375,
+   6.9603
+  ],
+  "Berlin": [
+   52.52,
+   13.405
+  ],
+  "Muenchen": [
+   48.1351,
+   11.582
+  ],
+  "Frankfurt": [
+   50.1109,
+   8.6821
+  ],
+  "Stuttgart": [
+   48.7758,
+   9.1829
+  ],
+  "Hannover": [
+   52.3759,
+   9.732
+  ],
+  "Bremen": [
+   53.0793,
+   8.8017
+  ],
+  "Dresden": [
+   51.0504,
+   13.7373
+  ],
+  "Leipzig": [
+   51.3397,
+   12.3731
+  ],
+  "Nuernberg": [
+   49.4521,
+   11.0767
+  ],
+  "Dortmund": [
+   51.5136,
+   7.4653
+  ],
+  "Duesseldorf": [
+   51.2277,
+   6.7735
+  ],
+  "Kiel": [
+   54.3233,
+   10.1228
+  ],
+  "Flensburg": [
+   54.7837,
+   9.436
+  ],
+  "Saarbruecken": [
+   49.2402,
+   6.9969
+  ],
+  "Freiburg": [
+   47.999,
+   7.8421
+  ],
+  "Passau": [
+   48.5667,
+   13.4319
+  ],
+  "Rostock": [
+   54.0924,
+   12.0991
+  ],
+  "Kassel": [
+   51.3127,
+   9.4797
+  ],
+  "Wuerzburg": [
+   49.7913,
+   9.9534
+  ],
+  "Karlsruhe": [
+   49.0069,
+   8.4037
+  ],
+  "Muenster": [
+   51.9607,
+   7.6261
+  ],
+  "Osnabrueck": [
+   52.2799,
+   8.0472
+  ],
+  "Erfurt": [
+   50.9848,
+   11.0299
+  ],
+  "Magdeburg": [
+   52.1205,
+   11.6276
+  ],
+  "Regensburg": [
+   49.0134,
+   12.1016
+  ],
+  "Ulm": [
+   48.4011,
+   9.9876
+  ],
+  "Aachen": [
+   50.7753,
+   6.0839
+  ],
+  "Luebeck": [
+   53.8655,
+   10.6866
+  ],
+  "Bielefeld": [
+   52.0302,
+   8.5325
+  ],
+  "Meerbusch": [
+   51.256,
+   6.689
+  ],
+  "Norddeich": [
+   53.6148,
+   7.1621
+  ]
+ },
+ "korridore": [
+  [
+   "Hamburg",
+   "Koeln"
+  ],
+  [
+   "Koeln",
+   "Frankfurt"
+  ],
+  [
+   "Frankfurt",
+   "Muenchen"
+  ],
+  [
+   "Hamburg",
+   "Berlin"
+  ],
+  [
+   "Berlin",
+   "Muenchen"
+  ],
+  [
+   "Berlin",
+   "Hannover"
+  ],
+  [
+   "Hannover",
+   "Dortmund"
+  ],
+  [
+   "Dortmund",
+   "Frankfurt"
+  ],
+  [
+   "Frankfurt",
+   "Stuttgart"
+  ],
+  [
+   "Stuttgart",
+   "Muenchen"
+  ],
+  [
+   "Hamburg",
+   "Kiel"
+  ],
+  [
+   "Hamburg",
+   "Flensburg"
+  ],
+  [
+   "Hamburg",
+   "Rostock"
+  ],
+  [
+   "Berlin",
+   "Dresden"
+  ],
+  [
+   "Dresden",
+   "Nuernberg"
+  ],
+  [
+   "Leipzig",
+   "Erfurt"
+  ],
+  [
+   "Erfurt",
+   "Frankfurt"
+  ],
+  [
+   "Koeln",
+   "Saarbruecken"
+  ],
+  [
+   "Karlsruhe",
+   "Freiburg"
+  ],
+  [
+   "Nuernberg",
+   "Passau"
+  ],
+  [
+   "Muenchen",
+   "Regensburg"
+  ],
+  [
+   "Kassel",
+   "Wuerzburg"
+  ],
+  [
+   "Muenster",
+   "Osnabrueck"
+  ],
+  [
+   "Bremen",
+   "Hannover"
+  ],
+  [
+   "Duesseldorf",
+   "Aachen"
+  ],
+  [
+   "Luebeck",
+   "Berlin"
+  ],
+  [
+   "Bielefeld",
+   "Magdeburg"
+  ],
+  [
+   "Ulm",
+   "Stuttgart"
+  ],
+  [
+   "Meerbusch",
+   "Norddeich"
+  ]
+ ]
+}

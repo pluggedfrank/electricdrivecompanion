@@ -1,0 +1,5 @@
+{
+ "quelle": "TomTom Routing API, Route mit Zwischenziel gegen Route des Abschnitts",
+ "hinweis": "Schluessel: Station|Richtungssektor|naechster Routenpunkt. Sekunden ohne Verkehrslage.",
+ "eintraege": {}
+}

@@ -10,6 +10,13 @@
 //   node tools/register-probe.mjs --verkehr            mit Verkehrslage
 //   node tools/register-probe.mjs --ohne-umwege        nur die Liste, eine Anfrage
 //   node tools/register-probe.mjs --all-results        alle Zeilen
+//   node tools/register-probe.mjs --tabelle=daten/umwege.json   Umwegtabelle (Vorgabe)
+//   node tools/register-probe.mjs --ohne-tabelle       alles frisch rechnen, nichts schreiben
+//   node tools/register-probe.mjs --still              nur Kopfzahlen, fuer Korridorlaeufe
+//
+// Die Umwegtabelle: Was einmal gerechnet ist, wird nachgeschlagen und nicht
+// noch einmal gefragt. Jeder Lauf traegt seine neuen Werte ein. Die Tabelle
+// liegt im Repo und wandert ins Bundle der App, siehe umwegtabelle.mjs.
 //
 // Warum ein zweiter Probelauf: tomtom-probe.mjs haengt an der Search API, und
 // die hat im Freemium 2.500 Anfragen im Monat, fuenfzig je Lauf. Dieser hier
@@ -25,6 +32,7 @@ import * as ev from './lib/evsearch.mjs';
 import * as editorial from './lib/editorial.mjs';
 import * as registerquelle from './lib/registerquelle.mjs';
 import * as umwege from './lib/umwege.mjs';
+import * as umwegtabelle from './lib/umwegtabelle.mjs';
 import { istGetestet, urteil } from './lib/redaktion.mjs';
 import { resolveApiKey } from './lib/apikey.mjs';
 
@@ -35,7 +43,8 @@ const DEFAULTS = {
   to: '53.6148,7.1621',
   corridor: '2',
   show: '40',
-  daten: 'daten/standorte-300kw.json',
+  daten: 'daten/standorte-150kw.json',
+  tabelle: 'daten/umwege.json',
 };
 
 // ------------------------------------------------------------- Argumente
@@ -128,6 +137,9 @@ async function main() {
   // nicht erst nach der Eingabe auffallen.
   const datenPfad = resolve(join(here, '..'), String(args.daten));
   const register = registerquelle.ladeStandorte(datenPfad);
+  const still = Boolean(args.still);
+  const tabellenPfad = args['ohne-tabelle'] ? null : resolve(join(here, '..'), String(args.tabelle));
+  const tabelle = tabellenPfad ? umwegtabelle.lade(tabellenPfad) : null;
 
   const apiKey = await resolveApiKey({
     argumentKey: args.key,
@@ -183,6 +195,25 @@ async function main() {
     const stuetzen = umwege.stuetzpunkte(route.points, route.durationMin * 60);
     const begonnen = Date.now();
 
+    // Erst die Tabelle: Was schon einmal gerechnet wurde, kostet nichts.
+    const lage = umwegtabelle.routenLage(route.points);
+    let ausTabelle = 0;
+    if (tabelle) {
+      for (const s of stationen) {
+        const bekannt = umwegtabelle.nachschlagen(tabelle, s, lage);
+        if (bekannt != null) {
+          s.detourSeconds = bekannt;
+          s.detourAusTabelle = true;
+          ausTabelle++;
+        }
+      }
+      console.log(
+        dim(`Tabelle ${tabellenPfad.replace(join(here, '..') + '/', '')}: ` +
+          `${Object.keys(tabelle.eintraege).length} Eintraege, ${ausTabelle} Treffer fuer diese Route`)
+      );
+    }
+    const offen = stationen.filter((s) => s.detourSeconds == null);
+
     const routeSekunden = async (punkte) => {
       await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS);
       const antwort = await routeAntwort(apiKey, punkte, mitVerkehr);
@@ -190,7 +221,7 @@ async function main() {
     };
 
     let zuletzt = 0;
-    umwegErgebnis = await umwege.berechneUmwege(routeSekunden, stuetzen, stationen, {
+    umwegErgebnis = await umwege.berechneUmwege(routeSekunden, stuetzen, offen, {
       onFortschritt: (n, von) => {
         if (n - zuletzt >= 20 || n === von) {
           process.stdout.write(dim(`  ${n} von ${von}\r`));
@@ -201,22 +232,40 @@ async function main() {
     anfragen += umwegErgebnis.anfragen;
     const sekunden = ((Date.now() - begonnen) / 1000).toFixed(1);
     console.log(
-      `Umweg für ${bold(String(umwegErgebnis.gerechnet))} von ${stationen.length} Standorten, ` +
+      `Umweg für ${bold(String(umwegErgebnis.gerechnet + ausTabelle))} von ${stationen.length} Standorten: ` +
+        `${ausTabelle} aus der Tabelle, ${umwegErgebnis.gerechnet} gerechnet in ` +
         `${umwegErgebnis.anfragen} Anfragen (${umwegErgebnis.abschnitte} Abschnitte), ${sekunden} s` +
         (umwegErgebnis.fehler ? red(`, ${umwegErgebnis.fehler} Fehler`) : '')
     );
+
+    // Dann eintragen, was neu ist. Mit Verkehr gerechnete Werte kommen nur
+    // hinein, wo noch nichts steht; die Tabelle soll den Umweg der Strasse
+    // enthalten, nicht den des Nachmittags.
+    if (tabelle) {
+      let neu = 0;
+      for (const s of offen) {
+        if (s.detourSeconds == null) continue;
+        if (umwegtabelle.eintragen(tabelle, s, lage, s.detourSeconds, { mitVerkehr })) neu++;
+      }
+      if (neu > 0) umwegtabelle.speichere(tabellenPfad, tabelle);
+      console.log(
+        dim(`${neu} neue Eintraege, Tabelle jetzt ${Object.keys(tabelle.eintraege).length}`)
+      );
+    }
   }
 
   // 5. Liste
   heading(`5. Ergebnis, in Fahrtrichtung sortiert (erste ${Math.min(show, annotated.length)} von ${annotated.length})`);
-  const sichtbar = args['all-results'] ? annotated : annotated.slice(0, show);
+  const sichtbar = still ? [] : args['all-results'] ? annotated : annotated.slice(0, show);
   for (const item of sichtbar) {
     const s = item.station;
     const parts = [
       s.maxPowerKW ? `${s.maxPowerKW} kW` : 'kW unbekannt',
       s.pointCount ? `${s.pointCount} Ladepunkte` : null,
       `${Math.round(s.distanceFromRouteMeters)} m ab Route`,
-      s.detourSeconds != null ? `+${Math.round(s.detourSeconds / 60)} min Umweg` : null,
+      s.detourSeconds != null
+        ? `+${Math.round(s.detourSeconds / 60)} min Umweg` + (s.detourAusTabelle ? ' (Tabelle)' : '')
+        : null,
     ].filter(Boolean);
 
     const km = String(Math.round(s.progressMeters / 1000)).padStart(3);
@@ -232,7 +281,9 @@ async function main() {
       console.log(`         ${green('auf der Liste,')} ${dim('noch nicht getestet')}`);
     }
   }
-  if (sichtbar.length < annotated.length) {
+  if (still) {
+    console.log(dim('--still: Liste weggelassen'));
+  } else if (sichtbar.length < annotated.length) {
     console.log(dim(`\n... und ${annotated.length - sichtbar.length} weitere. --all-results zeigt alle.`));
   }
 
