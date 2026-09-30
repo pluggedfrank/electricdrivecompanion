@@ -58,7 +58,7 @@ struct DrivingOverlay: View {
                 if index == reachLineIndex {
                     reachLine
                 }
-                DrivingTileView(tile: tile, compact: compact)
+                DrivingTileView(tile: tile, order: index + 1, compact: compact)
                     // Antippen holt die Belegung. Über die Station routen
                     // kommt mit der Zielführung; bis dahin gäbe es nichts,
                     // wohin eine neue Route führen könnte.
@@ -152,6 +152,8 @@ struct DrivingOverlay: View {
 
 struct DrivingTileView: View {
     let tile: DrivingTile
+    /// Die Nummer, die auch die Nadel auf der Karte trägt.
+    let order: Int
     let compact: Bool
 
     var body: some View {
@@ -211,6 +213,13 @@ struct DrivingTileView: View {
 
     private var distance: some View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
+            Text("\(order)")
+                .font(.system(size: compact ? 10 : 11, weight: .bold))
+                .foregroundStyle(tile.isPlannedStop ? Theme.ink : .white)
+                .frame(width: compact ? 16 : 18, height: compact ? 16 : 18)
+                .background(tile.isPlannedStop ? Color.white : Theme.river, in: Circle())
+                .alignmentGuide(.firstTextBaseline) { d in d[.bottom] - 3 }
+                .padding(.trailing, 5)
             Text(kmText)
                 .font(.system(size: compact ? 30 : 38, weight: .bold, design: .rounded).monospacedDigit())
             Text("km")

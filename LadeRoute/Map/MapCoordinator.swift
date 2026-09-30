@@ -166,6 +166,19 @@ private extension MapCoordinator {
                 MainActor.assumeIsolated { self?.redrawMarkers() }
             }
             .store(in: &cancellables)
+
+        // Während der Fahrt zeigt die Karte nur, was in den Kacheln steht.
+        // Neu gezeichnet wird, wenn sich die Auswahl ändert, also beim
+        // Vorbeifahren, nicht bei jeder Position.
+        trip.$drivingTiles
+            .map { $0.map(\.id) }
+            .removeDuplicates()
+            .combineLatest(trip.$isDriving.removeDuplicates())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _ in
+                MainActor.assumeIsolated { self?.redrawMarkers() }
+            }
+            .store(in: &cancellables)
     }
 
     /// Führt einen Kartenbefehl der Oberfläche aus.
@@ -273,6 +286,11 @@ private extension MapCoordinator {
         // Marker sind im SDK Annotationen, es gibt kein removeMarkers.
         map.removeAnnotations()
 
+        if trip.isDriving {
+            redrawDrivingMarkers(on: map)
+            return
+        }
+
         for (index, annotated) in trip.stations.enumerated() {
             let image = MarkerImages.stationPin(
                 index: index + 1,
@@ -290,6 +308,43 @@ private extension MapCoordinator {
 
             // Der Rückgabewert wird nicht gebraucht: Adressiert wird über
             // das Tag, entfernt wird über removeAnnotations().
+            _ = try? map.addMarker(options: options)
+        }
+    }
+
+    /// Während der Fahrt: die Stationen der Kacheln, nummeriert wie die
+    /// Kacheln, und die geplanten Ladestopps. Sonst nichts; neunzig Nadeln
+    /// entlang der Strecke erzählen etwas anderes als drei Kacheln.
+    func redrawDrivingMarkers(on map: TomTomMap) {
+        var shown = Set<String>()
+
+        for (index, tile) in trip.drivingTiles.enumerated() {
+            shown.insert(tile.id)
+            let options = MarkerOptions(
+                coordinate: tile.station.station.coordinate,
+                pinImage: MarkerImages.drivingPin(
+                    order: index + 1,
+                    isPlannedStop: tile.isPlannedStop,
+                    isSelected: tile.id == trip.selectedStationID
+                ),
+                tag: tile.id
+            )
+            _ = try? map.addMarker(options: options)
+        }
+
+        let progress = trip.driveFix?.progressMeters ?? 0
+        for item in trip.stations
+        where trip.plannedStopIDs.contains(item.id) && !shown.contains(item.id)
+            && (item.station.progressAlongRouteMeters ?? 0) > progress {
+            let options = MarkerOptions(
+                coordinate: item.station.coordinate,
+                pinImage: MarkerImages.drivingPin(
+                    order: nil,
+                    isPlannedStop: true,
+                    isSelected: item.id == trip.selectedStationID
+                ),
+                tag: item.id
+            )
             _ = try? map.addMarker(options: options)
         }
     }
