@@ -5,7 +5,7 @@
 import CoreLocation
 import Foundation
 
-struct ChargingStation: Identifiable, Hashable, Sendable {
+struct ChargingStation: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let name: String
     let address: String
@@ -99,7 +99,7 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
         return connectors.compactMap(\.type).filter { seen.insert($0).inserted }
     }
 
-    struct Connector: Hashable, Sendable {
+    struct Connector: Hashable, Codable, Sendable {
         let type: ConnectorType?
         let ratedPowerKW: Double?
         let currentType: String?

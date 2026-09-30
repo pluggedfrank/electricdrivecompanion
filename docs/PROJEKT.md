@@ -609,6 +609,10 @@ Stelle, das Matching bleibt unberührt.
 - [ ] Deckt das Freemium-Kontingent eine Fahrt mit Neuberechnungen? Non-Tile
       liegt bei 2.500 Anfragen am Tag, eine Fahrt braucht davon wenige Dutzend.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
+      30.09.2026: Search antwortet mit 403 "InsufficientFunds", Routing geht
+      noch. Seitdem zählt die Testversion jede Anfrage (RequestCounter, Zeile
+      im Stationsblatt), und die Auslandstreffer bleiben 24 Stunden je
+      Streckenstück gespeichert (ForeignStationCache).
 - [ ] Welches Fahrzeug ist das Standardprofil? Akkukapazität, Verbrauch und
       Ladekurve müssen von irgendwo kommen. Für v1 reicht ein Profil von Hand,
       aber es braucht eines.

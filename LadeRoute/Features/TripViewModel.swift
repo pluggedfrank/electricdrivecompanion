@@ -1276,8 +1276,19 @@ final class TripViewModel: ObservableObject {
 
         var found: [ChargingStation] = []
         for piece in pieces where piece.count >= 2 {
+            if let cached = foreignCache.stations(for: piece, minPowerKW: options.minPowerKW) {
+                found += cached
+                continue
+            }
             do {
-                found += try await api.chargingStationsAlongRoute(routeGeometry: piece, options: options)
+                let report = try await api.chargingStationsAlongRouteReport(routeGeometry: piece, options: options)
+                found += report.stations
+                if report.failedSegments == 0 {
+                    foreignCache.store(report.stations, for: piece, minPowerKW: options.minPowerKW)
+                } else {
+                    stationSearchProblem = "Stationen im Ausland unvollständig: \(report.failedSegments) von "
+                        + "\(report.segments) Abschnitten ohne Antwort."
+                }
             } catch TomTomAPIError.quotaExhausted {
                 stationSearchProblem = "Stationen im Ausland fehlen: Das TomTom-Suchkontingent ist aufgebraucht."
                 break
@@ -1733,6 +1744,7 @@ final class TripViewModel: ObservableObject {
     private var handledSimulatedStops = Set<String>()
     private var lastRerouteAt: Date?
     private let locationSource = UserLocationSource()
+    private let foreignCache = ForeignStationCache()
     private let apiKey: String
     private let api: TomTomAPIClient
     private let detourCalculator: DetourCalculator

@@ -200,6 +200,16 @@ actor TomTomAPIClient {
         routeGeometry: [CLLocationCoordinate2D],
         options: AlongRouteSearchOptions = AlongRouteSearchOptions()
     ) async throws -> [ChargingStation] {
+        try await chargingStationsAlongRouteReport(routeGeometry: routeGeometry, options: options).stations
+    }
+
+    /// Wie chargingStationsAlongRoute, sagt aber auch, wie viele Abschnitte
+    /// ohne Antwort blieben. Wer Ergebnisse speichert, braucht das: Ein
+    /// lückenhaftes Ergebnis soll nicht einen Tag lang als vollständig gelten.
+    func chargingStationsAlongRouteReport(
+        routeGeometry: [CLLocationCoordinate2D],
+        options: AlongRouteSearchOptions = AlongRouteSearchOptions()
+    ) async throws -> (stations: [ChargingStation], failedSegments: Int, segments: Int) {
         guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
         guard routeGeometry.count >= 2 else { throw TomTomAPIError.emptyRoute }
 
@@ -241,7 +251,7 @@ actor TomTomAPIClient {
         }
 
         if succeeded == 0, let lastError { throw lastError }
-        return order.compactMap { merged[$0] }
+        return (order.compactMap { merged[$0] }, segments.count - succeeded, segments.count)
     }
 
     /// Sucht Ladestationen im Umkreis von Punkten entlang der Route.
@@ -691,6 +701,7 @@ actor TomTomAPIClient {
                 try? await Task.sleep(for: .seconds(2))
             }
 
+            if let kind = RequestKind.of(request.url) { RequestCounter.shared.count(kind) }
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return data }
             if (200 ..< 300).contains(http.statusCode) { return data }

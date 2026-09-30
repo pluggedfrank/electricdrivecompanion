@@ -294,6 +294,9 @@ struct StationListSheet: View {
                 }
                 chargingPlanLine
                 vehicleLine
+                #if DEBUG
+                RequestCountLine()
+                #endif
                 driveButtons
             }
         }
@@ -414,6 +417,30 @@ struct StationListSheet: View {
         return hours > 0 ? "\(hours) h \(rest) min" : "\(rest) min"
     }
 }
+
+// MARK: - Anfragen
+
+#if DEBUG
+/// Was die App heute und in diesem Monat bei TomTom abgefragt hat. Nur in
+/// der Testversion; siehe RequestCounter.
+struct RequestCountLine: View {
+    @State private var tick = 0
+
+    var body: some View {
+        let counter = RequestCounter.shared
+        let kinds = RequestKind.allCases
+        VStack(alignment: .leading, spacing: 2) {
+            Text("TomTom heute: " + kinds.map { "\($0.rawValue) \(counter.today($0))" }.joined(separator: " · "))
+            Text("im Monat: " + kinds.map { "\($0.rawValue) \(counter.thisMonth($0))" }.joined(separator: " · "))
+        }
+        .font(.system(size: 13).monospacedDigit())
+        .foregroundStyle(Theme.faint)
+        .textCase(nil)
+        .id(tick)
+        .onReceive(NotificationCenter.default.publisher(for: RequestCounter.didChange)) { _ in tick += 1 }
+    }
+}
+#endif
 
 // MARK: - Zeile
 

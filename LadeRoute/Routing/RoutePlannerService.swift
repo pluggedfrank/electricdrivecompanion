@@ -63,6 +63,7 @@ final class RoutePlannerService {
             costModel: CostModel(routeType: .fast)
         )
 
+        RequestCounter.shared.count(.routing)
         return try await withCheckedThrowingContinuation { continuation in
             planner.planRoute(options: options, onRouteReady: nil) { result in
                 switch result {
