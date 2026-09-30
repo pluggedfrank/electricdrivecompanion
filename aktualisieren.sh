@@ -6,6 +6,7 @@
 #   lade node tools/matrix-probe.mjs   holen, dann den Befehl hier ausfuehren
 #   ./aktualisieren.sh --einrichten Abkuerzung "lade" und Automatik einrichten
 #   ./aktualisieren.sh --still      ohne Ausgabe, fuer die Automatik
+#   lade --team=ABCDE12345          Team fuers iPhone von Hand eintragen
 #
 # Wozu: git pull, xcodegen generate, Projekt oeffnen. Drei Schritte, von denen
 # der zweite nur manchmal noetig ist, naemlich wenn sich eine Datei unter
@@ -19,10 +20,12 @@ cd "$VERZEICHNIS"
 
 STILL=0
 EINRICHTEN=0
+TEAM_VON_HAND=
 while [ $# -gt 0 ]; do
   case "$1" in
     --still) STILL=1; shift ;;
     --einrichten) EINRICHTEN=1; shift ;;
+    --team=*) TEAM_VON_HAND=${1#--team=}; shift ;;
     # Ein unbekannter Schalter bricht nicht ab, sondern wird gemeldet und
     # uebergangen. Grund: Die Argumentpruefung laeuft vor dem Holen. Eine
     # Fassung, die einen neuen Schalter nicht kennt, wuerde sonst aussteigen,
@@ -154,6 +157,18 @@ fi
 # Findet sich genau ein Team, wird es eingetragen; bei mehreren werden sie
 # genannt, und eines kommt von Hand hinein. Die Kennung ist kein Geheimnis,
 # sie steht in jeder signierten App.
+if [ -n "$TEAM_VON_HAND" ] && [ -f Secrets.xcconfig ]; then
+  if ! printf '%s' "$TEAM_VON_HAND" | grep -qE '^[A-Z0-9]{10}$'; then
+    sage "\"$TEAM_VON_HAND\" ist keine Team-Kennung. Sie hat zehn Zeichen, Grossbuchstaben und Ziffern."
+  elif grep -q '^DEVELOPMENT_TEAM' Secrets.xcconfig; then
+    sed -i '' "s/^DEVELOPMENT_TEAM.*/DEVELOPMENT_TEAM = $TEAM_VON_HAND/" Secrets.xcconfig
+    sage "Team $TEAM_VON_HAND in Secrets.xcconfig eingetragen."
+  else
+    printf '\nDEVELOPMENT_TEAM = %s\n' "$TEAM_VON_HAND" >> Secrets.xcconfig
+    sage "Team $TEAM_VON_HAND in Secrets.xcconfig eingetragen."
+  fi
+fi
+
 if [ -f Secrets.xcconfig ] && ! grep -qE '^DEVELOPMENT_TEAM *= *[A-Z0-9]{10}' Secrets.xcconfig; then
   # Je Team eine Zeile "frei kennung name". Das kostenlose Personal Team
   # zaehlt nur, wenn es kein bezahltes gibt: Mit ihm laeuft die App sieben
@@ -192,7 +207,10 @@ if [ -f Secrets.xcconfig ] && ! grep -qE '^DEVELOPMENT_TEAM *= *[A-Z0-9]{10}' Se
     sage "Das richtige in Secrets.xcconfig eintragen, Zeile: DEVELOPMENT_TEAM = KENNUNG"
     sage "Welches welches ist: developer.apple.com, Account, Membership details."
   else
-    sage "Kein Team gefunden. In Xcode unter Settings, Accounts mit der Apple-ID anmelden, dann noch einmal: lade"
+    sage "Kein Team gefunden. Entweder in Xcode unter Settings, Accounts mit der"
+    sage "Apple-ID des Developer-Kontos anmelden und noch einmal lade, oder die"
+    sage "Kennung direkt mitgeben: lade --team=ABCDE12345"
+    sage "(steht auf developer.apple.com unter Account, Membership details, Team ID)"
   fi
 fi
 
