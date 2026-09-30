@@ -52,8 +52,12 @@ struct DrivingOverlay: View {
                     .padding(.bottom, 8)
                     .frame(maxHeight: .infinity, alignment: .bottomLeading)
             }
-            .onAppear { trip.mapTrailingInset = railWidth + 20 }
+            .onAppear {
+                trip.mapTrailingInset = railWidth + 20
+                trip.mapDrivingBottomInset = barHeight + 24
+            }
             .onChange(of: railWidth) { _, width in trip.mapTrailingInset = width + 20 }
+            .onChange(of: barHeight) { _, height in trip.mapDrivingBottomInset = height + 24 }
         }
         .sheet(isPresented: $trip.isAdjustingCharge) {
             ChargeAdjustSheet(initial: trip.chargeNowPercent) { percent in
@@ -77,6 +81,16 @@ struct DrivingOverlay: View {
                 notice(problem, systemImage: "speaker.slash")
             } else if trip.guidance.isEmpty {
                 notice("Anweisungen werden geladen …", systemImage: "hourglass")
+            }
+            if let selected = trip.selectedStation {
+                StationActionCard(
+                    item: selected,
+                    isVia: trip.viaStation?.id == selected.id,
+                    onToggleVia: {
+                        if trip.viaStation?.id == selected.id { trip.clearVia() } else { trip.routeVia(stationID: selected.id) }
+                    },
+                    onClose: { trip.selectedStationID = nil }
+                )
             }
             if let stop = trip.simulatedStop {
                 SimulatedStopCard(stop: stop, chargeNow: trip.chargeNowPercent) { trip.finishSimulatedStop() }
@@ -121,9 +135,8 @@ struct DrivingOverlay: View {
             // bleibt die Reihenfolge ab dem Auto, 1 ist die nächste.
             ForEach(Array(trip.drivingTiles.enumerated()).reversed(), id: \.element.id) { index, tile in
                 DrivingTileView(tile: tile, order: index + 1, compact: compact)
-                    // Antippen holt die Belegung. Über die Station routen
-                    // kommt mit der Zielführung; bis dahin gäbe es nichts,
-                    // wohin eine neue Route führen könnte.
+                    // Antippen holt die Belegung und öffnet oben links die
+                    // Karte mit "Über diese Station".
                     .onTapGesture { trip.selectStation(id: tile.id) }
                     // Neue kommen oben herein, vorbeigefahrene gehen unten
                     // hinaus, wie die Straße.
@@ -271,9 +284,67 @@ struct DrivingOverlay: View {
 
 // MARK: - Ladestopp
 
-/// Die Simulation hält am geplanten Stopp.
+/// Eine angetippte Kachel: was die Station hat, und "Über diese Station".
+struct StationActionCard: View {
+    let item: AnnotatedStation
+    let isVia: Bool
+    let onToggleVia: () -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.station.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .lineLimit(2)
+                    Text(details)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.meta)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 4)
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Theme.meta)
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Schließen")
+            }
+            Button(action: onToggleVia) {
+                Label(isVia ? "Zwischenziel aufheben" : "Über diese Station",
+                      systemImage: isVia ? "xmark.circle" : "arrow.triangle.turn.up.right.diamond.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(isVia ? Theme.meta : Theme.river, in: RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+        }
+        .foregroundStyle(Theme.ink)
+        .padding(12)
+        .background(Theme.paper.opacity(0.97), in: RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+    }
+
+    private var details: String {
+        var parts: [String] = []
+        if let kw = item.station.maxPowerKW { parts.append("\(Int(kw)) kW") }
+        if let availability = item.availability, availability.known > 0 {
+            parts.append("\(availability.available)/\(availability.total) frei")
+        }
+        if let detour = item.station.detourSeconds { parts.append("Umweg \(Int((detour / 60).rounded())) min") }
+        let street = item.station.address.split(separator: ",").first.map(String.init) ?? ""
+        if !street.isEmpty { parts.append(street) }
+        return parts.joined(separator: " · ")
+    }
+}
+
+/// Die Simulation hält an einem Stopp.
 struct SimulatedStopCard: View {
-    let stop: ChargingStop
+    let stop: TripViewModel.SimulatedStop
     let chargeNow: Double
     let onContinue: () -> Void
 
@@ -283,10 +354,10 @@ struct SimulatedStopCard: View {
                 .font(.system(size: 11, weight: .bold))
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.river)
-            Text(stop.station.name)
+            Text(stop.name)
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(2)
-            Text("Ankunft mit \(Int(chargeNow.rounded())) %, geplant \(Int((stop.chargingSeconds / 60).rounded())) min laden")
+            Text("Ankunft mit \(Int(chargeNow.rounded())) %, \(Int(stop.chargingMinutes.rounded())) min laden")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.meta)
             Button(action: onContinue) {

@@ -64,8 +64,10 @@ enum PowerTier: Double, CaseIterable, Identifiable, Sendable {
     case schnell = 150
     case hpc = 300
 
-    /// Was die App zeigt, wenn nichts gewählt wurde.
-    static let standard: PowerTier = .schnell
+    /// Was die App zeigt, wenn nichts gewählt wurde. 300 kW seit dem
+    /// 30.09.2026: Auf der Langstrecke zählt die Standzeit, und die
+    /// Ausweichzeile geht ohnehin bis 150 kW hinunter, wenn es knapp wird.
+    static let standard: PowerTier = .hpc
 
     var id: Double { rawValue }
 
@@ -381,15 +383,20 @@ actor TomTomAPIClient {
     /// Weg" und zu jeder Anweisung den Punkt, an dem sie gilt; über den Punkt
     /// landet sie auf der Linie des SDK. Mit Verkehrslage wie der
     /// Routenplaner, damit beide dieselbe Strecke nehmen.
+    ///
+    /// `points` sind Start, Zwischenziele und Ziel, wie beim Routenplaner.
+    /// `heading` ist die Fahrtrichtung am Start, damit beide dieselbe Route
+    /// nehmen, wenn mitten in der Fahrt neu geplant wird.
     func routeInstructions(
-        from origin: CLLocationCoordinate2D,
-        to destination: CLLocationCoordinate2D
+        through points: [CLLocationCoordinate2D],
+        heading: Double? = nil
     ) async throws -> [CalculateRouteResponse.Instruction] {
         guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
+        guard points.count >= 2 else { throw TomTomAPIError.emptyRoute }
 
-        let path = "\(origin.latitude),\(origin.longitude):\(destination.latitude),\(destination.longitude)"
+        let path = points.map { "\($0.latitude),\($0.longitude)" }.joined(separator: ":")
         var components = URLComponents(string: "\(Self.baseURL)/routing/1/calculateRoute/\(path)/json")
-        components?.queryItems = [
+        components?.queryItems = (heading.map { [URLQueryItem(name: "vehicleHeading", value: String((Int($0.rounded()) % 360 + 360) % 360))] } ?? []) + [
             URLQueryItem(name: "key", value: apiKey),
             URLQueryItem(name: "routeType", value: "fastest"),
             URLQueryItem(name: "traffic", value: "true"),

@@ -7,11 +7,26 @@ import SwiftUI
 
 struct StationDetailView: View {
     let station: AnnotatedStation
+    /// Ist das die Station, über die gerade geroutet wird?
+    var isVia = false
+    /// Route über diese Station, oder das Zwischenziel aufheben.
+    var onToggleVia: (() -> Void)?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 titleBlock
+                if let onToggleVia {
+                    Button(action: onToggleVia) {
+                        Label(isVia ? "Zwischenziel aufheben" : "Über diese Station routen",
+                              systemImage: isVia ? "xmark.circle" : "arrow.triangle.turn.up.right.diamond")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(isVia ? Theme.meta : Theme.river, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
                 if let availability = station.availability { availabilityBlock(availability) }
                 connectorBlock
                 if let editorial = station.editorial, editorial.isTested {

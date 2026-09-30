@@ -34,13 +34,24 @@ final class RoutePlannerService {
 
     // MARK: Internal
 
+    /// - Parameters:
+    ///   - via: Zwischenziele, etwa eine Ladestation, über die es gehen soll.
+    ///   - heading: Fahrtrichtung am Start in Grad ab Nord. Mitten in der
+    ///     Fahrt wichtig: Ohne sie darf die Route mit einem Wenden beginnen,
+    ///     und auf der Autobahn heißt das bis zur nächsten Ausfahrt.
     func planRoute(
         from origin: CLLocationCoordinate2D,
-        to destination: CLLocationCoordinate2D
+        to destination: CLLocationCoordinate2D,
+        via: [CLLocationCoordinate2D] = [],
+        heading: Double? = nil
     ) async throws -> TomTomSDKRoute.Route {
         let itinerary = Itinerary(
-            origin: ItineraryPoint(coordinate: origin),
-            destination: ItineraryPoint(coordinate: destination)
+            origin: ItineraryPoint(
+                coordinate: origin,
+                heading: heading.map { Measurement(value: $0, unit: UnitAngle.degrees) }
+            ),
+            destination: ItineraryPoint(coordinate: destination),
+            waypoints: via.map { ItineraryPoint(coordinate: $0) }
         )
 
         // Ohne GuidanceOptions: der Prototyp zeichnet die Route und sucht an ihr

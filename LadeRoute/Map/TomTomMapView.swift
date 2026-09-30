@@ -33,7 +33,7 @@ struct TomTomMapView: UIViewRepresentable {
         mapView.contentInsets = NSDirectionalEdgeInsets(
             top: 0,
             leading: 0,
-            bottom: trip.isDriving ? 0 : trip.mapBottomInset,
+            bottom: trip.isDriving ? trip.mapDrivingBottomInset : trip.mapBottomInset,
             trailing: trip.isDriving ? trip.mapTrailingInset : 0
         )
     }

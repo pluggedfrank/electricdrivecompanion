@@ -17,10 +17,40 @@ struct StationListSheet: View {
                 }
                 .listRowBackground(Theme.paper)
 
+                if let via = trip.viaStation {
+                    Section {
+                        HStack(spacing: 10) {
+                            Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                                .foregroundStyle(Theme.river)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Route über")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .textCase(.uppercase)
+                                    .foregroundStyle(Theme.meta)
+                                Text(via.name)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Theme.ink)
+                            }
+                            Spacer()
+                            Button("Aufheben") { trip.clearVia() }
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Theme.river)
+                                .buttonStyle(.plain)
+                        }
+                    }
+                    .listRowBackground(Theme.panel)
+                }
+
                 Section {
                     ForEach(Array(trip.stationsForList.enumerated()), id: \.element.id) { index, item in
                         NavigationLink {
-                            StationDetailView(station: item)
+                            StationDetailView(
+                                station: item,
+                                isVia: trip.viaStation?.id == item.id,
+                                onToggleVia: {
+                                    if trip.viaStation?.id == item.id { trip.clearVia() } else { trip.routeVia(stationID: item.id) }
+                                }
+                            )
                         } label: {
                             StationRow(
                                 index: index + 1,

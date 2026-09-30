@@ -51,6 +51,30 @@ struct ChargingPlan: Sendable {
     var totalDetourSeconds: Double { stops.reduce(0) { $0 + $1.detourSeconds } }
 }
 
+extension ChargingPlan {
+    /// Ein Plan, der auf dem Rest der Route gerechnet wurde, zurück auf Meter
+    /// ab Routenbeginn. Die Stationen kommen aus `stations`, damit sie ihre
+    /// echte Lage behalten und nicht die verschobene aus der Rechnung.
+    func shifted(by offset: Double, stations: [AnnotatedStation]) -> ChargingPlan {
+        let byID = Dictionary(stations.map { ($0.id, $0.station) }, uniquingKeysWith: { a, _ in a })
+        return ChargingPlan(
+            stops: stops.map { stop in
+                ChargingStop(
+                    station: byID[stop.station.id] ?? stop.station,
+                    progressMeters: stop.progressMeters + offset,
+                    arrivalKWh: stop.arrivalKWh,
+                    departureKWh: stop.departureKWh,
+                    chargingSeconds: stop.chargingSeconds,
+                    detourSeconds: stop.detourSeconds
+                )
+            },
+            problem: problem,
+            arrivalKWh: arrivalKWh,
+            rangeMeters: rangeMeters
+        )
+    }
+}
+
 enum ChargingStopPlanner {
     // MARK: Kennzahlen
 
@@ -60,6 +84,15 @@ enum ChargingStopPlanner {
     /// Ohne diesen Posten sieht ein Stopp mit einer Minute Ladezeit fast gratis
     /// aus, und die Planung streut sie über die Strecke.
     static let stopOverheadSeconds: Double = 300
+
+    /// Umweg einer Station, deren Umweg noch nicht gerechnet ist: hin und
+    /// zurück mit 30 km/h plus zwei Minuten. Vorher zählte er als null, und
+    /// die Planung nahm bevorzugt Stationen, die noch niemand geprüft hatte.
+    /// Gegenstück: geschaetzterUmweg() in tools/lib/ladeplanung.mjs.
+    static func estimatedDetourSeconds(_ station: ChargingStation) -> Double {
+        let distance = station.distanceFromRouteMeters ?? 1000
+        return 2 * distance / (30 / 3.6) + 120
+    }
 
     // MARK: Ladekurve
 
@@ -205,7 +238,7 @@ enum ChargingStopPlanner {
             for candidate in reachable {
                 let distance = candidate.progress - position
                 let arrival = charge - distance * perMeter
-                let detour = candidate.station.detourSeconds ?? 0
+                let detour = candidate.station.detourSeconds ?? estimatedDetourSeconds(candidate.station)
 
                 // Bis wohin laden: so viel, wie bis zum Ziel noch fehlt,
                 // höchstens bis zur Grenze, ab der jede Säule langsam wird.

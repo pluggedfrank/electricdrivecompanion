@@ -102,7 +102,9 @@ final class TripViewModel: ObservableObject {
 
     /// Kennungen der geplanten Stopps, für die Kennzeichnung in Liste und Karte.
     var plannedStopIDs: Set<String> {
-        Set(chargingPlan?.stops.map(\.station.id) ?? [])
+        var ids = Set(chargingPlan?.stops.map(\.station.id) ?? [])
+        if let via = viaStation { ids.insert(via.id) }
+        return ids
     }
 
     /// Was im Suchfeld steht.
@@ -132,6 +134,9 @@ final class TripViewModel: ObservableObject {
     /// Platz rechts, den die Kacheln der Fahransicht belegen. Die Karte
     /// rückt ihre Mitte entsprechend nach links.
     @Published var mapTrailingInset: CGFloat = 0
+    /// Platz unten, den die Fahrleiste belegt. Ohne ihn lag der Pfeil der
+    /// Kamera unter der Leiste.
+    @Published var mapDrivingBottomInset: CGFloat = 0
 
     // MARK: Fahrt
 
@@ -166,8 +171,20 @@ final class TripViewModel: ObservableObject {
     @Published var chargeNotice: ChargeNotice?
     /// Steht das Auto an einer Säule? Name der Station, sobald erkannt.
     @Published private(set) var chargingAt: String?
-    /// Die Simulation hält an einem geplanten Stopp und wartet auf "Weiter".
-    @Published private(set) var simulatedStop: ChargingStop?
+    /// Ein Halt der Simulation: ein geplanter Stopp oder die Station, über
+    /// die gerade geroutet wird.
+    struct SimulatedStop: Equatable {
+        let id: String
+        let name: String
+        let powerKW: Double?
+        let chargingMinutes: Double
+    }
+
+    /// Die Simulation hält an einem Stopp und wartet auf "Weiter".
+    @Published private(set) var simulatedStop: SimulatedStop?
+    /// Die Station, über die gerade geroutet wird, bis sie hinter dem Auto
+    /// liegt.
+    @Published private(set) var viaStation: ChargingStation?
     /// Offen, wenn der Ladestand von Hand eingestellt wird.
     @Published var isAdjustingCharge = false
 
@@ -286,10 +303,14 @@ final class TripViewModel: ObservableObject {
     /// einer langen Fahrt nicht, und da eine Antwort nur 20 Treffer fasst,
     /// verdrängen langsame Säulen sonst die brauchbaren.
     @Published var powerTier: PowerTier = .standard
-    @Published var maxDetourMinutes: Double = 10
+    /// Vorgabe 5 Minuten: Wer auf der Langstrecke lädt, will an der Säule
+    /// stehen, nicht im Stadtverkehr davor.
+    @Published var maxDetourMinutes: Double = 5
 
     var selectedStation: AnnotatedStation? {
-        stations.first { $0.id == selectedStationID }
+        // Auch aus dem Bestand: Die Ausweichzeile zeigt Stationen, die der
+        // Leistungsfilter aus der Liste nimmt.
+        stations.first { $0.id == selectedStationID } ?? fetchedStations.first { $0.id == selectedStationID }
     }
 
     var routeSummary: (distanceKm: Double, durationMinutes: Double)? {
@@ -359,11 +380,11 @@ final class TripViewModel: ObservableObject {
         chargingAt = nil
         simulatedStop = nil
         handledSimulatedStops = []
+        selectedStationID = nil
         stopDetector.reset()
+        viaProgressMeters = viaStation.flatMap { tracker.nearest(to: $0.coordinate, from: 0)?.progressMeters }
         resetGuidanceProgress()
-        if let first = route.geometry.first, let last = route.geometry.last {
-            loadGuidance(from: first, to: last, tracker: tracker)
-        }
+        loadGuidance(for: route, tracker: tracker)
 
         var path: [CLLocationCoordinate2D]?
         if simulated {
@@ -421,8 +442,11 @@ final class TripViewModel: ObservableObject {
         self.tracker = tracker
         if driveStartProgress == nil { driveStartProgress = fix.progressMeters }
         driveFix = fix
+        lastDriveCoordinate = coordinate
+        if needsReplan { planCharging() }
         updateSpeed(progress: fix.progressMeters)
         watchForChargingStop(at: coordinate)
+        releaseViaIfPassed()
         refreshDrivingTiles()
         refreshGuidance()
         watchForDeviation(fix: fix, at: coordinate)
@@ -456,6 +480,7 @@ final class TripViewModel: ObservableObject {
     /// Setzt den Ladestand jetzt, von Hand oder nach einem Ladestopp.
     func setChargeNow(_ percent: Double) {
         chargeEvents.append(ChargeEvent(drivenMeters: drivenMeters, percent: min(100, max(0, percent))))
+        planCharging()
         refreshDrivingTiles()
     }
 
@@ -538,14 +563,44 @@ final class TripViewModel: ObservableObject {
     /// Die Simulation fährt an geplanten Stopps nicht ab, sie hält auf der
     /// Route, auf Höhe der Station, und wartet auf "Laden und weiter".
     private func watchSimulatedStop() {
-        guard simulatedStop == nil, let fix = driveFix, let plan = chargingPlan else { return }
-        guard let stop = plan.stops.first(where: {
+        guard simulatedStop == nil, let fix = driveFix else { return }
+        var stop: SimulatedStop?
+        if let via = viaStation, !handledSimulatedStops.contains(via.id),
+           let progress = viaProgressMeters, progress <= fix.progressMeters {
+            stop = SimulatedStop(
+                id: via.id,
+                name: via.name,
+                powerKW: via.maxPowerKW,
+                chargingMinutes: minutesToChargeUp(at: via.maxPowerKW)
+            )
+        } else if let planned = chargingPlan?.stops.first(where: {
             !handledSimulatedStops.contains($0.id) && $0.progressMeters <= fix.progressMeters
-        }) else { return }
+        }) {
+            stop = SimulatedStop(
+                id: planned.id,
+                name: planned.station.name,
+                powerKW: planned.station.maxPowerKW,
+                chargingMinutes: planned.chargingSeconds / 60
+            )
+        }
+        guard let stop else { return }
         handledSimulatedStops.insert(stop.id)
         simulatedStop = stop
-        chargingAt = stop.station.name
+        chargingAt = stop.name
         driveCommands.send(.updateSimulatedPath([fix.snapped]))
+    }
+
+    /// Wie lange es von jetzt bis zur Ladegrenze des Profils dauert.
+    private func minutesToChargeUp(at powerKW: Double?) -> Double {
+        let profile = vehicleStore.profile
+        let from = chargeNowPercent / 100 * profile.usableBatteryKWh
+        let seconds = ChargingStopPlanner.chargingSeconds(
+            from: from,
+            to: profile.maxChargeAtStopKWh,
+            curve: profile.chargingCurve(),
+            stationPowerKW: powerKW ?? 50
+        )
+        return seconds.isFinite ? seconds / 60 : 30
     }
 
     /// Nach dem simulierten Stopp: laden, so lange der Plan es vorsieht, und
@@ -554,24 +609,27 @@ final class TripViewModel: ObservableObject {
         guard let stop = simulatedStop, let tracker else { return }
         simulatedStop = nil
         chargingAt = nil
-        applyChargingStop(
-            stationName: stop.station.name,
-            stationPowerKW: stop.station.maxPowerKW,
-            minutes: stop.chargingSeconds / 60 + 2
-        )
+        applyChargingStop(stationName: stop.name, stationPowerKW: stop.powerKW, minutes: stop.chargingMinutes + 2)
         driveCommands.send(.updateSimulatedPath(simulatedPath(on: tracker, from: driveFix?.progressMeters ?? 0)))
     }
 
     // MARK: Zielführung, Ablauf
 
-    /// Holt die Anweisungen zur Strecke. Kostet eine Routing-Anfrage.
-    private func loadGuidance(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D, tracker: RouteTracker) {
+    /// Holt die Anweisungen zur Strecke. Kostet eine Routing-Anfrage. Mit
+    /// der Station, über die geroutet wird, als Zwischenziel, und mit der
+    /// Fahrtrichtung, wenn mitten in der Fahrt neu geplant wurde: Sonst
+    /// nähme die Anfrage womöglich eine andere Route als das SDK.
+    private func loadGuidance(for route: TomTomSDKRoute.Route, tracker: RouteTracker, heading: Double? = nil) {
+        guard let first = route.geometry.first, let last = route.geometry.last else { return }
+        var points = [first]
+        if let via = viaStation { points.append(via.coordinate) }
+        points.append(last)
         guidanceTask?.cancel()
         guidanceProblem = nil
         guidanceTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let dto = try await api.routeInstructions(from: origin, to: destination)
+                let dto = try await api.routeInstructions(through: points, heading: heading)
                 guard !Task.isCancelled, isDriving else { return }
                 guidance = Guidance.locate(Guidance.instructions(from: dto), on: tracker)
                 if guidance.isEmpty { guidanceProblem = "Keine Anweisungen für diese Strecke." }
@@ -648,17 +706,20 @@ final class TripViewModel: ObservableObject {
         fetchedStations.contains { GeoUtils.distance($0.station.coordinate, coordinate) <= meters }
     }
 
-    private func reroute(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D) {
+    private func reroute(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D, announce: String = "Route wird neu berechnet") {
         isRerouting = true
         lastRerouteAt = Date()
-        if voiceEnabled { speaker.speak("Route wird neu berechnet") }
+        if voiceEnabled { speaker.speak(announce) }
+        let heading = driveFix?.courseDegrees
+        let via = viaStation.map { [$0.coordinate] } ?? []
+        rerouteTask?.cancel()
         rerouteTask = Task { [weak self] in
             guard let self else { return }
             defer { isRerouting = false }
             do {
-                let neu = try await routePlanner.planRoute(from: origin, to: destination)
+                let neu = try await routePlanner.planRoute(from: origin, to: destination, via: via, heading: heading)
                 guard !Task.isCancelled, isDriving else { return }
-                adoptRerouted(neu)
+                adoptRerouted(neu, heading: heading)
             } catch {
                 // Kein Abbruch: Die alte Route bleibt, und nach 20 Sekunden
                 // wird es wieder versucht, falls das Auto noch daneben ist.
@@ -673,7 +734,7 @@ final class TripViewModel: ObservableObject {
     /// Umleitung ändert die Strecke meist um ein paar Kilometer, und eine neue
     /// Suche kostete fünfzig Anfragen. Was weiter als 10 km neben der neuen
     /// Route liegt, fällt heraus. Der Verbrauch zählt weiter.
-    private func adoptRerouted(_ neu: TomTomSDKRoute.Route) {
+    private func adoptRerouted(_ neu: TomTomSDKRoute.Route, heading: Double?) {
         if let fix = driveFix, let begin = driveStartProgress {
             drivenBeforeRerouteMeters += fix.progressMeters - begin
         }
@@ -696,10 +757,54 @@ final class TripViewModel: ObservableObject {
         }
         applyLocalFilters()
 
+        viaProgressMeters = viaStation.flatMap { tracker.nearest(to: $0.coordinate, from: 0)?.progressMeters }
         guidance = []
         resetGuidanceProgress()
-        if let first = neu.geometry.first, let last = neu.geometry.last {
-            loadGuidance(from: first, to: last, tracker: tracker)
+        loadGuidance(for: neu, tracker: tracker, heading: heading)
+        // Die Simulation fährt die neue Linie ab, vom Anfang: Der liegt dort,
+        // wo das Auto gerade ist.
+        if isSimulatingDrive {
+            driveCommands.send(.updateSimulatedPath(simulatedPath(on: tracker, from: 0)))
+        }
+    }
+
+    // MARK: Über eine Station
+
+    /// Plant ab hier über die Station zum Ziel. Während der Fahrt, aus einer
+    /// Kachel oder der Liste; vor der Fahrt wird die Route mit der Station
+    /// neu geplant und neu gesucht.
+    func routeVia(stationID: String) {
+        guard let item = fetchedStations.first(where: { $0.id == stationID }) else { return }
+        viaStation = item.station
+        selectedStationID = nil
+        guard isDriving else {
+            starteSuche()
+            return
+        }
+        guard let destination, let origin = lastDriveCoordinate ?? driveFix?.snapped else { return }
+        reroute(from: origin, to: destination, announce: "Route über \(item.station.name)")
+    }
+
+    /// Hebt das Zwischenziel auf und plant direkt zum Ziel.
+    func clearVia() {
+        guard viaStation != nil else { return }
+        viaStation = nil
+        viaProgressMeters = nil
+        guard isDriving else {
+            starteSuche()
+            return
+        }
+        guard let destination, let origin = lastDriveCoordinate ?? driveFix?.snapped else { return }
+        reroute(from: origin, to: destination, announce: "Route direkt zum Ziel")
+    }
+
+    /// Liegt die Station hinter dem Auto, ist sie kein Zwischenziel mehr.
+    /// Eine spätere Neuplanung führt sonst zurück zur Säule.
+    private func releaseViaIfPassed() {
+        guard viaStation != nil, let progress = viaProgressMeters, let fix = driveFix else { return }
+        if fix.progressMeters > progress + 500, !stopDetector.isNearStation {
+            viaStation = nil
+            viaProgressMeters = nil
         }
     }
 
@@ -707,6 +812,7 @@ final class TripViewModel: ObservableObject {
 
     func setDestination(_ coordinate: CLLocationCoordinate2D) {
         destination = coordinate
+        viaStation = nil
         starteSuche()
     }
 
@@ -744,6 +850,8 @@ final class TripViewModel: ObservableObject {
         streckenNummer += 1
 
         route = nil
+        viaStation = nil
+        viaProgressMeters = nil
         stations = []
         fetchedStations = []
         fetchedTier = nil
@@ -795,7 +903,11 @@ final class TripViewModel: ObservableObject {
         selectedStationID = nil
 
         do {
-            let geplant = try await routePlanner.planRoute(from: origin, to: destination)
+            let geplant = try await routePlanner.planRoute(
+                from: origin,
+                to: destination,
+                via: viaStation.map { [$0.coordinate] } ?? []
+            )
             guard gilt(nummer) else { return }
             route = geplant
         } catch {
@@ -1116,39 +1228,66 @@ final class TripViewModel: ObservableObject {
     ///
     /// Grundlage ist die angezeigte Liste, nicht der gesamte Bestand: Wer den
     /// Filter auf 300 kW stellt, will auch an 300 kW laden.
+    ///
+    /// Während der Fahrt ab dem Auto, mit dem Ladestand jetzt: Nach einem
+    /// Ladestopp, einer Umleitung oder einem Zwischenziel stimmt der Plan vom
+    /// Start nicht mehr. Die Planung rechnet dazu auf dem Rest der Route, als
+    /// begänne sie hier, und die Stopps werden danach wieder auf Meter ab
+    /// Routenbeginn gesetzt.
     private func planCharging() {
         guard let route, !stations.isEmpty else {
             chargingPlan = nil
             return
         }
+        // Gleich nach einer Umleitung steht das Auto noch nicht auf der neuen
+        // Linie. Dann bleibt der alte Plan, bis die erste Position da ist.
+        if isDriving, driveFix == nil, chargingPlan != nil {
+            needsReplan = true
+            return
+        }
+        needsReplan = false
 
-        let length = route.summary.length.converted(to: .meters).value
+        var length = route.summary.length.converted(to: .meters).value
         let minPower = powerTier.minPowerKW ?? 50
+        var vehicle = vehicleStore.profile
+        var offset = 0.0
+        var candidates = stations
 
-        // Erst nur mit Favoriten. Geht die Strecke damit nicht auf, mit allen;
-        // die Liste kennzeichnet dann die Stopps, die kein Favorit sind.
-        if favoritesActive {
-            let favoriten = stations.filter { isFavorite($0) }
-            if !favoriten.isEmpty {
-                let plan = ChargingStopPlanner.plan(
-                    routeLengthMeters: length,
-                    stations: favoriten,
-                    vehicle: vehicleStore.profile,
-                    minPowerKW: minPower
-                )
-                if plan.isFeasible {
-                    chargingPlan = plan
-                    return
-                }
+        if isDriving, let fix = driveFix {
+            offset = fix.progressMeters
+            length = (tracker?.lengthMeters ?? length) - offset
+            vehicle.currentChargePercent = chargeNowPercent
+            // Was keine 500 m mehr vor dem Auto liegt, ist verpasst.
+            candidates = stations.compactMap { item in
+                guard let progress = item.station.progressAlongRouteMeters, progress > offset + 500 else { return nil }
+                var shifted = item
+                shifted.station.progressAlongRouteMeters = progress - offset
+                return shifted
             }
         }
 
-        chargingPlan = ChargingStopPlanner.plan(
+        // Erst nur mit Favoriten. Geht die Strecke damit nicht auf, mit allen;
+        // die Liste kennzeichnet dann die Stopps, die kein Favorit sind.
+        var plan: ChargingPlan?
+        if favoritesActive {
+            let favoriten = candidates.filter { isFavorite($0) }
+            if !favoriten.isEmpty {
+                let favPlan = ChargingStopPlanner.plan(
+                    routeLengthMeters: length,
+                    stations: favoriten,
+                    vehicle: vehicle,
+                    minPowerKW: minPower
+                )
+                if favPlan.isFeasible { plan = favPlan }
+            }
+        }
+        let result = plan ?? ChargingStopPlanner.plan(
             routeLengthMeters: length,
-            stations: stations,
-            vehicle: vehicleStore.profile,
+            stations: candidates,
+            vehicle: vehicle,
             minPowerKW: minPower
         )
+        chargingPlan = offset > 0 ? result.shifted(by: offset, stations: stations) : result
     }
 
     /// Wendet Leistung, Umweg und seitlichen Abstand auf das Gefundene an.
@@ -1177,9 +1316,7 @@ final class TripViewModel: ObservableObject {
             lowerPowerStations = []
         }
 
-        // Während der Fahrt bleibt der Plan, mit dem losgefahren wurde. Nach
-        // einer Umleitung finge er sonst mit dem Ladestand vom Start neu an.
-        if !isDriving || chargingPlan == nil { planCharging() }
+        planCharging()
         // Während der Fahrt kommen Umwege und Belegungen nach; die Kacheln
         // sollen sie sofort zeigen, nicht erst bei der nächsten Position.
         refreshDrivingTiles()
@@ -1263,6 +1400,10 @@ final class TripViewModel: ObservableObject {
     private var lastSpeedSample: (progress: Double, time: Date)?
     private var offRouteFixes = 0
     private var stopDetector = StopDetector()
+    private var lastDriveCoordinate: CLLocationCoordinate2D?
+    private var needsReplan = false
+    /// Wo auf der aktuellen Route die Station liegt, über die geroutet wird.
+    private var viaProgressMeters: Double?
     private var handledSimulatedStops = Set<String>()
     private var lastRerouteAt: Date?
     private let locationSource = UserLocationSource()

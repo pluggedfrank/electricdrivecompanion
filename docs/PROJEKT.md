@@ -224,6 +224,18 @@ zur Säule keine Neuberechnung auslöst. Die Simulation hält an den geplanten
 Stopps und fährt nach „Laden und weiter" mit dem geschätzten Stand weiter.
 Rechnung und Tests: `tools/lib/akku.mjs`.
 
+**Über eine Station routen** (Stand 30.09.2026): Eine Kachel antippen öffnet
+oben links eine Karte mit „Über diese Station"; vor der Fahrt steht derselbe
+Knopf in der Stationsansicht der Liste. Die Route führt dann über die Säule
+zum Ziel, mitten in der Fahrt mit der aktuellen Fahrtrichtung als Start, damit
+sie nicht mit einem Wenden beginnt. Die Station gilt als geplanter Stopp, bis
+sie 500 m hinter dem Auto liegt. Die Ladeplanung rechnet während der Fahrt ab
+dem Auto mit dem Ladestand jetzt, nach Umleitung, Zwischenziel oder Ladestopp.
+
+**Vorgaben seit 30.09.2026:** 300 kW und höchstens 5 Minuten Umweg. Ein noch
+nicht gerechneter Umweg zählt in der Planung nicht mehr als null, sondern als
+hin und zurück mit 30 km/h plus zwei Minuten.
+
 ### Zielführung, Stand 30.09.2026
 
 Eigenbau aus der Routing-API, ohne Navigation SDK:
@@ -561,8 +573,8 @@ Zwei Stränge, die parallel laufen können.
 4. ~~Fahransicht bauen.~~ Stand siehe oben.
 5. ~~Ansage bauen.~~ Eigenbau, Stand siehe oben. Offen: Ansage im
    Hintergrund (Audio-Hintergrundmodus), Spurempfehlung.
-6. ~~Akku nach einem Ladestopp auffüllen.~~ Stand siehe oben. Offen: eine
-   Station antippen und über sie routen.
+6. ~~Akku nach einem Ladestopp auffüllen.~~ ~~Über eine Station routen.~~
+   Stand siehe oben.
 7. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
 
 **State of Charge**

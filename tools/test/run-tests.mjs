@@ -2281,3 +2281,15 @@ test('haltSchritt: vorbeifahren und kurz halten zaehlt nicht', () => {
   if (e) ereignisse.push(e);
   assert.deepEqual(ereignisse, []);
 });
+
+test('planeStopps: ein unbekannter Umweg zaehlt nicht als null', () => {
+  assert.ok(Math.abs(ladeplanung.geschaetzterUmweg({ distanceFromRouteMeters: 330 }) - 199.2) < 0.1);
+  // Zwei Stationen an derselben Stelle, eine mit gerechnetem Umweg von einer
+  // Minute, eine ungerechnet 800 m neben der Route.
+  const stations = [
+    { id: 'ungerechnet', progressMeters: 250_000, distanceFromRouteMeters: 800, detourSeconds: null, maxPowerKW: 300 },
+    { id: 'gerechnet', progressMeters: 250_000, distanceFromRouteMeters: 300, detourSeconds: 60, maxPowerKW: 300 },
+  ];
+  const ergebnis = ladeplanung.planeStopps({ routeLengthMeters: 450_000, stations, fahrzeug: AUTO });
+  assert.equal(ergebnis.stopps[0].station.id, 'gerechnet');
+});

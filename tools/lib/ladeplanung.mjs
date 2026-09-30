@@ -70,6 +70,21 @@ export function ladezeitSekunden(vonKWh, bisKWh, kurve, saeulenleistungKW) {
   return sekunden;
 }
 
+/**
+ * Umweg einer Station, deren Umweg noch nicht gerechnet ist.
+ *
+ * Vorher zaehlte ein fehlender Umweg als null, und die Planung nahm
+ * bevorzugt Stationen, deren Umweg noch niemand kannte: die A52-Station am
+ * Huelserhof, 330 m neben der Route, aber nur ueber die Stadt zu erreichen.
+ * Jetzt: hin und zurueck mit Stadttempo, 30 km/h, plus zwei Minuten fuer
+ * Abfahrt und Auffahrt. Eine gerechnete Station mit echtem Umweg bleibt so
+ * im Vorteil gegenueber einer ungerechneten gleich weit neben der Route.
+ */
+export function geschaetzterUmweg(station) {
+  const abstand = station.distanceFromRouteMeters ?? 1000;
+  return (2 * abstand) / (30 / 3.6) + 120;
+}
+
 /** Verbrauch je Meter, in kWh. */
 function verbrauchProMeter(fahrzeug) {
   return fahrzeug.consumptionKWhPer100km / 100000;
@@ -181,7 +196,7 @@ export function planeStopps({
     for (const station of erreichbare) {
       const strecke = station.progressMeters - position;
       const ankunft = ladung - strecke * proMeter;
-      const umweg = station.detourSeconds ?? 0;
+      const umweg = station.detourSeconds ?? geschaetzterUmweg(station);
 
       // Bis wohin laden: so viel, wie bis zum Ziel noch fehlt, hoechstens aber
       // bis zur Grenze, ab der jede Saeule langsam wird.
