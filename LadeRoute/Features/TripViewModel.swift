@@ -6,6 +6,7 @@ import Combine
 import CoreLocation
 import Foundation
 import TomTomSDKRoute
+import UIKit
 
 @MainActor
 final class TripViewModel: ObservableObject {
@@ -378,6 +379,17 @@ final class TripViewModel: ObservableObject {
         drivingFallbackReason = nil
         isSimulatingDrive = simulated
         isDriving = true
+        // Der Bildschirm bleibt an, solange gefahren wird.
+        UIApplication.shared.isIdleTimerDisabled = true
+        if !simulated {
+            locationSource.beginDriving()
+            realPositionSubscription = locationSource.$lastLocation
+                .compactMap { $0 }
+                .removeDuplicates { $0.timestamp == $1.timestamp }
+                .sink { [weak self] location in
+                    self?.updateDrivePosition(location.coordinate, measuredSpeed: location.speed >= 0 ? location.speed : nil)
+                }
+        }
         drivenBeforeRerouteMeters = 0
         chargeEvents = []
         chargeNotice = nil
@@ -435,12 +447,16 @@ final class TripViewModel: ObservableObject {
         chargingAt = nil
         simulatedStop = nil
         isAdjustingCharge = false
+        realPositionSubscription = nil
+        locationSource.endDriving()
+        UIApplication.shared.isIdleTimerDisabled = false
         speaker.stop()
         driveCommands.send(.stop)
     }
 
     /// Eine neue Position während der Fahrt, von der Karte gemeldet.
-    func updateDrivePosition(_ coordinate: CLLocationCoordinate2D) {
+    /// `measuredSpeed` ist das Tempo aus dem GPS, in m/s, wenn es eines gibt.
+    func updateDrivePosition(_ coordinate: CLLocationCoordinate2D, measuredSpeed: Double? = nil) {
         guard isDriving, var tracker else { return }
         guard let fix = tracker.locate(coordinate) else { return }
         self.tracker = tracker
@@ -448,7 +464,7 @@ final class TripViewModel: ObservableObject {
         driveFix = fix
         lastDriveCoordinate = coordinate
         if needsReplan { planCharging() }
-        updateSpeed(progress: fix.progressMeters)
+        updateSpeed(progress: fix.progressMeters, measured: measuredSpeed)
         watchForChargingStop(at: coordinate)
         releaseViaIfPassed()
         refreshDrivingTiles()
@@ -656,8 +672,13 @@ final class TripViewModel: ObservableObject {
 
     /// Tempo aus dem Weg auf der Route, geglättet. In der Simulation fest,
     /// damit die Ansagen so fallen wie auf der Autobahn, nur schneller.
-    private func updateSpeed(progress: Double) {
+    private func updateSpeed(progress: Double, measured gps: Double? = nil) {
         guard !isSimulatingDrive else { return }
+        // Das GPS misst das Tempo direkt, genauer als der Weg auf der Route.
+        if let gps {
+            speedMetersPerSecond = speedMetersPerSecond == 0 ? gps : speedMetersPerSecond * 0.5 + gps * 0.5
+            return
+        }
         let now = Date()
         guard let last = lastSpeedSample else {
             lastSpeedSample = (progress, now)
@@ -1463,6 +1484,7 @@ final class TripViewModel: ObservableObject {
     private var offRouteFixes = 0
     private var stopDetector = StopDetector()
     private var lastDriveCoordinate: CLLocationCoordinate2D?
+    private var realPositionSubscription: AnyCancellable?
     private var needsReplan = false
     /// Wo auf der aktuellen Route die Station liegt, über die geroutet wird.
     private var viaProgressMeters: Double?

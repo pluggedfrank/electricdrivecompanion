@@ -34,6 +34,15 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Der Startpunkt der Route und die Suche nach Ladestationen in der Nähe brauchen deinen Standort.</string>
+	<!-- Ansagen und Ortung laufen während der Fahrt weiter, auch bei
+	     gesperrtem Bildschirm oder wenn Musik vorne ist. Die Ortung im
+	     Hintergrund braucht keine Freigabe "Immer": Sie startet im
+	     Vordergrund, und iOS zeigt dann oben die blaue Anzeige. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>location</string>
+	</array>
 	<key>TomTomAPIKey</key>
 	<string>$(TOMTOM_API_KEY)</string>
 </dict>

@@ -107,11 +107,11 @@ extension MapCoordinator: TomTomSDKMapDisplay.MapDelegate {
 
 extension MapCoordinator: TomTomSDKLocationProvider.LocationUpdateObserver {
     func didUpdateLocation(location: GeoLocation) {
-        // Während der Fahrt ist dieser Geber die Quelle der Position, echt
-        // oder simuliert. Der Pfeil auf der Karte und die Kacheln kommen so
-        // aus derselben Position.
+        // In der Simulation ist dieser Geber die Quelle der Position: Er fährt
+        // die Route ab. Beim echten Fahren kommt sie aus UserLocationSource,
+        // die auch im Hintergrund ortet; die Karte zeichnet dann nur.
         if trip.isDriving {
-            trip.updateDrivePosition(location.location.coordinate)
+            if trip.isSimulatingDrive { trip.updateDrivePosition(location.location.coordinate) }
             return
         }
 

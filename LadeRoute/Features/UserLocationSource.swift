@@ -47,6 +47,9 @@ final class UserLocationSource: NSObject, ObservableObject {
     }
 
     @Published private(set) var coordinate: CLLocationCoordinate2D?
+    /// Die letzte Messung mit Zeit und Tempo. Während der Fahrt die Quelle
+    /// der Position, auch im Hintergrund.
+    @Published private(set) var lastLocation: CLLocation?
     @Published private(set) var authorizationStatus: CLAuthorizationStatus
 
     /// Was gerade fehlt, oder nil, wenn eine Position vorliegt.
@@ -67,6 +70,32 @@ final class UserLocationSource: NSObject, ObservableObject {
             manager.requestWhenInUseAuthorization()
         }
         beginUpdatesIfAllowed()
+    }
+
+    /// Fahrt beginnt: genau, ohne Pause, auch im Hintergrund.
+    ///
+    /// Die Karte liefert im Hintergrund keine Positionen, sie zeichnet dann
+    /// nicht. Dieser Manager schon, wenn er es darf: Die Hintergrundmodi
+    /// stehen in der Info.plist, und gestartet wird im Vordergrund. Dann
+    /// reicht die Freigabe "Beim Verwenden", und iOS zeigt oben die blaue
+    /// Anzeige, solange die App im Hintergrund ortet.
+    func beginDriving() {
+        manager.activityType = .automotiveNavigation
+        manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+        manager.distanceFilter = kCLDistanceFilterNone
+        manager.pausesLocationUpdatesAutomatically = false
+        manager.allowsBackgroundLocationUpdates = true
+        manager.showsBackgroundLocationIndicator = true
+        beginUpdatesIfAllowed()
+    }
+
+    /// Fahrt endet: zurück auf sparsam, kein Hintergrund mehr.
+    func endDriving() {
+        manager.allowsBackgroundLocationUpdates = false
+        manager.showsBackgroundLocationIndicator = false
+        manager.pausesLocationUpdatesAutomatically = true
+        manager.activityType = .other
+        manager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
     }
 
     // MARK: Private
@@ -101,6 +130,7 @@ extension UserLocationSource: CLLocationManagerDelegate {
         guard let last = locations.last else { return }
         Task { @MainActor in
             self.coordinate = last.coordinate
+            self.lastLocation = last
         }
     }
 

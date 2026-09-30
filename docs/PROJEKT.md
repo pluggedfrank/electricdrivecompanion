@@ -580,8 +580,12 @@ Zwei Stränge, die parallel laufen können.
    nicht geknackt). Nachrangig, seit Register und Umwegtabelle die Suche
    ersetzen.
 4. ~~Fahransicht bauen.~~ Stand siehe oben.
-5. ~~Ansage bauen.~~ Eigenbau, Stand siehe oben. Offen: Ansage im
-   Hintergrund (Audio-Hintergrundmodus), Spurempfehlung.
+5. ~~Ansage bauen.~~ Eigenbau, Stand siehe oben. ~~Ansage im Hintergrund.~~
+   Seit 30.09.2026: Hintergrundmodi Audio und Standort; beim echten Fahren
+   kommt die Position aus einem eigenen CLLocationManager (Navigationsgenauigkeit,
+   ohne automatische Pause, im Hintergrund mit blauer Anzeige), die Karte
+   zeichnet nur. Bildschirm bleibt während der Fahrt an. Nur auf dem Gerät
+   prüfbar. Offen: Spurempfehlung.
 6. ~~Akku nach einem Ladestopp auffüllen.~~ ~~Über eine Station routen.~~
    Stand siehe oben.
 7. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
