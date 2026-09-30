@@ -607,12 +607,15 @@ Stelle, das Matching bleibt unberührt.
       verbirgt er sich hinter "Extended Routing API", das noch nicht
       angehakt ist. Sonst gehört er zur Presseanfrage.
 - [ ] Deckt das Freemium-Kontingent eine Fahrt mit Neuberechnungen? Non-Tile
-      liegt bei 2.500 Anfragen am Tag, eine Fahrt braucht davon wenige Dutzend.
+      liegt bei 2.500 Anfragen im Monat (nicht am Tag, korrigiert 30.09.2026);
+      eine Rom-Planung braucht allein im Ausland gut 20 Suchanfragen.
       Zu prüfen, ob Long Distance EV Routing aus demselben Topf zählt.
       30.09.2026: Search antwortet mit 403 "InsufficientFunds", Routing geht
       noch. Seitdem zählt die Testversion jede Anfrage (RequestCounter, Zeile
       im Stationsblatt), und die Auslandstreffer bleiben 24 Stunden je
-      Streckenstück gespeichert (ForeignStationCache).
+      Streckenstück gespeichert (ForeignStationCache). Seit 30.09.2026 ist
+      eine Zahlungsart hinterlegt; über das Freikontingent hinaus wird nach
+      Verbrauch abgerechnet. Kosten beobachten.
 - [ ] Welches Fahrzeug ist das Standardprofil? Akkukapazität, Verbrauch und
       Ladekurve müssen von irgendwo kommen. Für v1 reicht ein Profil von Hand,
       aber es braucht eines.
