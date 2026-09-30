@@ -889,6 +889,7 @@ final class TripViewModel: ObservableObject {
         destination = coordinate
         chosenPlaceName = name
         chosenPlace = place
+        if name == nil { destinationQuery = "" }
         viaStation = nil
         savedPlaces.remember(
             name: name ?? "Ort auf der Karte",
@@ -899,17 +900,28 @@ final class TripViewModel: ObservableObject {
     }
 
     /// Übernimmt ein Suchergebnis als Ziel.
+    ///
+    /// Das Suchfeld zeigt danach das gewählte Ziel, statt leer zu werden:
+    /// Ein leeres Feld ließ offen, ob die Eingabe angenommen war (Rückmeldung
+    /// vom 30.09.2026). Eine neue Suche löst das nicht aus, siehe
+    /// startPlaceSearch.
     func choosePlace(_ place: Place) {
-        destinationQuery = ""
         placeResults = []
         setDestination(place.coordinate, name: place.title, place: place)
+        destinationQuery = place.title
+    }
+
+    /// Zeigt das Suchfeld gerade das gewählte Ziel statt einer Eingabe?
+    var searchShowsDestination: Bool {
+        guard let name = chosenPlaceName else { return false }
+        return !destinationQuery.isEmpty && destinationQuery == name
     }
 
     /// Fährt ein gespeichertes Ziel an.
     func chooseSaved(_ saved: SavedPlace) {
-        destinationQuery = ""
         placeResults = []
         setDestination(saved.coordinate, name: saved.name)
+        destinationQuery = saved.name
     }
 
     func clearPlaceSearch() {
@@ -1498,6 +1510,13 @@ final class TripViewModel: ObservableObject {
         placeSearchTask?.cancel()
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Das Feld zeigt das gewählte Ziel: nicht danach suchen, sonst klappt
+        // die Trefferliste gleich wieder auf.
+        if let name = chosenPlaceName, trimmed == name {
+            placeResults = []
+            isSearchingPlaces = false
+            return
+        }
         guard trimmed.count >= 2 else {
             placeResults = []
             isSearchingPlaces = false

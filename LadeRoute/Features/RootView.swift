@@ -79,7 +79,7 @@ struct RootView: View {
         VStack(spacing: 10) {
             header
             searchField
-            if trip.destinationQuery.isEmpty {
+            if trip.destinationQuery.isEmpty || trip.searchShowsDestination {
                 SavedPlacesBar(
                     store: trip.savedPlaces,
                     onChoose: { place in
@@ -172,9 +172,9 @@ struct RootView: View {
 
     private var searchField: some View {
         HStack(spacing: 9) {
-            Image(systemName: "magnifyingglass")
+            Image(systemName: trip.searchShowsDestination ? "mappin.circle.fill" : "magnifyingglass")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Theme.meta)
+                .foregroundStyle(trip.searchShowsDestination ? Theme.signal : Theme.meta)
 
             TextField("Ziel suchen", text: $trip.destinationQuery)
                 .font(.system(size: 15))
