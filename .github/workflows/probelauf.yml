@@ -27,6 +27,7 @@ on:
           - korridore-abfahren.mjs
           - umweg-einzeln.mjs
           - tomtom-probe.mjs
+          - zielfuehrung-probe.mjs
       argumente:
         description: "Argumente, etwa --from=51.256,6.689 --to=53.6148,7.1621"
         required: false
