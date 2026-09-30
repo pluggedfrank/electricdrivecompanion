@@ -22,6 +22,10 @@ on:
         description: "Modul, etwa TomTomSDKMapDisplay"
         required: false
         default: "TomTomSDKMapDisplay"
+      bloecke:
+        description: "Ganze Deklarationen zeigen, Namen mit Komma, etwa Announcement,Instruction"
+        required: false
+        default: ""
 
 jobs:
   nachschlagen:
@@ -69,6 +73,7 @@ jobs:
         env:
           SUCHE: ${{ inputs.suche }}
           MODUL: ${{ inputs.modul }}
+          BLOECKE: ${{ inputs.bloecke }}
         run: |
           set -o pipefail
           echo "Suche nach \"$SUCHE\" in $MODUL"
@@ -98,6 +103,16 @@ jobs:
             echo "--- $(basename "$(dirname "$(dirname "$(dirname "$datei")")")")"
             grep -nE "$SUCHE" "$datei" |
               sed 's/^[[:space:]]*//' | sort -u | head -100 | tee -a "$GITHUB_STEP_SUMMARY"
+            # Eine Zeile je Treffer reicht nicht, um einen Typ zu verstehen:
+            # Felder und Initialisierer stehen darunter. Hier der ganze Block
+            # bis zur schliessenden Klammer am Zeilenanfang.
+            for name in $(echo "$BLOECKE" | tr ',' ' '); do
+              echo "=== $name"
+              awk -v n="$name" '
+                !drin && $0 ~ ("^(public |@frozen public |final public |open )*(struct|protocol|enum|class|extension) ([A-Za-z]+\\.)*" n "([ :<{]|$)") { drin=1 }
+                drin { print; if ($0 ~ /^}/ || $0 ~ /\{\}$/) { drin=0; print "" } }
+              ' "$datei" | head -400
+            done
           done
 
           echo '```' >> "$GITHUB_STEP_SUMMARY"
