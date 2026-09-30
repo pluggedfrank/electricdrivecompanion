@@ -108,6 +108,22 @@ VORHER=$(git rev-parse HEAD)
 if ! AUSGABE=$(git pull --ff-only --quiet origin main 2>&1); then
   sage "Konnte nicht holen:"
   sage "$AUSGABE"
+  # Der haeufigste Grund: Xcode hat eine Datei selbst geaendert, etwa ueber
+  # einen Fix-Knopf bei einer Warnung. Dann die Dateien nennen und sagen, wie
+  # man sie beiseitelegt, statt nur Git sprechen zu lassen. Am 30.09. stand
+  # hier nur die Git-Meldung, und der naechste Schritt musste erfragt werden.
+  GEAENDERT=$(git diff --name-only 2>/dev/null)
+  if [ -n "$GEAENDERT" ]; then
+    sage ""
+    sage "Auf diesem Rechner geaendert, nicht im Repo:"
+    printf '%s\n' "$GEAENDERT" | sed 's/^/  /'
+    sage ""
+    sage "Ansehen und beiseitelegen (nichts geht verloren, git stash pop holt es zurueck):"
+    sage "  cd $(pwd)"
+    sage "  git diff"
+    sage "  git stash"
+    sage "  lade"
+  fi
   if [ "$STILL" -eq 1 ]; then
     osascript -e 'display notification "Eigene Aenderungen im Weg" with title "LadeRoute"' 2>/dev/null || true
   fi
