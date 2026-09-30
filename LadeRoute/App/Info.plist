@@ -28,9 +28,15 @@
 	     ein UIColorName ohne Wert, was keine Farbe benennt. -->
 	<key>UILaunchScreen</key>
 	<dict/>
+	<!-- Hoch- und Querformat. Die Fahransicht hat fuer das Querformat eine
+	     eigene Aufteilung (Kacheln rechts ueber die volle Hoehe, Fahrleiste
+	     nur unter der Karte); bis zum 30.09.2026 stand hier nur Hochformat,
+	     und das iPhone drehte nicht. Kopfueber bleibt aus, wie bei Apple Karten. -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Der Startpunkt der Route und die Suche nach Ladestationen in der Nähe brauchen deinen Standort.</string>
