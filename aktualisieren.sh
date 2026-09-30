@@ -187,10 +187,27 @@ if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
   fi
 
   if command -v xcodegen > /dev/null 2>&1; then
+    # Ist Xcode offen, das Projekt vorher schliessen und danach wieder
+    # oeffnen. xcodegen ersetzt den ganzen Projektordner, auch die
+    # Arbeitsbereichsdatei darin, und ein offenes Xcode fragte dann: "The
+    # workspace file has disappeared. Re-save or close?" (30.09.2026).
+    # Geschlossen wird mit Sichern, damit ungesicherte Aenderungen im Editor
+    # nicht verloren gehen. Beim ersten Mal fragt macOS, ob das Terminal
+    # Xcode steuern darf; ohne Erlaubnis bleibt es bei der Rueckfrage von
+    # Xcode, dann dort auf "Close" klicken.
+    XCODE_OFFEN=0
+    if pgrep -x Xcode > /dev/null 2>&1; then
+      XCODE_OFFEN=1
+      osascript -e 'tell application "Xcode" to close (every workspace document whose path contains "LadeRoute.xcodeproj") saving yes' > /dev/null 2>&1 || true
+      sleep 1
+    fi
+
     xcodegen generate > /dev/null
     sage "Projekt neu erzeugt, es waren Dateien der App dabei."
-    if pgrep -x Xcode > /dev/null 2>&1; then
-      sage "Xcode laedt es von selbst nach."
+
+    if [ "$XCODE_OFFEN" -eq 1 ]; then
+      open LadeRoute.xcodeproj
+      sage "Xcode hat das Projekt neu geoeffnet. Oben den Simulator waehlen, dann Cmd+R."
     fi
   else
     sage "xcodegen fehlt: brew install xcodegen"
