@@ -521,8 +521,10 @@ Zwei Stränge, die parallel laufen können.
 
 **Navi**
 
-1. Presseanfrage an TomTom: Entwurf liegt in `docs/tomtom-presseanfrage.md`,
-   noch nicht verschickt.
+1. Presseanfrage an TomTom: am 30.09.2026 an die deutsche PR-Agentur von
+   TomTom geschickt, mit der Bitte, beim globalen PR-Team (Schwerpunkt
+   Automotive) in Amsterdam vorzufühlen. Antwort abwarten. Die Kontakte
+   stehen bewusst nicht im Repo, solange es öffentlich ist.
 2. ~~Fahrzeugprofil anlegen.~~
 3. Long Distance EV Routing anbinden (freigeschaltet, Parameterformat noch
    nicht geknackt). Nachrangig, seit Register und Umwegtabelle die Suche
