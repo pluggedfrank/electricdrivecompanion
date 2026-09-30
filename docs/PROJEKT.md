@@ -214,9 +214,31 @@ Gebaut nach dem Konzept „Fahransicht LadeRoute"
 Die Rechnung dahinter (Lage auf der Route, Kachelauswahl, Ausweichen) hat ihr
 Gegenstück mit Tests in `tools/lib/fahrt.mjs`.
 
-Offen: Die Kacheln rutschen nach unten, wo später die Fahrleiste der
-Zielführung hingehört; das wird mit der Ansage neu geordnet. Der Akku wird ab
-Abfahrt heruntergerechnet, nach einem Ladestopp aber nicht aufgefüllt.
+Offen: Der Akku wird ab Abfahrt heruntergerechnet, nach einem Ladestopp aber
+nicht aufgefüllt.
+
+### Zielführung, Stand 30.09.2026
+
+Eigenbau aus der Routing-API, ohne Navigation SDK:
+
+- **Anweisungen** kommen aus einer eigenen Anfrage beim Losfahren
+  (`instructionsType=text`, `language=de-DE`), fertig formuliert: „Biegen Sie
+  links ab auf Brühler Weg". Jede wird über ihren Manöverpunkt auf die Linie
+  des SDK gelegt. Das SDK Core liefert Sprachtexte nur noch als veraltete
+  Felder, die eigentliche Ansage steckt im Navigation SDK.
+- **Ansage in drei Stufen** nach Tempo: Autobahn 2 km, 600 m, kurz davor;
+  Stadt 400, 120, 40 m. Bei 600 m der kombinierte Satz der API („… dann
+  bleiben Sie links"), der Nachfolger sagt dann nur noch „jetzt". „Folgen Sie
+  A31 für 209 Kilometer" nur bei langen Abschnitten. Musik wird leiser.
+- **Neuplanung**, wenn das Auto dreimal hintereinander mehr als 50 m neben der
+  Route ist. Stationen werden auf die neue Linie gelegt, nicht neu gesucht.
+- **Fahransicht neu aufgeteilt:** Anweisung oben links, Kacheln rechts,
+  Fahrleiste unten mit Beenden, Ankunft, Reststrecke, Akku, Ansage an/aus,
+  Kamera. In der Simulation ein Tempoknopf 1×/3×/10×.
+
+Rechnung und Tests: `tools/lib/ansage.mjs`, gegen eine echte Antwort
+Meerbusch–Norddeich (`tools/test/fixtures/anweisungen-meerbusch-norddeich.json`,
+erzeugt mit dem Probelauf `zielfuehrung-probe.mjs --fixture`).
 
 ## Was der Schlüssel darf
 
@@ -530,10 +552,8 @@ Zwei Stränge, die parallel laufen können.
    nicht geknackt). Nachrangig, seit Register und Umwegtabelle die Suche
    ersetzen.
 4. ~~Fahransicht bauen.~~ Stand siehe oben.
-5. Ansage bauen: Manöverliste, Entfernung zum nächsten Manöver, Sprachausgabe,
-   Abweichungserkennung und Neuplanung. Mit dem Navigation SDK oder als
-   Eigenbau aus den Routing-Anweisungen. Dabei Kacheln und Fahrleiste neu
-   ordnen.
+5. ~~Ansage bauen.~~ Eigenbau, Stand siehe oben. Offen: Ansage im
+   Hintergrund (Audio-Hintergrundmodus), Spurempfehlung.
 6. Akku nach einem Ladestopp auffüllen: Ankunft an der Säule erkennen, nach
    der Weiterfahrt den Stand abfragen oder schätzen.
 7. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
