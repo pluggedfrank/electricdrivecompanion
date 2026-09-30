@@ -678,7 +678,11 @@ final class TripViewModel: ObservableObject {
         guidanceTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let dto = try await api.routeInstructions(through: points, heading: heading)
+                let dto = try await api.routeInstructions(
+                    through: points,
+                    heading: heading,
+                    supportingPoints: route.geometry
+                )
                 guard !Task.isCancelled, isDriving else { return }
                 guidance = Guidance.locate(Guidance.instructions(from: dto), on: tracker)
                 if guidance.isEmpty { guidanceProblem = "Keine Anweisungen für diese Strecke." }

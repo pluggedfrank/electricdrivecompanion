@@ -387,9 +387,17 @@ actor TomTomAPIClient {
     /// `points` sind Start, Zwischenziele und Ziel, wie beim Routenplaner.
     /// `heading` ist die Fahrtrichtung am Start, damit beide dieselbe Route
     /// nehmen, wenn mitten in der Fahrt neu geplant wird.
+    ///
+    /// `supportingPoints` ist die Linie, die die Karte zeigt. Mit ihr
+    /// rekonstruiert TomTom genau diese Route und formuliert nur die
+    /// Anweisungen dazu. Ohne sie plant die Anfrage selbst und nimmt
+    /// mitunter einen anderen Weg: In der Simulation vom 30.09.2026 sagte
+    /// die Ansage die Hauptstraße an, die Karte zeigte die Necklenbroicher
+    /// Straße.
     func routeInstructions(
         through points: [CLLocationCoordinate2D],
-        heading: Double? = nil
+        heading: Double? = nil,
+        supportingPoints: [CLLocationCoordinate2D]? = nil
     ) async throws -> [CalculateRouteResponse.Instruction] {
         guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
         guard points.count >= 2 else { throw TomTomAPIError.emptyRoute }
@@ -408,6 +416,12 @@ actor TomTomAPIClient {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 20
+        if let supportingPoints, supportingPoints.count >= 2 {
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let body = ["supportingPoints": supportingPoints.map { ["latitude": $0.latitude, "longitude": $0.longitude] }]
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        }
 
         let data = try await perform(request)
         do {

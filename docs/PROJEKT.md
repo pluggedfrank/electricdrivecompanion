@@ -252,7 +252,12 @@ Eigenbau aus der Routing-API, ohne Navigation SDK:
 - **Anweisungen** kommen aus einer eigenen Anfrage beim Losfahren
   (`instructionsType=text`, `language=de-DE`), fertig formuliert: „Biegen Sie
   links ab auf Brühler Weg". Jede wird über ihren Manöverpunkt auf die Linie
-  des SDK gelegt. Das SDK Core liefert Sprachtexte nur noch als veraltete
+  des SDK gelegt. Die Anfrage bekommt die Linie der Karte als
+  `supportingPoints` mit, damit TomTom genau diese Route rekonstruiert:
+  Ohne sie plante die Anfrage selbst, und in der Simulation sagte die Ansage
+  die Hauptstraße an, während die Karte die Necklenbroicher Straße zeigte.
+  Probelauf `zielfuehrung-probe.mjs --rekonstruktion`: Referenz über einen
+  erzwungenen Umweg 323,6 km, rekonstruiert 324,0 km, gleicher Weg. Das SDK Core liefert Sprachtexte nur noch als veraltete
   Felder, die eigentliche Ansage steckt im Navigation SDK.
 - **Ansage in drei Stufen** nach Tempo: Autobahn 2 km, 600 m, kurz davor;
   Stadt 400, 120, 40 m. Bei 600 m der kombinierte Satz der API („… dann
