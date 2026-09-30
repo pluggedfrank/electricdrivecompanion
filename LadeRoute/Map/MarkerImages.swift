@@ -25,6 +25,11 @@ enum MarkerImages {
         )
     }
 
+    /// Nadel für die Ausweichstation: grau, mit A.
+    static func fallbackPin(isSelected: Bool) -> UIImage {
+        pin(label: "A", fill: UIColor(hex: 0x9C9388), isSelected: isSelected)
+    }
+
     private static func pin(label text: String, fill: UIColor, isSelected: Bool) -> UIImage {
         let size = CGSize(width: 34, height: 44)
         let renderer = UIGraphicsImageRenderer(size: size)

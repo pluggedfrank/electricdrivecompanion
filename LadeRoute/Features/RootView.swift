@@ -28,7 +28,12 @@ struct RootView: View {
             }
         }
         .sheet(isPresented: $showsVehicleSheet) {
-            VehicleProfileSheet(store: trip.vehicleStore)
+            VehicleProfileSheet(
+                store: trip.vehicleStore,
+                preferences: trip.brandPreferences,
+                brands: trip.brands,
+                siteCounts: trip.brandSiteCounts
+            )
         }
         .task {
             // Hier und nicht im Initialisierer: Der Freigabedialog gehört auf

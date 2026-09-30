@@ -51,7 +51,7 @@ struct DrivingOverlay: View {
     private func rail(compact: Bool) -> some View {
         VStack(spacing: compact ? 8 : 10) {
             if trip.drivingTiles.isEmpty {
-                Text(trip.driveFix == nil ? "Suche die eigene Position auf der Route …" : "Keine passenden Lader mehr bis zum Ziel.")
+                Text(emptyText)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.meta)
                     .padding(12)
@@ -78,6 +78,13 @@ struct DrivingOverlay: View {
                     reachLine
                 }
             }
+            // Ganz unten, direkt über dem Auto: die Ausweichstation, wenn
+            // der nächste Favorit zu weit ist.
+            if let fallback = trip.drivingFallback {
+                FallbackRow(tile: fallback, compact: compact)
+                    .onTapGesture { trip.selectStation(id: fallback.id) }
+                    .transition(.opacity)
+            }
             if let offRoute = trip.driveFix, !offRoute.isOnRoute {
                 Text("Nicht auf der Route, \(Int(offRoute.offsetMeters)) m daneben")
                     .font(.system(size: 12, weight: .semibold))
@@ -85,6 +92,13 @@ struct DrivingOverlay: View {
             }
         }
         .animation(.easeOut(duration: 0.35), value: trip.drivingTiles.map(\.id))
+    }
+
+    private var emptyText: String {
+        if trip.driveFix == nil { return "Suche die eigene Position auf der Route …" }
+        return trip.favoritesActive
+            ? "Kein bevorzugter Anbieter mehr bis zum Ziel."
+            : "Keine passenden Lader mehr bis zum Ziel."
     }
 
     private var reachLineIndex: Int {
@@ -158,6 +172,60 @@ struct DrivingOverlay: View {
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.meta)
         }
+    }
+}
+
+// MARK: - Ausweichen
+
+/// Eine schmale Zeile für eine Station, die kein Favorit ist.
+///
+/// Bewusst kleiner und blasser als die Kacheln, aber ablesbar: Sie erscheint
+/// nur, wenn der nächste Favorit hinter der Reserve liegt.
+struct FallbackRow: View {
+    let tile: DrivingTile
+    let compact: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.uturn.right")
+                    .font(.system(size: 10, weight: .bold))
+                Text("Ausweichen, kein Favorit")
+                    .font(.system(size: 10, weight: .bold))
+                    .textCase(.uppercase)
+            }
+            .foregroundStyle(Theme.busy)
+
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(kmText)
+                    .font(.system(size: compact ? 17 : 20, weight: .bold, design: .rounded).monospacedDigit())
+                Text(tile.station.station.name)
+                    .font(.system(size: compact ? 12 : 13, weight: .semibold))
+                    .lineLimit(1)
+                Spacer(minLength: 2)
+                Text("\(max(0, Int(tile.arrivalPercent.rounded()))) %")
+                    .font(.system(size: compact ? 13 : 15, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(tile.arrivalPercent < 20 ? Theme.busy : Theme.ink2)
+            }
+            .foregroundStyle(Theme.ink2)
+
+            if let kw = tile.station.station.maxPowerKW {
+                Text("\(Int(kw)) kW")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.meta)
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.panel.opacity(0.96), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.busy.opacity(0.5), lineWidth: 1))
+        .accessibilityElement(children: .combine)
+    }
+
+    private var kmText: String {
+        let km = max(0, tile.meters / 1000)
+        return (km < 10 ? String(format: "%.1f", km).replacingOccurrences(of: ".", with: ",") : "\(Int(km.rounded()))") + " km"
     }
 }
 

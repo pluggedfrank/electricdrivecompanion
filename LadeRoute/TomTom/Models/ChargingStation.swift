@@ -32,6 +32,8 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     var detourIsComputed = false
     /// Stammt die Station aus dem Ladesäulenregister statt von TomTom?
     var isFromRegister = false
+    /// Die Marke des Betreibers, sofern sie in daten/marken.json steht.
+    var brandID: String?
     /// Seitlicher Abstand zur Route. Aus der Antwort, sofern vorhanden, sonst
     /// aus der eigenen Projektion.
     var distanceFromRouteMeters: Double?

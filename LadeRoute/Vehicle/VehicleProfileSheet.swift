@@ -7,6 +7,10 @@ struct VehicleProfileSheet: View {
     // MARK: Internal
 
     @ObservedObject var store: VehicleProfileStore
+    @ObservedObject var preferences: BrandPreferences
+    let brands: ChargingBrands
+    /// Standorte je Marke, zum Einordnen.
+    let siteCounts: [String: Int]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -36,6 +40,32 @@ struct VehicleProfileSheet: View {
                             + "\(Int(store.profile.remainingRangeKm)) km. Über 80 Prozent lädt jede "
                             + "Säule langsam; weiterzufahren ist dann meist schneller als vollzuladen."
                     )
+                }
+
+                Section {
+                    ForEach(brands.all) { brand in
+                        Toggle(isOn: Binding(
+                            get: { preferences.favorites.contains(brand.id) },
+                            set: { _ in preferences.toggle(brand.id) }
+                        )) {
+                            HStack {
+                                Text(brand.name)
+                                Spacer()
+                                if let count = siteCounts[brand.id] {
+                                    Text("\(count)")
+                                        .font(.system(size: 13).monospacedDigit())
+                                        .foregroundStyle(Theme.faint)
+                                }
+                            }
+                        }
+                        .tint(Theme.signal)
+                    }
+                } header: {
+                    Text("Bevorzugte Anbieter")
+                } footer: {
+                    Text(preferences.isActive
+                        ? "Beim Fahren zeigen die Kacheln nur diese Anbieter. Ist der nächste zu weit, erscheint eine Ausweichstation eines anderen. Die Ladeplanung nimmt andere nur, wenn es ohne nicht geht. Die Zahl nennt die Standorte ab 150 kW in Deutschland."
+                        : "Keiner gewählt: Alle Anbieter zählen gleich. Die Zahl nennt die Standorte ab 150 kW in Deutschland.")
                 }
 
                 Section {

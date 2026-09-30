@@ -16,6 +16,7 @@ final class TripViewModel: ObservableObject {
         editorialStore: EditorialStore = .loadBundled(),
         registerStore: RegisterStore = .loadBundled(),
         detourTable: DetourTable = .loadBundled(),
+        brands: ChargingBrands = .loadBundled(),
         // nil und nicht VehicleProfileStore(): Ein Vorgabewert im
         // Parameterkopf wird außerhalb des Actors ausgewertet, und der Speicher
         // ist @MainActor. Angelegt wird er deshalb hier drinnen.
@@ -25,6 +26,14 @@ final class TripViewModel: ObservableObject {
         self.editorialStore = editorialStore
         self.registerStore = registerStore
         self.detourTable = detourTable
+        self.brands = brands
+        brandPreferences = BrandPreferences()
+        // Standorte je Marke, einmal aus dem Register, für die Auswahl.
+        var counts: [String: Int] = [:]
+        for station in registerStore.stations {
+            if let brand = brands.brand(for: station) { counts[brand.id, default: 0] += 1 }
+        }
+        brandSiteCounts = counts
         self.vehicleStore = vehicleStore ?? VehicleProfileStore()
         api = TomTomAPIClient(apiKey: apiKey)
         detourCalculator = DetourCalculator(api: api)
@@ -51,6 +60,15 @@ final class TripViewModel: ObservableObject {
         self.vehicleStore.$profile
             .dropFirst()
             .sink { [weak self] _ in self?.planCharging() }
+            .store(in: &cancellables)
+
+        // Andere Favoriten ändern Liste, Plan und Kacheln, nicht die Suche.
+        // Ohne receive(on:) liefe der Filter im willSet, mit den alten
+        // Favoriten.
+        brandPreferences.$favorites
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.applyLocalFilters() }
             .store(in: &cancellables)
     }
 
@@ -124,6 +142,31 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var driveFix: RouteTracker.Fix?
     /// Die Kacheln rechts, höchstens drei.
     @Published private(set) var drivingTiles: [DrivingTile] = []
+    /// Eine Station eines anderen Anbieters, wenn der nächste Favorit
+    /// hinter der Reserve liegt.
+    @Published private(set) var drivingFallback: DrivingTile?
+
+    // MARK: Bevorzugte Anbieter
+
+    let brands: ChargingBrands
+    let brandPreferences: BrandPreferences
+    /// Standorte ab der Leistung des Registers je Marke, für die Auswahl.
+    let brandSiteCounts: [String: Int]
+    /// Zeigt die Liste nur Favoriten? Die Kacheln tun es ohnehin, sobald
+    /// welche gewählt sind; die Liste lässt sich aufmachen, um zu sehen, was
+    /// es sonst noch gibt.
+    @Published var listOnlyFavorites = true
+
+    func isFavorite(_ item: AnnotatedStation) -> Bool {
+        isFavorite(item.station)
+    }
+
+    func isFavorite(_ station: ChargingStation) -> Bool {
+        guard let brand = station.brandID else { return false }
+        return brandPreferences.favorites.contains(brand)
+    }
+
+    var favoritesActive: Bool { brandPreferences.isActive }
 
     /// Was die Karte für die Fahrt tun soll.
     ///
@@ -204,8 +247,12 @@ final class TripViewModel: ObservableObject {
         )
     }
 
-    /// Stationen mit eigener Bewertung zuerst, ansonsten Reihenfolge entlang der Route.
-    var stationsForList: [AnnotatedStation] { stations }
+    /// Was Liste und Karte zeigen: bei gewählten Favoriten nur deren
+    /// Stationen, sofern der Schalter in der Liste nicht aufgemacht ist.
+    var stationsForList: [AnnotatedStation] {
+        guard favoritesActive, listOnlyFavorites else { return stations }
+        return stations.filter { isFavorite($0) }
+    }
 
     var editorialCount: Int { stations.filter(\.hasEditorialContent).count }
 
@@ -241,6 +288,7 @@ final class TripViewModel: ObservableObject {
         driveStartProgress = nil
         driveFix = nil
         drivingTiles = []
+        drivingFallback = nil
         isSimulatingDrive = simulated
         isDriving = true
 
@@ -263,6 +311,7 @@ final class TripViewModel: ObservableObject {
         tracker = nil
         driveFix = nil
         drivingTiles = []
+        drivingFallback = nil
         mapTrailingInset = 0
         driveCommands.send(.stop)
     }
@@ -315,14 +364,19 @@ final class TripViewModel: ObservableObject {
 
     private func refreshDrivingTiles() {
         guard isDriving, let fix = driveFix else { return }
-        drivingTiles = DrivingTiles.tiles(
+        let favorites = brandPreferences.favorites
+        let set = DrivingTiles.tilesWithFavorites(
             stations: stations,
+            isFavorite: { item in item.station.brandID.map(favorites.contains) ?? false },
+            favoritesActive: favoritesActive,
             progressMeters: fix.progressMeters,
             chargePercentNow: chargeNowPercent,
             percentPerKm: percentPerKm,
             reservePercent: vehicleStore.profile.minChargeAtStopPercent,
             plannedStopIDs: plannedStopIDs
         )
+        drivingTiles = set.tiles
+        drivingFallback = set.fallback
     }
 
     // MARK: Aktionen
@@ -458,7 +512,7 @@ final class TripViewModel: ObservableObject {
             if !ausRegister.isEmpty {
                 stationSource = .register
                 fetchedTier = powerTier
-                fetchedStations = editorialStore.annotate(ausRegister)
+                fetchedStations = editorialStore.annotate(withBrands(ausRegister))
                 applyLocalFilters()
                 phase = .ready
                 starteUmwege()
@@ -487,7 +541,7 @@ final class TripViewModel: ObservableObject {
                 routeGeometry: route.geometry,
                 maxDistanceMeters: Self.keepDistanceMeters
             )
-            fetchedStations = editorialStore.annotate(sortiert)
+            fetchedStations = editorialStore.annotate(withBrands(sortiert))
             applyLocalFilters()
             phase = .ready
         } catch {
@@ -544,7 +598,7 @@ final class TripViewModel: ObservableObject {
                 fetchedStations.compactMap { item in item.availability.map { (item.id, $0) } },
                 uniquingKeysWith: { first, _ in first }
             )
-            fetchedStations = editorialStore.annotate(sortiert).map { item in
+            fetchedStations = editorialStore.annotate(withBrands(sortiert)).map { item in
                 var angereichert = item
                 angereichert.availability = belegungen[item.id]
                 return angereichert
@@ -744,11 +798,32 @@ final class TripViewModel: ObservableObject {
             return
         }
 
+        let length = route.summary.length.converted(to: .meters).value
+        let minPower = powerTier.minPowerKW ?? 50
+
+        // Erst nur mit Favoriten. Geht die Strecke damit nicht auf, mit allen;
+        // die Liste kennzeichnet dann die Stopps, die kein Favorit sind.
+        if favoritesActive {
+            let favoriten = stations.filter { isFavorite($0) }
+            if !favoriten.isEmpty {
+                let plan = ChargingStopPlanner.plan(
+                    routeLengthMeters: length,
+                    stations: favoriten,
+                    vehicle: vehicleStore.profile,
+                    minPowerKW: minPower
+                )
+                if plan.isFeasible {
+                    chargingPlan = plan
+                    return
+                }
+            }
+        }
+
         chargingPlan = ChargingStopPlanner.plan(
-            routeLengthMeters: route.summary.length.converted(to: .meters).value,
+            routeLengthMeters: length,
             stations: stations,
             vehicle: vehicleStore.profile,
-            minPowerKW: powerTier.minPowerKW ?? 50
+            minPowerKW: minPower
         )
     }
 
@@ -843,4 +918,13 @@ final class TripViewModel: ObservableObject {
     private let editorialStore: EditorialStore
     private let registerStore: RegisterStore
     private let detourTable: DetourTable
+
+    /// Trägt die Marke an jeder Station ein, bevor sie in den Bestand geht.
+    private func withBrands(_ stations: [ChargingStation]) -> [ChargingStation] {
+        stations.map { station in
+            var tagged = station
+            tagged.brandID = brands.brand(for: station)?.id
+            return tagged
+        }
+    }
 }

@@ -180,9 +180,21 @@ private extension MapCoordinator {
         trip.$drivingTiles
             .map { $0.map(\.id) }
             .removeDuplicates()
-            .combineLatest(trip.$isDriving.removeDuplicates())
+            .combineLatest(
+                trip.$isDriving.removeDuplicates(),
+                trip.$drivingFallback.map { $0?.id }.removeDuplicates()
+            )
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, _ in
+            .sink { [weak self] _, _, _ in
+                MainActor.assumeIsolated { self?.redrawMarkers() }
+            }
+            .store(in: &cancellables)
+
+        // Der Schalter "nur Favoriten" in der Liste gilt auch für die Karte.
+        trip.$listOnlyFavorites
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
                 MainActor.assumeIsolated { self?.redrawMarkers() }
             }
             .store(in: &cancellables)
@@ -297,7 +309,7 @@ private extension MapCoordinator {
             return
         }
 
-        for (index, annotated) in trip.stations.enumerated() {
+        for (index, annotated) in trip.stationsForList.enumerated() {
             let image = MarkerImages.stationPin(
                 index: index + 1,
                 hasEditorial: annotated.hasEditorialContent,
@@ -350,6 +362,15 @@ private extension MapCoordinator {
                 tag: tile.id
             )
             place(options, on: map)
+        }
+
+        if let fallback = trip.drivingFallback {
+            shown.insert(fallback.id)
+            place(MarkerOptions(
+                coordinate: fallback.station.station.coordinate,
+                pinImage: MarkerImages.fallbackPin(isSelected: fallback.id == trip.selectedStationID),
+                tag: fallback.id
+            ), on: map)
         }
 
         let progress = trip.driveFix?.progressMeters ?? 0

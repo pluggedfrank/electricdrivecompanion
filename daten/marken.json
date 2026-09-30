@@ -1,0 +1,247 @@
+{
+ "hinweis": "Marken der Schnellladebetreiber. Ein Betreiber gehoert zu einer Marke, wenn sein Name (Register: Firmenname, TomTom: Markenname) eines der Muster enthaelt, ohne Gross- und Kleinschreibung. Reihenfolge nach Zahl der Standorte ab 150 kW im Register vom 01.09.2026. Gepflegt von Hand; der Test in tools/test prueft Abdeckung und Doppeltreffer gegen das Register.",
+ "marken": [
+  {
+   "id": "enbw",
+   "name": "EnBW",
+   "muster": [
+    "enbw"
+   ]
+  },
+  {
+   "id": "ewego",
+   "name": "EWE Go",
+   "muster": [
+    "ewe go"
+   ]
+  },
+  {
+   "id": "shell",
+   "name": "Shell Recharge",
+   "muster": [
+    "shell"
+   ]
+  },
+  {
+   "id": "aral",
+   "name": "Aral pulse",
+   "muster": [
+    "bp europa",
+    "aral"
+   ]
+  },
+  {
+   "id": "allego",
+   "name": "Allego",
+   "muster": [
+    "allego"
+   ]
+  },
+  {
+   "id": "pfalzwerke",
+   "name": "Pfalzwerke",
+   "muster": [
+    "pfalzwerke"
+   ]
+  },
+  {
+   "id": "tesla",
+   "name": "Tesla Supercharger",
+   "muster": [
+    "tesla"
+   ]
+  },
+  {
+   "id": "vattenfall",
+   "name": "Vattenfall InCharge",
+   "muster": [
+    "vattenfall"
+   ]
+  },
+  {
+   "id": "aldi",
+   "name": "Aldi",
+   "muster": [
+    "aldi s",
+    "aldi n",
+    "aldi "
+   ]
+  },
+  {
+   "id": "ionity",
+   "name": "Ionity",
+   "muster": [
+    "ionity"
+   ]
+  },
+  {
+   "id": "eon",
+   "name": "E.ON Drive",
+   "muster": [
+    "e.on"
+   ]
+  },
+  {
+   "id": "teag",
+   "name": "TEAG",
+   "muster": [
+    "teag mobil"
+   ]
+  },
+  {
+   "id": "comfortcharge",
+   "name": "Comfortcharge",
+   "muster": [
+    "comfortcharge"
+   ]
+  },
+  {
+   "id": "mer",
+   "name": "Mer",
+   "muster": [
+    "mer germany"
+   ]
+  },
+  {
+   "id": "circlek",
+   "name": "Circle K",
+   "muster": [
+    "circle k"
+   ]
+  },
+  {
+   "id": "total",
+   "name": "TotalEnergies",
+   "muster": [
+    "totalenergies"
+   ]
+  },
+  {
+   "id": "jolt",
+   "name": "Jolt",
+   "muster": [
+    "jolt"
+   ]
+  },
+  {
+   "id": "hen",
+   "name": "Hamburger Energiewerke",
+   "muster": [
+    "hamburger energiewerke"
+   ]
+  },
+  {
+   "id": "bilkraft",
+   "name": "Bilkraft",
+   "muster": [
+    "bilkraft"
+   ]
+  },
+  {
+   "id": "enercity",
+   "name": "enercity",
+   "muster": [
+    "enercity"
+   ]
+  },
+  {
+   "id": "edeka",
+   "name": "Edeka",
+   "muster": [
+    "edeka"
+   ]
+  },
+  {
+   "id": "esb",
+   "name": "Energie Südbayern",
+   "muster": [
+    "energie südbayern"
+   ]
+  },
+  {
+   "id": "citywatt",
+   "name": "Citywatt",
+   "muster": [
+    "citywatt"
+   ]
+  },
+  {
+   "id": "fastned",
+   "name": "Fastned",
+   "muster": [
+    "fastned"
+   ]
+  },
+  {
+   "id": "amperio",
+   "name": "amperio",
+   "muster": [
+    "amperio"
+   ]
+  },
+  {
+   "id": "autostrom",
+   "name": "Autostrom plus",
+   "muster": [
+    "autostrom"
+   ]
+  },
+  {
+   "id": "gpjoule",
+   "name": "GP Joule",
+   "muster": [
+    "gp joule"
+   ]
+  },
+  {
+   "id": "electra",
+   "name": "Electra",
+   "muster": [
+    "electra"
+   ]
+  },
+  {
+   "id": "orlen",
+   "name": "Orlen / Star",
+   "muster": [
+    "orlen"
+   ]
+  },
+  {
+   "id": "jet",
+   "name": "JET",
+   "muster": [
+    "jet tankstellen"
+   ]
+  },
+  {
+   "id": "westfalen",
+   "name": "Westfalen",
+   "muster": [
+    "westfalen ag"
+   ]
+  },
+  {
+   "id": "numbat",
+   "name": "Numbat",
+   "muster": [
+    "numbat"
+   ]
+  },
+  {
+   "id": "mercedes",
+   "name": "Mercedes-Benz Charging",
+   "muster": [
+    "mercedes-benz high-power",
+    "mercedes-benz charging"
+   ]
+  },
+  {
+   "id": "plenitude",
+   "name": "Plenitude",
+   "muster": [
+    "plenitude"
+   ]
+  }
+ ]
+}

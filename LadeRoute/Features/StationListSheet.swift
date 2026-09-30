@@ -25,7 +25,8 @@ struct StationListSheet: View {
                             StationRow(
                                 index: index + 1,
                                 item: item,
-                                isPlannedStop: trip.plannedStopIDs.contains(item.id)
+                                isPlannedStop: trip.plannedStopIDs.contains(item.id),
+                                isFavorite: trip.favoritesActive && trip.isFavorite(item)
                             )
                         }
                         .listRowBackground(
@@ -43,7 +44,7 @@ struct StationListSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("\(trip.stations.count) Ladestationen")
+                    Text("\(trip.stationsForList.count) Ladestationen")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                 }
@@ -206,7 +207,10 @@ struct StationListSheet: View {
                 // heisst "EWE Go GmbH", die Liste sagt "EWE Go", und der Plan
                 // soll dieselbe Sprache sprechen.
                 let name = stopp.station.name
-                return "km \(km) \(name), \(minuten) min"
+                // Geht die Strecke nur mit einem anderen Anbieter auf, soll
+                // man das sehen, bevor man dort ohne Vertrag steht.
+                let fremd = trip.favoritesActive && !trip.isFavorite(stopp.station) ? " (kein Favorit)" : ""
+                return "km \(km) \(name)\(fremd), \(minuten) min"
             }
             .joined(separator: "  ·  ")
     }
@@ -247,6 +251,21 @@ struct StationListSheet: View {
 
     private var filterRow: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if trip.favoritesActive {
+                Toggle(isOn: $trip.listOnlyFavorites) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Nur bevorzugte Anbieter")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.ink2)
+                        Text("\(trip.stations.filter { trip.isFavorite($0) }.count) von \(trip.stations.count) Stationen. Die Kacheln beim Fahren zeigen immer nur Favoriten.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.faint)
+                    }
+                }
+                .tint(Theme.signal)
+                .textCase(nil)
+            }
+
             VStack(alignment: .leading, spacing: 6) {
                 Picker("Ladeleistung", selection: $trip.powerTier) {
                     ForEach(PowerTier.allCases) { tier in
@@ -366,6 +385,8 @@ struct StationRow: View {
     /// Steht die Station im Ladeplan? Dann ist sie kein Vorschlag mehr,
     /// sondern der Halt, mit dem die Strecke aufgeht.
     var isPlannedStop = false
+    /// Gehört sie zu einem bevorzugten Anbieter?
+    var isFavorite = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -384,6 +405,12 @@ struct StationRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
+                    if isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Theme.busy)
+                            .accessibilityLabel("Bevorzugter Anbieter")
+                    }
                     Text(item.station.name)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Theme.ink)

@@ -136,3 +136,46 @@ export function kacheln({
 export function reichweitenLinie(liste) {
   return liste.findIndex((k) => !k.erreichbar);
 }
+
+/**
+ * Kacheln mit Favoriten, und eine Ausweichzeile, wenn es knapp wird.
+ *
+ * Sind Favoriten gewaehlt, zeigen die Kacheln nur deren Stationen. Liegt
+ * die naechste davon hinter der Reserve, oder kommt gar keine mehr, gibt es
+ * eine Ausweichstation eines anderen Anbieters: die fernste, die noch
+ * erreichbar ist. Die fernste, nicht die naechste, weil sie am weitesten
+ * bringt; erreichbar heisst ohnehin mit Reserve.
+ *
+ * Ohne Favoriten ist das Ergebnis dasselbe wie kacheln(), ohne Ausweichzeile.
+ */
+export function kachelnMitFavoriten(parameter) {
+  const { stationen, istFavorit, fortschritt, akkuJetzt, prozentJeKm, reserve = 10, vorbei = 100 } = parameter;
+  const favoriten = stationen.filter((s) => istFavorit(s));
+  // Aktiv, sobald Favoriten gewaehlt sind, auch wenn auf dieser Strecke
+  // keiner liegt: Dann gibt es eben nur die Ausweichzeile.
+  const aktiv = parameter.favoritenAktiv ?? favoriten.length > 0;
+  if (!aktiv) return { kacheln: kacheln(parameter), ausweich: null };
+
+  const liste = kacheln({ ...parameter, stationen: favoriten });
+  const knapp = liste.length === 0 || !liste[0].erreichbar;
+  if (!knapp) return { kacheln: liste, ausweich: null };
+
+  const reichweite = Math.max(0, ((akkuJetzt - reserve) / prozentJeKm) * 1000);
+  const kandidaten = stationen
+    .filter((s) => !istFavorit(s) && Number.isFinite(s.progressMeters) && s.progressMeters > fortschritt + vorbei)
+    .map((s) => ({ s, meter: s.progressMeters - fortschritt + zugangMeter(s) }))
+    .filter((k) => k.meter <= reichweite)
+    .sort((a, b) => b.meter - a.meter);
+  const beste = kandidaten[0];
+  const ausweich = beste
+    ? {
+        station: beste.s,
+        meter: beste.meter,
+        akkuBeiAnkunft: akkuJetzt - (beste.meter / 1000) * prozentJeKm,
+        erreichbar: true,
+        geplant: false,
+        weitere: 0,
+      }
+    : null;
+  return { kacheln: liste, ausweich };
+}

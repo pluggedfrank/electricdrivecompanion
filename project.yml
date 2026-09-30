@@ -44,6 +44,9 @@ targets:
       # Die Umwegtabelle, gefuellt von Probelaeufen und Korridorfahrten.
       - path: daten/umwege.json
         buildPhase: resources
+      # Marken der Ladebetreiber, fuer die bevorzugten Anbieter.
+      - path: daten/marken.json
+        buildPhase: resources
     configFiles:
       Debug: Secrets.xcconfig
       Release: Secrets.xcconfig

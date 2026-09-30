@@ -26,6 +26,7 @@ import * as registerquelle from '../lib/registerquelle.mjs';
 import * as umwege from '../lib/umwege.mjs';
 import * as tabelle from '../lib/umwegtabelle.mjs';
 import * as fahrt from '../lib/fahrt.mjs';
+import * as marken from '../lib/marken.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -1928,4 +1929,93 @@ test('umwegtabelle: Meter werden mitgeschrieben und gelesen', () => {
   assert.deepEqual(tabelle.nachschlagenEintrag(t, station, lage), {
     sekunden: 300, meter: 3400, verkehr: false, datum: '2026-09-30',
   });
+});
+
+
+// ------------------------------------------------------------- Marken
+
+const markenPfad = new URL('../../daten/marken.json', import.meta.url).pathname;
+const register150 = new URL('../../daten/standorte-150kw.json', import.meta.url).pathname;
+
+test('marken: Register-Firmennamen landen bei der Marke, die man kennt', () => {
+  const m = marken.ladeMarken(markenPfad);
+  const id = (name) => marken.markeVon(m, name)?.id ?? null;
+  assert.equal(id('BP Europa SE'), 'aral');
+  assert.equal(id('Aral pulse'), 'aral');
+  assert.equal(id('EnBW mobility+ AG und Co.KG'), 'enbw');
+  assert.equal(id('IONITY GmbH'), 'ionity');
+  assert.equal(id('Tesla Germany GmbH'), 'tesla');
+  assert.equal(id('ALDI SÜD Immobilienverwaltungs-GmbH & Co. oHG'), 'aldi');
+  assert.equal(id('Fastned Deutschland GmbH & Co. KG'), 'fastned');
+  assert.equal(id('Stadtwerke Duisburg AG'), null);
+  // STEAG enthaelt TEAG, ist aber ein anderer Betreiber.
+  assert.equal(id('STEAG Technischer Service GmbH'), null);
+  assert.equal(id('TEAG Mobil GmbH'), 'teag');
+});
+
+test('marken: kein Betreiber im Register passt auf zwei Marken', () => {
+  const m = marken.ladeMarken(markenPfad);
+  const betreiber = new Set(JSON.parse(readFileSync(register150, 'utf8')).standorte.map((s) => s.operator));
+  const doppelt = [...betreiber]
+    .map((b) => [b, marken.alleMarkenVon(m, b).map((x) => x.id)])
+    .filter(([, ids]) => ids.length > 1);
+  assert.deepEqual(doppelt, [], 'Muster ueberschneiden sich');
+});
+
+test('marken: die Tabelle deckt mindestens 70 Prozent der Standorte ab 150 kW', () => {
+  const m = marken.ladeMarken(markenPfad);
+  const standorte = JSON.parse(readFileSync(register150, 'utf8')).standorte;
+  const mitMarke = standorte.filter((s) => marken.markeVon(m, s.operator)).length;
+  const anteil = mitMarke / standorte.length;
+  assert.ok(anteil >= 0.7, `nur ${(anteil * 100).toFixed(1)} Prozent`);
+});
+
+
+test('kachelnMitFavoriten: nur Favoriten, keine Ausweichzeile, solange es reicht', () => {
+  const stationen = [
+    { id: 'fremd1', progressMeters: 10_000, detourSeconds: 0 },
+    { id: 'fav1', progressMeters: 30_000, detourSeconds: 0 },
+    { id: 'fremd2', progressMeters: 40_000, detourSeconds: 0 },
+    { id: 'fav2', progressMeters: 80_000, detourSeconds: 0 },
+  ];
+  const r = fahrt.kachelnMitFavoriten({
+    stationen, istFavorit: (s) => s.id.startsWith('fav'), fortschritt: 0, akkuJetzt: 60, prozentJeKm: 0.25,
+  });
+  assert.deepEqual(r.kacheln.map((k) => k.station.id), ['fav1', 'fav2']);
+  assert.equal(r.ausweich, null);
+});
+
+test('kachelnMitFavoriten: naechster Favorit zu weit, Ausweichen auf die fernste erreichbare', () => {
+  // 20 % Akku, Reserve 10 %, 0,25 %/km: 40 km Reichweite.
+  const stationen = [
+    { id: 'fremd1', progressMeters: 10_000, detourSeconds: 0 },
+    { id: 'fremd2', progressMeters: 35_000, detourSeconds: 0 },
+    { id: 'fremd3', progressMeters: 45_000, detourSeconds: 0 },  // zu weit
+    { id: 'fav1', progressMeters: 60_000, detourSeconds: 0 },
+  ];
+  const r = fahrt.kachelnMitFavoriten({
+    stationen, istFavorit: (s) => s.id.startsWith('fav'), fortschritt: 0, akkuJetzt: 20, prozentJeKm: 0.25,
+  });
+  assert.deepEqual(r.kacheln.map((k) => k.station.id), ['fav1']);
+  assert.equal(r.kacheln[0].erreichbar, false);
+  assert.equal(r.ausweich.station.id, 'fremd2');
+  assert.ok(Math.abs(r.ausweich.akkuBeiAnkunft - (20 - 35 * 0.25)) < 1e-9);
+});
+
+test('kachelnMitFavoriten: ohne Favoriten wie bisher', () => {
+  const stationen = [{ id: 'a', progressMeters: 10_000 }, { id: 'b', progressMeters: 20_000 }];
+  const r = fahrt.kachelnMitFavoriten({
+    stationen, istFavorit: () => false, fortschritt: 0, akkuJetzt: 50, prozentJeKm: 0.25,
+  });
+  assert.deepEqual(r.kacheln.map((k) => k.station.id), ['a', 'b']);
+  assert.equal(r.ausweich, null);
+});
+
+test('kachelnMitFavoriten: Favoriten gewaehlt, aber keiner auf der Strecke', () => {
+  const stationen = [{ id: 'a', progressMeters: 10_000 }, { id: 'b', progressMeters: 20_000 }];
+  const r = fahrt.kachelnMitFavoriten({
+    stationen, istFavorit: () => false, favoritenAktiv: true, fortschritt: 0, akkuJetzt: 50, prozentJeKm: 0.25,
+  });
+  assert.deepEqual(r.kacheln, []);
+  assert.equal(r.ausweich.station.id, 'b', 'die fernste erreichbare');
 });

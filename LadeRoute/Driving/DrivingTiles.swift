@@ -23,7 +23,77 @@ struct DrivingTile: Identifiable, Equatable {
     var id: String { station.id }
 }
 
+/// Kacheln und, wenn es knapp wird, eine Ausweichstation.
+struct DrivingTileSet: Equatable {
+    var tiles: [DrivingTile] = []
+    var fallback: DrivingTile?
+}
+
 enum DrivingTiles {
+    /// Kacheln mit Favoriten, und eine Ausweichzeile, wenn es knapp wird.
+    ///
+    /// Gegenstück zu kachelnMitFavoriten() in tools/lib/fahrt.mjs. Sind
+    /// Favoriten gewählt, zeigen die Kacheln nur deren Stationen. Liegt die
+    /// nächste davon hinter der Reserve, oder kommt gar keine mehr, gibt es
+    /// eine Ausweichstation eines anderen Anbieters: die fernste, die noch
+    /// erreichbar ist, weil sie am weitesten bringt.
+    static func tilesWithFavorites(
+        stations: [AnnotatedStation],
+        isFavorite: (AnnotatedStation) -> Bool,
+        favoritesActive: Bool,
+        progressMeters: Double,
+        chargePercentNow: Double,
+        percentPerKm: Double,
+        reservePercent: Double,
+        plannedStopIDs: Set<String>,
+        passedMeters: Double = 100
+    ) -> DrivingTileSet {
+        guard favoritesActive else {
+            return DrivingTileSet(tiles: tiles(
+                stations: stations,
+                progressMeters: progressMeters,
+                chargePercentNow: chargePercentNow,
+                percentPerKm: percentPerKm,
+                reservePercent: reservePercent,
+                plannedStopIDs: plannedStopIDs
+            ))
+        }
+
+        let favoriteTiles = tiles(
+            stations: stations.filter(isFavorite),
+            progressMeters: progressMeters,
+            chargePercentNow: chargePercentNow,
+            percentPerKm: percentPerKm,
+            reservePercent: reservePercent,
+            plannedStopIDs: plannedStopIDs
+        )
+        let tight = favoriteTiles.first.map { !$0.isReachable } ?? true
+        guard tight, percentPerKm > 0 else { return DrivingTileSet(tiles: favoriteTiles) }
+
+        let rangeMeters = max(0, (chargePercentNow - reservePercent) / percentPerKm * 1000)
+        let candidate = stations
+            .filter { !isFavorite($0) }
+            .compactMap { item -> (AnnotatedStation, Double)? in
+                guard let position = item.station.progressAlongRouteMeters,
+                      position > progressMeters + passedMeters else { return nil }
+                let meters = position - progressMeters + accessMeters(item.station)
+                return meters <= rangeMeters ? (item, meters) : nil
+            }
+            .max { $0.1 < $1.1 }
+
+        let fallback = candidate.map { item, meters in
+            DrivingTile(
+                station: item,
+                meters: meters,
+                arrivalPercent: chargePercentNow - meters / 1000 * percentPerKm,
+                isReachable: true,
+                isPlannedStop: plannedStopIDs.contains(item.id),
+                moreHere: 0
+            )
+        }
+        return DrivingTileSet(tiles: favoriteTiles, fallback: fallback)
+    }
+
     /// Weg von der Route bis zur Säule, einfach.
     ///
     /// Am genauesten ist die halbe Umwegstrecke. Kennt man nur die Umwegzeit,
