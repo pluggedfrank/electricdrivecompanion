@@ -157,6 +157,46 @@ final class TripViewModel: ObservableObject {
     /// ein paar hundert Meter, und wer wissen will, wo er auf der Strecke
     /// ist, sah das nicht (Rückmeldung von der ersten iPhone-Fahrt).
     @Published var drivingOverview = false
+
+    /// Die drei Ansichten der Fahrt, wie das Menü oben rechts sie anbietet.
+    /// Abgebildet auf `cameraNorthUp` (gemerkt) und `drivingOverview`.
+    enum CameraMode: CaseIterable, Identifiable {
+        case heading, northUp, overview
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .heading: return "Fahrtrichtung"
+            case .northUp: return "Norden oben"
+            case .overview: return "Gesamtroute"
+            }
+        }
+
+        var symbolName: String {
+            switch self {
+            case .heading: return "location.north.line.fill"
+            case .northUp: return "safari"
+            case .overview: return "map"
+            }
+        }
+    }
+
+    var cameraMode: CameraMode {
+        get { drivingOverview ? .overview : (cameraNorthUp ? .northUp : .heading) }
+        set {
+            switch newValue {
+            case .overview:
+                drivingOverview = true
+            case .northUp:
+                cameraNorthUp = true
+                drivingOverview = false
+            case .heading:
+                cameraNorthUp = false
+                drivingOverview = false
+            }
+        }
+    }
     /// Norden oben statt Fahrtrichtung oben. Wird gemerkt.
     @Published var cameraNorthUp = UserDefaults.standard.bool(forKey: "cameraNorthUp") {
         didSet { UserDefaults.standard.set(cameraNorthUp, forKey: "cameraNorthUp") }

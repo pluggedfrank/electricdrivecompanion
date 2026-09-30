@@ -32,7 +32,9 @@ struct DrivingOverlay: View {
             // Inhalt, und im Querformat schob sie die ganze Ansicht samt
             // Fahrleiste über den unteren Rand (30.09.2026). Jetzt passt die
             // Zahl der Kacheln sich an: quer meist zwei, hoch drei.
-            let railHeight = max(0, geometry.size.height - 8 - (landscape ? 10 : barHeight + 18))
+            // Oben rechts sitzt das Ansichtsmenü, die Kacheln beginnen darunter.
+            let menuSpace: CGFloat = 52
+            let railHeight = max(0, geometry.size.height - 8 - menuSpace - (landscape ? 10 : barHeight + 18))
             let maxTiles = landscape && railHeight < 380 ? 2 : 3
             let leftHeight = max(0, geometry.size.height - 8 - barHeight - 22)
 
@@ -42,9 +44,14 @@ struct DrivingOverlay: View {
                 rail(compact: !landscape, maxTiles: maxTiles)
                     .frame(width: railWidth, height: railHeight, alignment: .bottom)
                     .clipped()
-                    .padding(.top, 8)
+                    .padding(.top, 8 + menuSpace)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(.trailing, 10)
+
+                cameraMenu
+                    .padding(.top, 8)
+                    .padding(.trailing, 10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 
                 guidancePanel(compact: !landscape)
                     .frame(width: leftWidth, alignment: .leading)
@@ -101,10 +108,35 @@ struct DrivingOverlay: View {
                         .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
                 }
                 .buttonStyle(.plain)
-            } else {
-                roundButton("map", label: "Ganze Route zeigen") { trip.drivingOverview = true }
             }
         }
+    }
+
+    /// Oben rechts: welche Ansicht. Fahrtrichtung, Norden oben oder die
+    /// ganze Route; vorher verteilt auf den Kameraknopf in der Fahrleiste
+    /// und einen Kartenknopf links.
+    private var cameraMenu: some View {
+        Menu {
+            ForEach(TripViewModel.CameraMode.allCases) { mode in
+                Button {
+                    trip.cameraMode = mode
+                } label: {
+                    if mode == trip.cameraMode {
+                        Label(mode.title, systemImage: "checkmark")
+                    } else {
+                        Label(mode.title, systemImage: mode.symbolName)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: trip.cameraMode.symbolName)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.ink)
+                .frame(width: 44, height: 44)
+                .background(Theme.paper.opacity(0.97), in: Circle())
+                .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+        }
+        .accessibilityLabel("Ansicht: \(trip.cameraMode.title)")
     }
 
     private func roundButton(_ systemImage: String, label: String, action: @escaping () -> Void) -> some View {
@@ -301,15 +333,6 @@ struct DrivingOverlay: View {
                 label: nil,
                 accessibility: trip.voiceEnabled ? "Ansagen an. Tippen zum Stummschalten." : "Ansagen aus. Tippen zum Einschalten."
             ) { trip.voiceEnabled.toggle() }
-
-            barButton(
-                systemImage: trip.cameraNorthUp ? "location.north.line.fill" : "location.north.line",
-                label: nil,
-                accessibility: trip.cameraNorthUp ? "Karte: Norden oben. Tippen für Fahrtrichtung." : "Karte: Fahrtrichtung oben. Tippen für Norden oben."
-            ) {
-                // Aus der Übersicht führt der Kameraknopf zurück zur Fahrt.
-                if trip.drivingOverview { trip.drivingOverview = false } else { trip.cameraNorthUp.toggle() }
-            }
         }
         .padding(.horizontal, 10)
         .background(Theme.paper.opacity(0.97), in: RoundedRectangle(cornerRadius: 18))
