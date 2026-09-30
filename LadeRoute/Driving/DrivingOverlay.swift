@@ -378,8 +378,10 @@ struct StationActionCard: View {
     private var details: String {
         var parts: [String] = []
         if let kw = item.station.maxPowerKW { parts.append("\(Int(kw)) kW") }
-        if let availability = item.availability, availability.known > 0 {
-            parts.append("\(availability.available)/\(availability.total) frei")
+        if let free = item.availabilityText {
+            parts.append(free)
+        } else if let size = item.sizeText {
+            parts.append(size)
         }
         if let detour = item.station.detourSeconds { parts.append("Umweg \(Int((detour / 60).rounded())) min") }
         let street = item.station.address.split(separator: ",").first.map(String.init) ?? ""
@@ -643,16 +645,30 @@ struct DrivingTileView: View {
                     chip("+\(Int((detour / 60).rounded())) min", background: Theme.river.opacity(tile.isPlannedStop ? 0.35 : 0.12),
                          foreground: tile.isPlannedStop ? Color(hex: 0xBFDDEC) : Theme.river)
                 }
-                if !compact, let availability = tile.station.availability, availability.known > 0 {
-                    chip("\(availability.available)/\(availability.total) frei",
-                         background: Theme.free.opacity(tile.isPlannedStop ? 0.3 : 0.12),
-                         foreground: tile.isPlannedStop ? Color(hex: 0xBDE6CD) : Theme.free)
-                }
                 if !compact, tile.moreHere > 0 {
                     Text("+\(tile.moreHere) weitere")
                         .font(.system(size: 11))
                         .foregroundStyle(secondary)
                 }
+            }
+
+            // Belegung, wenn sie da ist, sonst die Größe des Standorts: Ein
+            // Ladepark mit zwölf Punkten ist eine andere Wette als eine Säule.
+            if let free = tile.station.availabilityText {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(tile.station.availability?.isUsable == true ? Theme.free : Theme.busy)
+                        .frame(width: 7, height: 7)
+                    Text(free)
+                        .font(.system(size: compact ? 11 : 12, weight: .semibold).monospacedDigit())
+                }
+                .foregroundStyle(tile.isPlannedStop ? Color(hex: 0xBDE6CD) : Theme.ink2)
+            } else if let size = tile.station.sizeText {
+                Text(size)
+                    .font(.system(size: compact ? 11 : 12).monospacedDigit())
+                    .foregroundStyle(secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
         }
         .foregroundStyle(primary)

@@ -482,8 +482,12 @@ struct StationRow: View {
                     }
                 }
 
-                if let availability = item.availability {
-                    availabilityLine(availability)
+                if let availability = item.availability, availability.known > 0 {
+                    availabilityLine(availability, size: item.station.deviceCount)
+                } else if let size = item.sizeText {
+                    Text(size)
+                        .font(.system(size: 12).monospacedDigit())
+                        .foregroundStyle(Theme.meta)
                 }
 
                 if let editorial = item.editorial, editorial.isTested {
@@ -503,12 +507,12 @@ struct StationRow: View {
             .background(Theme.panel, in: RoundedRectangle(cornerRadius: 4))
     }
 
-    private func availabilityLine(_ availability: StationAvailability) -> some View {
+    private func availabilityLine(_ availability: StationAvailability, size devices: Int?) -> some View {
         HStack(spacing: 5) {
             Circle()
                 .fill(availability.isUsable ? Theme.free : Theme.busy)
                 .frame(width: 6, height: 6)
-            Text("\(availability.available) von \(availability.total) frei")
+            Text("\(availability.available) von \(availability.total) frei" + (devices.map { $0 > 1 ? " · \($0) Säulen" : " · 1 Säule" } ?? ""))
                 .font(.system(size: 12).monospacedDigit())
                 .foregroundStyle(Theme.meta)
         }

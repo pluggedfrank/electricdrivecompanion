@@ -34,6 +34,10 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     var isFromRegister = false
     /// Die Marke des Betreibers, sofern sie in daten/marken.json steht.
     var brandID: String?
+    /// Größe des Standorts laut Ladesäulenregister: Säulen und Ladepunkte.
+    /// TomTom liefert das nicht; dort kommt die Zahl erst mit der Belegung.
+    var deviceCount: Int?
+    var pointCount: Int?
     /// Seitlicher Abstand zur Route. Aus der Antwort, sofern vorhanden, sonst
     /// aus der eigenen Projektion.
     var distanceFromRouteMeters: Double?

@@ -66,6 +66,12 @@ struct StationDetailView: View {
                 if let power = station.station.maxPowerKW {
                     metric("max.", String(format: "%.0f kW", power))
                 }
+                if let devices = station.station.deviceCount, devices > 0 {
+                    metric("Säulen", "\(devices)")
+                }
+                if let points = station.pointTotal, points > 0 {
+                    metric("Ladepunkte", "\(points)")
+                }
             }
             .padding(.top, 6)
         }

@@ -164,4 +164,29 @@ struct AnnotatedStation: Identifiable, Hashable, Sendable {
 
     /// Die Station steht in unserem Bestand, ob getestet oder nicht.
     var isOnEditorialList: Bool { editorial != nil }
+
+    /// Wie viele Ladepunkte es gibt: aus der Belegung, sonst aus dem Register.
+    var pointTotal: Int? {
+        if let availability, availability.total > 0 { return availability.total }
+        return station.pointCount
+    }
+
+    /// "4 von 13 frei", wenn die Belegung bekannt ist.
+    var availabilityText: String? {
+        guard let availability, availability.known > 0 else { return nil }
+        return "\(availability.available) von \(availability.total) frei"
+    }
+
+    /// Größe des Standorts: "6 Säulen · 13 Ladepunkte". Damit ist zu sehen,
+    /// ob es ein Ladepark ist oder eine einzelne Säule.
+    var sizeText: String? {
+        var parts: [String] = []
+        if let devices = station.deviceCount, devices > 0 {
+            parts.append(devices == 1 ? "1 Säule" : "\(devices) Säulen")
+        }
+        if let points = pointTotal, points > 0 {
+            parts.append(points == 1 ? "1 Ladepunkt" : "\(points) Ladepunkte")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
 }

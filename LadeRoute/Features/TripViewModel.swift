@@ -553,6 +553,23 @@ final class TripViewModel: ObservableObject {
         drivingTiles = set.tiles
         drivingFallback = set.fallback
         drivingFallbackReason = set.fallbackReason
+        refreshTileAvailability()
+    }
+
+    /// Belegung der Kacheln während der Fahrt, ohne Antippen: für die drei
+    /// Kacheln und die Ausweichzeile, je Station höchstens alle fünf Minuten.
+    /// Eine Fahrt von 300 km sieht so vielleicht dreißig Stationen in den
+    /// Kacheln, das sind rund sechzig Abfragen; die Liste zieht weiter erst
+    /// beim Antippen nach.
+    private func refreshTileAvailability() {
+        guard isDriving else { return }
+        let ids = drivingTiles.map(\.id) + (drivingFallback.map { [$0.id] } ?? [])
+        let now = Date()
+        for id in ids {
+            if let last = availabilityRequestedAt[id], now.timeIntervalSince(last) < 300 { continue }
+            availabilityRequestedAt[id] = now
+            Task { [weak self] in await self?.loadAvailability(for: id, refresh: true) }
+        }
     }
 
     // MARK: Ladestopps
@@ -1267,17 +1284,23 @@ final class TripViewModel: ObservableObject {
 
     /// Live-Belegung erst beim Antippen holen, nicht für alle Treffer auf einmal.
     /// Das spart im Freemium-Kontingent den Löwenanteil der Anfragen.
-    private func loadAvailability(for stationID: String) async {
+    ///
+    /// `refresh` holt sie neu, auch wenn schon eine da ist: für die Kacheln
+    /// während der Fahrt, alle fünf Minuten.
+    private func loadAvailability(for stationID: String, refresh: Bool = false) async {
         // In den Bestand geschrieben, nicht in die Anzeige: `stations` ist eine
         // abgeleitete Sicht, ein späterer Filterwechsel würde die Belegung
         // sonst wieder wegwerfen.
         guard let index = fetchedStations.firstIndex(where: { $0.id == stationID }) else { return }
-        guard fetchedStations[index].availability == nil else { return }
+        guard refresh || fetchedStations[index].availability == nil else { return }
 
         // Registerstandorte kennen keine TomTom-Kennung. Eine Umkreissuche an
         // der Stelle holt sie nach, einmal, und merkt sie sich im Bestand.
+        // Nur einmal je Station: Findet die Umkreissuche nichts, kostete jeder
+        // weitere Versuch wieder eine Search-Anfrage.
         if fetchedStations[index].station.availabilityID == nil,
-           fetchedStations[index].station.isFromRegister {
+           fetchedStations[index].station.isFromRegister,
+           availabilityLookupTried.insert(stationID).inserted {
             let punkt = fetchedStations[index].station.coordinate
             if let treffer = try? await api.nearestChargingStation(to: punkt),
                let current = fetchedStations.firstIndex(where: { $0.id == stationID }) {
@@ -1524,6 +1547,8 @@ final class TripViewModel: ObservableObject {
     private var lastDriveCoordinate: CLLocationCoordinate2D?
     private var realPositionSubscription: AnyCancellable?
     private var needsReplan = false
+    private var availabilityRequestedAt: [String: Date] = [:]
+    private var availabilityLookupTried = Set<String>()
     /// Wo auf der aktuellen Route die Station liegt, über die geroutet wird.
     private var viaProgressMeters: Double?
     private var handledSimulatedStops = Set<String>()

@@ -273,6 +273,16 @@ Rechnung und Tests: `tools/lib/ansage.mjs`, gegen eine echte Antwort
 Meerbusch–Norddeich (`tools/test/fixtures/anweisungen-meerbusch-norddeich.json`,
 erzeugt mit dem Probelauf `zielfuehrung-probe.mjs --fixture`).
 
+## Größe und Belegung der Stationen (Stand 30.09.2026)
+
+Jede Kachel, jede Zeile der Liste und die Detailansicht zeigen die Größe des
+Standorts aus dem Register („6 Säulen · 13 Ladepunkte“), damit ein Ladepark von
+einer einzelnen Säule zu unterscheiden ist. Ist die Belegung bekannt, steht dort
+„4 von 13 frei“. Während der Fahrt holt die App die Belegung für die drei
+Kacheln und die Ausweichzeile selbst, je Station höchstens alle fünf Minuten;
+in der Liste weiter erst beim Antippen. Für Registerstandorte kostet die erste
+Abfrage eine Umkreissuche (TomTom-Kennung), und zwar nur einmal je Station.
+
 ## Gespeicherte Ziele (Stand 30.09.2026)
 
 Zuhause und Arbeit als Knöpfe unter dem Suchfeld, ein Tipp startet die Route.

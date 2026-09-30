@@ -138,6 +138,8 @@ extension ChargingStation {
             Connector(type: nil, ratedPowerKW: site.maxPowerKW, currentType: "DC")
         }
         categories = ["Electric Vehicle Station"]
+        deviceCount = site.deviceCount
+        pointCount = site.pointCount
         availabilityID = nil
         detourSeconds = nil
         detourMeters = nil
