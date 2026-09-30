@@ -182,6 +182,42 @@ verwirrend, denn ein Ziel steht ja schon. Es bleibt trotzdem stehen, weil daraus
 die Eingabe von Zwischenzielen wird: Wer unterwegs einen Halt einschieben will,
 sucht ihn dort. Bis dahin ist die Doppeldeutigkeit in Kauf genommen.
 
+### Stand am 30.09.2026
+
+Gebaut nach dem Konzept „Fahransicht LadeRoute"
+(https://claude.ai/artifact/Cw4CHJhntL2dVZHtTfZixe), im Simulator geprüft:
+
+- **Losfahren oder simulieren.** Unter der Stationsliste zwei Knöpfe. Die
+  Simulation fährt die Route zehnfach schnell ab; dafür bekommt die Karte einen
+  simulierten Standortgeber des SDK untergeschoben, Pfeil und Kacheln kommen
+  so aus derselben Position.
+- **Drei Kacheln rechts, die nächste unten.** Strecke bis zur Säule auf der
+  Route (plus halbe Umwegstrecke), Akku bei Ankunft, Betreiber und Straße,
+  Leistung, Umweg ab 2 Minuten, Belegung nach Antippen. Stationen innerhalb
+  von 2 km zu einer Kachel gebündelt, der geplante Ladestopp dunkel, eine
+  Linie dort, wo die Reserve endet. Die Reihenfolge von unten nach oben war
+  ein Wunsch nach der ersten Simulation: Was als Nächstes kommt, steht am Auto.
+- **Die Karte zeigt nur, was in den Kacheln steht**, nummeriert wie die
+  Kacheln, dazu die geplanten Ladestopps.
+- **Kamera im Routenmodus der TomTom-Navigation** (`followRouteDirection`):
+  geneigt, Richtung aus der Route statt aus dem GPS-Rauschen. Ein Knopf
+  schaltet auf Norden oben.
+- **Bevorzugte Anbieter.** 34 Marken im Fahrzeugprofil (`daten/marken.json`,
+  75 Prozent der Standorte ab 150 kW). Mit Favoriten zeigen Kacheln, Liste und
+  Karte nur deren Stationen; die Ladeplanung nimmt andere nur, wenn es ohne
+  nicht geht.
+- **Ausweichzeile, wenn es knapp wird.** Liegt die nächste Kachel hinter der
+  Reserve, sucht sie gestuft: anderer Anbieter mit der gewählten Leistung,
+  dann Favorit mit weniger Leistung, dann irgendwer ab 150 kW. Jeweils die
+  fernste erreichbare Station.
+
+Die Rechnung dahinter (Lage auf der Route, Kachelauswahl, Ausweichen) hat ihr
+Gegenstück mit Tests in `tools/lib/fahrt.mjs`.
+
+Offen: Die Kacheln rutschen nach unten, wo später die Fahrleiste der
+Zielführung hingehört; das wird mit der Ansage neu geordnet. Der Akku wird ab
+Abfahrt heruntergerechnet, nach einem Ladestopp aber nicht aufgefüllt.
+
 ## Was der Schlüssel darf
 
 Stand 10.09.2026, aus dem Selbstbedienungskatalog des Dashboards.
@@ -485,18 +521,20 @@ Zwei Stränge, die parallel laufen können.
 
 **Navi**
 
-1. Presseanfrage an TomTom entwerfen, Ziel: Konditionen und Versuchskontingent
-   für das Navigation SDK.
-2. Fahrzeugprofil anlegen: Kapazität, Verbrauch, Ladestand. Voraussetzung für
-   alles Weitere.
-3. Long Distance EV Routing anbinden und gegen die bisherige Routenplanung
-   stellen. Ergebnis: Ladestopps stecken in der Route statt daneben, und die
-   Suche schrumpft von neunundvierzig Anfragen auf eine.
-4. Fahransicht bauen: Kärtchen am Bildrand mit Entfernung entlang der Route und
-   Umweg in Minuten.
+1. Presseanfrage an TomTom: Entwurf liegt in `docs/tomtom-presseanfrage.md`,
+   noch nicht verschickt.
+2. ~~Fahrzeugprofil anlegen.~~
+3. Long Distance EV Routing anbinden (freigeschaltet, Parameterformat noch
+   nicht geknackt). Nachrangig, seit Register und Umwegtabelle die Suche
+   ersetzen.
+4. ~~Fahransicht bauen.~~ Stand siehe oben.
 5. Ansage bauen: Manöverliste, Entfernung zum nächsten Manöver, Sprachausgabe,
-   Abweichungserkennung.
-6. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
+   Abweichungserkennung und Neuplanung. Mit dem Navigation SDK oder als
+   Eigenbau aus den Routing-Anweisungen. Dabei Kacheln und Fahrleiste neu
+   ordnen.
+6. Akku nach einem Ladestopp auffüllen: Ankunft an der Säule erkennen, nach
+   der Weiterfahrt den Stand abfragen oder schätzen.
+7. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
 
 **State of Charge**
 
