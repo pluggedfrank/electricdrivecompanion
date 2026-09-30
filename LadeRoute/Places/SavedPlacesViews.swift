@@ -15,7 +15,7 @@ struct SavedPlacesBar: View {
             chip(for: .home)
             chip(for: .work)
             Button(action: onShowAll) {
-                Label("Gespeichert", systemImage: "list.star")
+                Label(store.recents.isEmpty ? "Gespeichert" : "Ziele", systemImage: "list.star")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 12)
@@ -188,6 +188,46 @@ struct SavedPlacesSheet: View {
     var body: some View {
         NavigationStack {
             List {
+                if !store.recents.isEmpty {
+                    Section {
+                        ForEach(store.recents) { place in
+                            Button {
+                                onChoose(place)
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .foregroundStyle(Theme.meta)
+                                        .frame(width: 22)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(place.name).foregroundStyle(Theme.ink)
+                                        if let address = place.address {
+                                            Text(address)
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(Theme.meta)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                }
+                            }
+                            .swipeActions {
+                                Button("Speichern") { editing = SavedPlace(
+                                    name: place.name, address: place.address,
+                                    latitude: place.latitude, longitude: place.longitude, category: .other
+                                ) }
+                                .tint(Theme.busy)
+                            }
+                        }
+                    } header: {
+                        HStack {
+                            Text("Zuletzt")
+                            Spacer()
+                            Button("Leeren") { store.clearRecents() }
+                                .font(.system(size: 12))
+                                .textCase(nil)
+                        }
+                    }
+                }
                 if store.places.isEmpty {
                     Section {
                         Text("Noch nichts gespeichert. Ein Ziel suchen, dann oben auf den Stern tippen. Zuhause und Arbeit lassen sich dort als Kategorie wählen.")
@@ -229,7 +269,7 @@ struct SavedPlacesSheet: View {
                     }
                 }
             }
-            .navigationTitle("Gespeicherte Ziele")
+            .navigationTitle("Ziele")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -237,7 +277,7 @@ struct SavedPlacesSheet: View {
                 }
             }
             .sheet(item: $editing) { place in
-                SavePlaceSheet(store: store, initial: place, isExisting: true)
+                SavePlaceSheet(store: store, initial: place, isExisting: store.places.contains { $0.id == place.id })
             }
         }
     }

@@ -81,9 +81,35 @@ final class SavedPlacesStore: ObservableObject {
            let decoded = try? JSONDecoder().decode([SavedPlace].self, from: data) {
             places = decoded
         }
+        if let data = defaults.data(forKey: Self.recentsKey),
+           let decoded = try? JSONDecoder().decode([SavedPlace].self, from: data) {
+            recents = decoded
+        }
+    }
+
+    /// Merkt ein Ziel als letztes. Dasselbe Ziel (innerhalb von 30 m) rückt
+    /// nach vorn statt doppelt zu stehen.
+    func remember(name: String, address: String?, coordinate: CLLocationCoordinate2D) {
+        recents.removeAll { GeoUtils.distance($0.coordinate, coordinate) <= 30 }
+        recents.insert(
+            SavedPlace(name: name, address: address, latitude: coordinate.latitude, longitude: coordinate.longitude, category: .other),
+            at: 0
+        )
+        if recents.count > 10 { recents.removeLast(recents.count - 10) }
+        if let data = try? JSONEncoder().encode(recents) {
+            defaults.set(data, forKey: Self.recentsKey)
+        }
+    }
+
+    func clearRecents() {
+        recents = []
+        defaults.removeObject(forKey: Self.recentsKey)
     }
 
     @Published private(set) var places: [SavedPlace] = []
+    /// Die letzten Ziele, neueste zuerst, höchstens zehn. Automatisch, bei
+    /// jedem neuen Ziel; "Route verwerfen" löscht sie nicht.
+    @Published private(set) var recents: [SavedPlace] = []
 
     func place(for category: PlaceCategory) -> SavedPlace? {
         places.first { $0.category == category }
@@ -128,6 +154,7 @@ final class SavedPlacesStore: ObservableObject {
     }
 
     private static let key = "savedPlaces"
+    private static let recentsKey = "recentPlaces"
     private let defaults: UserDefaults
 
     private func persist() {

@@ -326,6 +326,10 @@ private extension MapCoordinator {
     func redrawRoute(_ route: TomTomSDKRoute.Route?) {
         guard let map else { return }
 
+        // Erst die eigene Linie gezielt, dann alles: removeRoutes() allein hat
+        // nach "Route verwerfen" die Linie stehen lassen (30.09.2026), wie
+        // vorher removeAnnotations() die Nadeln.
+        if let routeOnMap { map.removeRoute(routeOnMap) }
         map.removeRoutes()
         routeOnMap = nil
 

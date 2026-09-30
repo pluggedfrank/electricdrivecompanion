@@ -886,6 +886,11 @@ final class TripViewModel: ObservableObject {
         chosenPlaceName = name
         chosenPlace = place
         viaStation = nil
+        savedPlaces.remember(
+            name: name ?? "Ort auf der Karte",
+            address: place?.subtitle,
+            coordinate: coordinate
+        )
         starteSuche()
     }
 

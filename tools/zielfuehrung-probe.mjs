@@ -92,3 +92,47 @@ if (args.fixture) {
   }) + '\n');
   console.log(`\nTestdatei geschrieben: ${ziel}`);
 }
+
+// --rekonstruktion: Stimmen Anweisungen und Linie ueberein, wenn die zweite
+// Anfrage die Linie der ersten als Stuetzpunkte mitbekommt? Anlass: In der
+// Simulation sagte die Ansage die Hauptstrasse an, die Karte zeigte die
+// Necklenbroicher Strasse. Hier wird eine Route ueber einen Zwischenpunkt
+// erzwungen, ihre Linie als supportingPoints an eine Anfrage OHNE
+// Zwischenpunkt gegeben, und geprueft, ob die Antwort dieser Linie folgt.
+if (args.rekonstruktion) {
+  const ueber = koord(args.ueber ?? '51.2605,6.7040');
+  const erzwungen = new URL(`${ev.BASE_URL}/routing/1/calculateRoute/${from.lat},${from.lon}:${ueber.lat},${ueber.lon}:${to.lat},${to.lon}/json`);
+  erzwungen.searchParams.set('key', apiKey);
+  erzwungen.searchParams.set('traffic', 'true');
+  erzwungen.searchParams.set('travelMode', 'car');
+  const r1 = await ev.requestWithRetry(fetch, erzwungen, {});
+  const j1 = await r1.json();
+  const linie = j1.routes[0].legs.flatMap((l) => l.points);
+  console.log(`\nRekonstruktion: Referenz ueber ${ueber.lat},${ueber.lon}: ${(j1.routes[0].summary.lengthInMeters / 1000).toFixed(1)} km, ${linie.length} Punkte`);
+
+  const url2 = new URL(`${ev.BASE_URL}/routing/1/calculateRoute/${from.lat},${from.lon}:${to.lat},${to.lon}/json`);
+  url2.searchParams.set('key', apiKey);
+  url2.searchParams.set('traffic', 'true');
+  url2.searchParams.set('travelMode', 'car');
+  url2.searchParams.set('instructionsType', 'text');
+  url2.searchParams.set('language', 'de-DE');
+  const r2 = await ev.requestWithRetry(fetch, url2, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ supportingPoints: linie.map((p) => ({ latitude: p.latitude, longitude: p.longitude })) }),
+  });
+  if (!r2.ok) {
+    console.log(`Mit Stuetzpunkten: HTTP ${r2.status} ${(await r2.text()).slice(0, 400)}`);
+  } else {
+    const j2 = await r2.json();
+    const route2 = j2.routes[0];
+    const anw = route2.guidance?.instructions ?? [];
+    const { distance } = await import('./lib/geo.mjs');
+    const ref = linie.map((p) => ({ lat: p.latitude, lon: p.longitude }));
+    const abstand = (p) => Math.min(...ref.map((q) => distance(q, p)));
+    const weit = anw.filter((a) => abstand({ lat: a.point.latitude, lon: a.point.longitude }) > 50);
+    console.log(`Mit Stuetzpunkten: ${(route2.summary.lengthInMeters / 1000).toFixed(1)} km, ${anw.length} Anweisungen, davon ${weit.length} mehr als 50 m neben der Referenz`);
+    for (const a of anw.slice(0, 8)) console.log(`  ${(a.routeOffsetInMeters / 1000).toFixed(1)} km  ${a.message}`);
+    for (const a of weit.slice(0, 5)) console.log(`  DANEBEN: ${a.message}`);
+  }
+}
