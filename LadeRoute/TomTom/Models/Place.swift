@@ -15,6 +15,9 @@ struct Place: Identifiable, Hashable, Sendable {
     let longitude: Double
     /// Luftlinie vom Suchmittelpunkt, wenn die Antwort sie mitliefert.
     let distanceMeters: Double?
+    /// Einordnung der Search-API, etwa "electric vehicle station". Daraus
+    /// kommt der Kategorievorschlag beim Speichern.
+    let categories: [String]
 
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
@@ -40,5 +43,6 @@ struct Place: Identifiable, Hashable, Sendable {
         latitude = result.position.lat
         longitude = result.position.lon
         distanceMeters = result.dist
+        categories = result.poi?.categories ?? []
     }
 }

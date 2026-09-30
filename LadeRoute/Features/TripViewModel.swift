@@ -40,6 +40,7 @@ final class TripViewModel: ObservableObject {
         detourCalculator = DetourCalculator(api: api)
         routePlanner = RoutePlannerService(apiKey: apiKey)
         speaker = Speaker()
+        savedPlaces = SavedPlacesStore()
 
         // Ohne receive(on:): Die Quelle ist selbst @MainActor und veröffentlicht
         // dort, ein Umweg über die Queue brächte nur eine Bildschirmaktualisierung
@@ -130,6 +131,10 @@ final class TripViewModel: ObservableObject {
     /// Name des zuletzt gewählten Ziels, für die Kopfzeile. Beim Ziel per
     /// langem Druck gibt es keinen.
     @Published private(set) var chosenPlaceName: String?
+    /// Der Suchtreffer dazu, für Adresse und Kategorie beim Speichern.
+    @Published private(set) var chosenPlace: Place?
+    /// Gespeicherte Ziele.
+    let savedPlaces: SavedPlacesStore
     @Published var mapIsReady = false
     @Published var mapBottomInset: CGFloat = 0
     /// Platz rechts, den die Kacheln der Fahransicht belegen. Die Karte
@@ -857,8 +862,12 @@ final class TripViewModel: ObservableObject {
 
     // MARK: Aktionen
 
-    func setDestination(_ coordinate: CLLocationCoordinate2D) {
+    /// Neues Ziel. Vom langen Druck auf die Karte ohne Namen; die Kopfzeile
+    /// zeigte vorher den Namen des vorigen Ziels weiter.
+    func setDestination(_ coordinate: CLLocationCoordinate2D, name: String? = nil, place: Place? = nil) {
         destination = coordinate
+        chosenPlaceName = name
+        chosenPlace = place
         viaStation = nil
         starteSuche()
     }
@@ -867,8 +876,14 @@ final class TripViewModel: ObservableObject {
     func choosePlace(_ place: Place) {
         destinationQuery = ""
         placeResults = []
-        chosenPlaceName = place.title
-        setDestination(place.coordinate)
+        setDestination(place.coordinate, name: place.title, place: place)
+    }
+
+    /// Fährt ein gespeichertes Ziel an.
+    func chooseSaved(_ saved: SavedPlace) {
+        destinationQuery = ""
+        placeResults = []
+        setDestination(saved.coordinate, name: saved.name)
     }
 
     func clearPlaceSearch() {
@@ -906,6 +921,7 @@ final class TripViewModel: ObservableObject {
         selectedStationID = nil
         destination = nil
         chosenPlaceName = nil
+        chosenPlace = nil
         phase = .idle
         clearPlaceSearch()
     }

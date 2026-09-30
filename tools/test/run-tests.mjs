@@ -31,6 +31,7 @@ import * as ansage from '../lib/ansage.mjs';
 import * as akku from '../lib/akku.mjs';
 import * as quellen from '../lib/quellen.mjs';
 import * as abweichung from '../lib/abweichung.mjs';
+import * as ziele from '../lib/ziele.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -2343,4 +2344,22 @@ test('neuPlanen: erst ab drei Positionen daneben und nicht oefter als alle 20 Se
   assert.equal(abweichung.neuPlanen({ abseits: 2, position }), false);
   assert.equal(abweichung.neuPlanen({ abseits: 3, position, sekundenSeit: 10 }), false);
   assert.equal(abweichung.neuPlanen({ abseits: 3, position, sekundenSeit: 25 }), true);
+});
+
+// ---------------------------------------------------------------- Ziele
+
+test('kategorieFuer: Vorschlag aus den Kategorien der Suche', () => {
+  assert.equal(ziele.kategorieFuer(['electric vehicle station']), 'laden');
+  assert.equal(ziele.kategorieFuer(['supermarkets & hypermarkets']), 'einkaufen');
+  assert.equal(ziele.kategorieFuer(['restaurant', 'italian']), 'essen');
+  assert.equal(ziele.kategorieFuer(['café/pub']), 'essen');
+  assert.equal(ziele.kategorieFuer(['hotel/motel']), 'sonstiges');
+  // Eine Adresse ohne POI.
+  assert.equal(ziele.kategorieFuer([]), 'sonstiges');
+});
+
+test('gespeichertBei: dasselbe Ziel innerhalb von 30 m', () => {
+  const liste = [{ id: 'a', lat: 51.25, lon: 6.69 }];
+  assert.equal(ziele.gespeichertBei(liste, oestlich(liste[0], 20), geo.distance)?.id, 'a');
+  assert.equal(ziele.gespeichertBei(liste, oestlich(liste[0], 60), geo.distance), null);
 });

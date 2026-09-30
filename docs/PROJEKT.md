@@ -273,6 +273,17 @@ Rechnung und Tests: `tools/lib/ansage.mjs`, gegen eine echte Antwort
 Meerbusch–Norddeich (`tools/test/fixtures/anweisungen-meerbusch-norddeich.json`,
 erzeugt mit dem Probelauf `zielfuehrung-probe.mjs --fixture`).
 
+## Gespeicherte Ziele (Stand 30.09.2026)
+
+Zuhause und Arbeit als Knöpfe unter dem Suchfeld, ein Tipp startet die Route.
+Der Stern in der Kopfzeile speichert das aktuelle Ziel mit Name und Kategorie:
+Zuhause, Arbeit, Ladestationen, Einkaufen, Essen & Trinken, Sonstiges. Die
+Kategorie wird aus der Einordnung der Search-API vorgeschlagen (Regel und
+Tests: `tools/lib/ziele.mjs`). „Gespeichert" zeigt alles nach Kategorien,
+Wischen löscht oder bearbeitet. Beim Tippen in die Suche stehen passende
+gespeicherte Ziele oben. Gespeichert wird auf dem Gerät (UserDefaults).
+Nächste Ausbaustufe: eigene Kategorien.
+
 ## Aufs iPhone
 
 Signiert wird automatisch mit dem Team aus `Secrets.xcconfig`

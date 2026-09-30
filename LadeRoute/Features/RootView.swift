@@ -10,6 +10,15 @@ struct RootView: View {
     @State private var showsResults = false
     @FocusState private var searchFieldFocused: Bool
     @State private var showsVehicleSheet = false
+    @State private var showsSavedPlaces = false
+    @State private var saveDraft: SaveDraft?
+
+    /// Was das Speicherblatt bekommt: das Ziel und ob es schon gespeichert ist.
+    private struct SaveDraft: Identifiable {
+        let place: SavedPlace
+        let isExisting: Bool
+        var id: UUID { place.id }
+    }
 
     init(apiKey: String) {
         _trip = StateObject(wrappedValue: TripViewModel(apiKey: apiKey))
@@ -27,7 +36,16 @@ struct RootView: View {
                 planningChrome
             }
         }
-        .sheet(isPresented: $showsVehicleSheet) {
+        .sheet(isPresented: $showsSavedPlaces, onDismiss: restoreResults) {
+            SavedPlacesSheet(store: trip.savedPlaces) { place in
+                searchFieldFocused = false
+                trip.chooseSaved(place)
+            }
+        }
+        .sheet(item: $saveDraft, onDismiss: restoreResults) { draft in
+            SavePlaceSheet(store: trip.savedPlaces, initial: draft.place, isExisting: draft.isExisting)
+        }
+        .sheet(isPresented: $showsVehicleSheet, onDismiss: restoreResults) {
             VehicleProfileSheet(
                 store: trip.vehicleStore,
                 preferences: trip.brandPreferences,
@@ -61,6 +79,21 @@ struct RootView: View {
         VStack(spacing: 10) {
             header
             searchField
+            if trip.destinationQuery.isEmpty {
+                SavedPlacesBar(
+                    store: trip.savedPlaces,
+                    onChoose: { place in
+                        searchFieldFocused = false
+                        trip.chooseSaved(place)
+                    },
+                    onShowAll: { presentOverResults { showsSavedPlaces = true } }
+                )
+            } else {
+                SavedMatchesList(store: trip.savedPlaces, query: trip.destinationQuery) { place in
+                    searchFieldFocused = false
+                    trip.chooseSaved(place)
+                }
+            }
             if !trip.placeResults.isEmpty {
                 placeResultList
             }
@@ -221,6 +254,47 @@ struct RootView: View {
             : String(format: "%.0f km", meters / 1000)
     }
 
+    // MARK: Blätter
+
+    /// Ein zweites Blatt lässt SwiftUI nicht aufgehen, solange die
+    /// Stationsliste offen ist. Also die Liste kurz schließen, das andere
+    /// Blatt öffnen und die Liste danach wieder zeigen.
+    private func presentOverResults(_ present: @escaping () -> Void) {
+        guard showsResults else {
+            present()
+            return
+        }
+        showsResults = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: present)
+    }
+
+    private func restoreResults() {
+        showsResults = !trip.isDriving && !trip.stations.isEmpty
+    }
+
+    // MARK: Ziele speichern
+
+    /// Öffnet das Speicherblatt: für ein gespeichertes Ziel zum Bearbeiten,
+    /// sonst mit Name und Kategorievorschlag aus dem Suchtreffer.
+    private func openSaveSheet() {
+        guard let destination = trip.destination else { return }
+        if let existing = trip.savedPlaces.saved(at: destination) {
+            saveDraft = SaveDraft(place: existing, isExisting: true)
+            return
+        }
+        let place = trip.chosenPlace
+        saveDraft = SaveDraft(
+            place: SavedPlace(
+                name: trip.chosenPlaceName ?? "Ziel",
+                address: place?.subtitle ?? place?.title,
+                latitude: destination.latitude,
+                longitude: destination.longitude,
+                category: PlaceCategory.suggested(for: place?.categories ?? [])
+            ),
+            isExisting: false
+        )
+    }
+
     // MARK: Kopfzeile
 
     private var header: some View {
@@ -247,8 +321,12 @@ struct RootView: View {
 
             Spacer()
 
+            if trip.destination != nil {
+                SaveStarButton(store: trip.savedPlaces, trip: trip) { presentOverResults { openSaveSheet() } }
+            }
+
             Button {
-                showsVehicleSheet = true
+                presentOverResults { showsVehicleSheet = true }
             } label: {
                 Image(systemName: "car")
                     .font(.system(size: 13, weight: .semibold))
