@@ -2102,17 +2102,29 @@ test('entfernungGesprochen: gerundet und im Dativ', () => {
   assert.equal(ansage.entfernungGesprochen(12_300), '12 Kilometern');
 });
 
+test('beschilderung: E, L und K nur, wenn sonst nichts dasteht', () => {
+  assert.equal(ansage.beschilderung('Fahren Sie auf die Autobahn A57/E31'), 'Fahren Sie auf die Autobahn A57');
+  assert.equal(ansage.beschilderung('Biegen Sie rechts ab auf Moerser Straße/L137'), 'Biegen Sie rechts ab auf Moerser Straße');
+  assert.equal(ansage.beschilderung('Biegen Sie links ab auf L1637/Hauptstraße'), 'Biegen Sie links ab auf Hauptstraße');
+  assert.equal(ansage.beschilderung('Folgen Sie A2/E34/E30 Richtung Hannover'), 'Folgen Sie A2 Richtung Hannover');
+  assert.equal(ansage.beschilderung('Kölner Straße/B8'), 'Kölner Straße/B8');
+  assert.equal(ansage.beschilderung('Biegen Sie rechts ab auf L137'), 'Biegen Sie rechts ab auf L137');
+  const [a] = ansage.anweisungenAusAntwort([{ routeOffsetInMeters: 0, point: { latitude: 0, longitude: 0 }, maneuver: 'TURN_LEFT', message: 'Biegen Sie links ab auf A57/E31' }]);
+  assert.equal(a.text, 'Biegen Sie links ab auf A57');
+});
+
 test('sprechbar: Strassennummern so, wie man sie sagt', () => {
   assert.equal(ansage.sprechbar('Folgen Sie B1 Richtung Dortmund'), 'Folgen Sie B eins Richtung Dortmund');
-  assert.equal(ansage.sprechbar('Fahren Sie auf die Autobahn A57/E31'), 'Fahren Sie auf die Autobahn A 57');
-  assert.equal(ansage.sprechbar('Biegen Sie rechts ab auf Moerser Straße/L137'), 'Biegen Sie rechts ab auf Moerser Straße, L 137');
-  assert.equal(ansage.sprechbar('Folgen Sie A3/E35 Richtung Köln'), 'Folgen Sie A 3 Richtung Köln');
+  assert.equal(ansage.sprechbar('Kölner Straße/B8'), 'Kölner Straße, B 8');
+  assert.equal(ansage.sprechbar('Folgen Sie A3 Richtung Köln'), 'Folgen Sie A 3 Richtung Köln');
   assert.equal(ansage.sprechbar('Fahren Sie auf A1 und dann auf A10'), 'Fahren Sie auf A eins und dann auf A 10');
   assert.equal(ansage.sprechbar('Biegen Sie links ab auf Brühler Weg'), 'Biegen Sie links ab auf Brühler Weg');
-  // Alle Anweisungen der Testroute: kein Schraegstrich, keine Nummer am Buchstaben.
+  // Alle Anweisungen der Testroute, wie die App sie sagt: kein Schraegstrich,
+  // keine Nummer am Buchstaben, keine Europastrasse neben einer Autobahn.
   const f = JSON.parse(readFileSync(join(here, 'fixtures', 'anweisungen-meerbusch-norddeich.json'), 'utf8'));
-  for (const a of f.anweisungen) {
-    const s = ansage.sprechbar(a.message);
+  for (const a of ansage.anweisungenAusAntwort(f.anweisungen)) {
+    assert.ok(!/\/[EKL]\d/.test(a.text), a.text);
+    const s = ansage.sprechbar(a.text);
     assert.ok(!s.includes('/'), s);
     assert.ok(!/\b[A-Z]{1,2}\d/.test(s), s);
   }

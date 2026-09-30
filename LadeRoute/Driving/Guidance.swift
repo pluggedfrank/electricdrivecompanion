@@ -59,8 +59,8 @@ enum Guidance {
                 offsetMeters: a.routeOffsetInMeters,
                 point: CLLocationCoordinate2D(latitude: a.point.latitude, longitude: a.point.longitude),
                 maneuver: a.maneuver,
-                text: a.message,
-                combinedText: a.combinedMessage
+                text: signed(a.message),
+                combinedText: a.combinedMessage.map(signed)
             )
         }
     }
@@ -115,13 +115,22 @@ enum Guidance {
         value == value.rounded() ? String(Int(value)) : comma(String(value))
     }
 
-    /// Macht den Text der Routing-API sprechbar: "B1" wird "B eins" statt
-    /// "B eine", "A52" wird "A 52", "A57/E31" wird "A 57", und ein übriger
-    /// Schrägstrich wird zur Pause. Gegenstück zu sprechbar() in
+    /// Lässt weg, was so nicht auf den Schildern steht: Europastraßen,
+    /// Landes- und Kreisstraßennummern, sobald daneben ein anderer Name
+    /// steht. "A57/E31" wird "A57", "Moerser Straße/L137" wird "Moerser
+    /// Straße". Allein bleibt die Nummer. Gegenstück zu beschilderung() in
     /// tools/lib/ansage.mjs.
+    static func signed(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: #"/[EKL]\d{1,4}\b"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"\b[EKL]\d{1,4}/"#, with: "", options: .regularExpression)
+    }
+
+    /// Macht den Text sprechbar: "B1" wird "B eins" statt "B eine", "A52"
+    /// wird "A 52", und ein verbliebener Schrägstrich wird zur Pause.
+    /// Gegenstück zu sprechbar() in tools/lib/ansage.mjs.
     static func speakable(_ text: String) -> String {
         var s = text
-        s = s.replacingOccurrences(of: #"\b([A-Z]{1,2}\d{1,4})/E\d{1,3}\b"#, with: "$1", options: .regularExpression)
         s = s.replacingOccurrences(of: #"\s*/\s*"#, with: ", ", options: .regularExpression)
         s = s.replacingOccurrences(of: #"\b([A-Z]{1,2})1\b"#, with: "$1 eins", options: .regularExpression)
         s = s.replacingOccurrences(of: #"\b([A-Z]{1,2})(\d{1,4})\b"#, with: "$1 $2", options: .regularExpression)

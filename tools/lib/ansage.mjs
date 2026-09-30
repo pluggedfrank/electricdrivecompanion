@@ -22,9 +22,23 @@ export function anweisungenAusAntwort(instructions) {
     offset: a.routeOffsetInMeters,
     punkt: { lat: a.point.latitude, lon: a.point.longitude },
     manoever: a.maneuver,
-    text: a.message,
-    kombiniert: a.combinedMessage ?? null,
+    text: beschilderung(a.message),
+    kombiniert: a.combinedMessage ? beschilderung(a.combinedMessage) : null,
   }));
+}
+
+/**
+ * Laesst weg, was so nicht auf den Schildern steht (Rueckmeldung vom
+ * 30.09.2026): Europastrassen, Landes- und Kreisstrassennummern, sobald
+ * daneben ein anderer Name steht. "A57/E31" wird "A57", "Moerser
+ * Straße/L137" wird "Moerser Straße". Steht die Nummer allein, bleibt sie,
+ * sonst hiesse es "Biegen Sie rechts ab auf".
+ * Gegenstueck: Guidance.signed in Swift.
+ */
+export function beschilderung(text) {
+  return String(text)
+    .replace(/\/[EKL]\d{1,4}\b/g, '')
+    .replace(/\b[EKL]\d{1,4}\//g, '');
 }
 
 /**
@@ -87,20 +101,18 @@ export function stufeFuer(abstand, tempo) {
 const komma = (x) => String(x).replace('.', ',');
 
 /**
- * Macht den Text der Routing-API sprechbar.
+ * Macht den Text sprechbar, nach beschilderung().
  *
  * Die iOS-Stimme las "B1" als "B eine" (Rueckmeldung vom 30.09.2026) und
  * einen Schraegstrich als Wort. Deshalb:
- * - "A57/E31": Die Europastrasse steht nur doppelt da, gesagt wird die erste.
- * - uebrige Schraegstriche werden zur Pause: "Moerser Straße/L137" wird
- *   "Moerser Straße, L 137".
+ * - verbliebene Schraegstriche werden zur Pause: "Kölner Straße/B8" wird
+ *   "Kölner Straße, B 8".
  * - Strassennummern bekommen ein Leerzeichen, "A52" wird "A 52", und die 1
  *   heisst "eins": "B1" wird "B eins".
  * Gegenstueck: Guidance.speakable in Swift.
  */
 export function sprechbar(text) {
   return String(text)
-    .replace(/\b([A-Z]{1,2}\d{1,4})\/E\d{1,3}\b/g, '$1')
     .replace(/\s*\/\s*/g, ', ')
     .replace(/\b([A-Z]{1,2})1\b/g, '$1 eins')
     .replace(/\b([A-Z]{1,2})(\d{1,4})\b/g, '$1 $2');
