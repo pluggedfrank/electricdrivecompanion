@@ -1,6 +1,7 @@
 //  DrivingOverlay.swift
-//  Die Fahransicht: rechts drei Kacheln mit den nächsten Ladern, unten links
-//  Ankunft, Reststrecke und Akku, oben links der Knopf zum Beenden.
+//  Die Fahransicht: oben links die nächste Anweisung, rechts drei Kacheln
+//  mit den nächsten Ladern, unten die Fahrleiste mit Ankunft, Reststrecke,
+//  Akku und den Knöpfen.
 //
 //  Konzept: https://claude.ai/artifact/Cw4CHJhntL2dVZHtTfZixe
 //  Regeln daraus, die hier umgesetzt sind: höchstens drei Kacheln, kein
@@ -10,6 +11,11 @@
 //  Die nächste Station steht unten, die fernste oben, wie die Straße vor
 //  einem: Was als Nächstes kommt, ist am Auto. Wunsch vom 30.09. nach der
 //  ersten Simulation; das Konzept hatte es andersherum.
+//
+//  Aufteilung seit der Zielführung: Die Anweisung gehört dorthin, wo der
+//  Blick zuerst hinfällt, nach oben links. Die Fahrleiste geht unten über
+//  die ganze Breite, im Querformat nur unter der Karte, damit die Kacheln
+//  die volle Höhe behalten.
 
 import SwiftUI
 
@@ -20,6 +26,8 @@ struct DrivingOverlay: View {
         GeometryReader { geometry in
             let landscape = geometry.size.width > geometry.size.height
             let railWidth = landscape ? geometry.size.width * 0.30 : geometry.size.width * 0.40
+            let leftWidth = geometry.size.width - railWidth - 32
+            let barHeight: CGFloat = landscape ? 58 : 62
 
             ZStack(alignment: .topLeading) {
                 Color.clear
@@ -27,25 +35,58 @@ struct DrivingOverlay: View {
                 rail(compact: !landscape)
                     .frame(width: railWidth)
                     .frame(maxHeight: .infinity, alignment: .bottom)
-                    .padding(.vertical, landscape ? 10 : 70)
+                    .padding(.top, 8)
+                    .padding(.bottom, landscape ? 10 : barHeight + 18)
                     .padding(.trailing, 10)
                     .frame(maxWidth: .infinity, alignment: .trailing)
 
-                HStack(spacing: 8) {
-                    stopButton
-                    cameraButton
-                }
-                .padding(.leading, 14)
-                .padding(.top, 8)
+                guidancePanel(compact: !landscape)
+                    .frame(width: leftWidth, alignment: .leading)
+                    .padding(.leading, 12)
+                    .padding(.top, 8)
 
-                statusBar(compact: !landscape)
-                    .padding(.leading, 14)
-                    .padding(.bottom, 12)
+                drivingBar(compact: !landscape)
+                    .frame(height: barHeight)
+                    .frame(width: landscape ? leftWidth : geometry.size.width - 20)
+                    .padding(.leading, landscape ? 12 : 10)
+                    .padding(.bottom, 8)
                     .frame(maxHeight: .infinity, alignment: .bottomLeading)
             }
             .onAppear { trip.mapTrailingInset = railWidth + 20 }
             .onChange(of: railWidth) { _, width in trip.mapTrailingInset = width + 20 }
         }
+    }
+
+    // MARK: Anweisung
+
+    @ViewBuilder
+    private func guidancePanel(compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if trip.isRerouting {
+                notice("Route wird neu berechnet …", systemImage: "arrow.triangle.2.circlepath")
+            } else if let maneuver = trip.nextManeuver {
+                ManeuverBanner(maneuver: maneuver, compact: compact)
+            } else if let problem = trip.guidanceProblem {
+                notice(problem, systemImage: "speaker.slash")
+            } else if trip.guidance.isEmpty {
+                notice("Anweisungen werden geladen …", systemImage: "hourglass")
+            }
+            if let fix = trip.driveFix, !fix.isOnRoute {
+                notice("Nicht auf der Route, \(Int(fix.offsetMeters)) m daneben", systemImage: "exclamationmark.triangle")
+            }
+        }
+        .animation(.easeOut(duration: 0.25), value: trip.nextManeuver?.instruction.id)
+    }
+
+    private func notice(_ text: String, systemImage: String) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Theme.ink)
+            .lineLimit(2)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Theme.paper.opacity(0.96), in: RoundedRectangle(cornerRadius: 14))
+            .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
     }
 
     // MARK: Kacheln
@@ -88,11 +129,6 @@ struct DrivingOverlay: View {
                     .onTapGesture { trip.selectStation(id: fallback.id) }
                     .transition(.opacity)
             }
-            if let offRoute = trip.driveFix, !offRoute.isOnRoute {
-                Text("Nicht auf der Route, \(Int(offRoute.offsetMeters)) m daneben")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Theme.signal)
-            }
         }
         .animation(.easeOut(duration: 0.35), value: trip.drivingTiles.map(\.id))
     }
@@ -132,70 +168,127 @@ struct DrivingOverlay: View {
             )
     }
 
-    // MARK: Status und Bedienung
+    // MARK: Fahrleiste
 
-    private var stopButton: some View {
-        Button {
-            trip.stopDriving()
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
-                Text(trip.isSimulatingDrive ? "Simulation beenden" : "Fahrt beenden")
-                    .font(.system(size: 13, weight: .semibold))
+    private func drivingBar(compact: Bool) -> some View {
+        HStack(spacing: compact ? 10 : 16) {
+            barButton(
+                systemImage: "xmark",
+                label: compact ? nil : (trip.isSimulatingDrive ? "Simulation beenden" : "Beenden"),
+                accessibility: trip.isSimulatingDrive ? "Simulation beenden" : "Fahrt beenden"
+            ) { trip.stopDriving() }
+
+            if trip.isSimulatingDrive {
+                Button { trip.cycleSimulationFactor() } label: {
+                    Text("\(Int(trip.simulationFactor))×")
+                        .font(.system(size: 14, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(Theme.river)
+                        .frame(minWidth: 40, minHeight: 40)
+                        .background(Theme.river.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Tempo der Simulation, \(Int(trip.simulationFactor))-fach. Tippen zum Wechseln.")
             }
-            .foregroundStyle(Theme.ink)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(Theme.paper.opacity(0.96), in: Capsule())
-            .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
-        }
-        .buttonStyle(.plain)
-    }
 
-    /// Fahrtrichtung oben oder Norden oben.
-    private var cameraButton: some View {
-        Button {
-            trip.cameraNorthUp.toggle()
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: trip.cameraNorthUp ? "location.north.line.fill" : "location.north.line")
-                    .font(.system(size: 12, weight: .bold))
-                Text(trip.cameraNorthUp ? "Norden oben" : "Fahrtrichtung")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(Theme.ink)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(Theme.paper.opacity(0.96), in: Capsule())
-            .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(trip.cameraNorthUp ? "Karte: Norden oben. Tippen für Fahrtrichtung." : "Karte: Fahrtrichtung oben. Tippen für Norden oben.")
-    }
-
-    private func statusBar(compact: Bool) -> some View {
-        HStack(spacing: compact ? 14 : 22) {
+            Spacer(minLength: 0)
             statusValue(trip.arrivalTimeText, "Ankunft", compact: compact)
             statusValue("\(Int(trip.remainingKm.rounded())) km", "bis Ziel", compact: compact)
             statusValue("\(Int(trip.chargeNowPercent.rounded())) %", "Akku jetzt", compact: compact)
+            Spacer(minLength: 0)
+
+            barButton(
+                systemImage: trip.voiceEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill",
+                label: nil,
+                accessibility: trip.voiceEnabled ? "Ansagen an. Tippen zum Stummschalten." : "Ansagen aus. Tippen zum Einschalten."
+            ) { trip.voiceEnabled.toggle() }
+
+            barButton(
+                systemImage: trip.cameraNorthUp ? "location.north.line.fill" : "location.north.line",
+                label: nil,
+                accessibility: trip.cameraNorthUp ? "Karte: Norden oben. Tippen für Fahrtrichtung." : "Karte: Fahrtrichtung oben. Tippen für Norden oben."
+            ) { trip.cameraNorthUp.toggle() }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background(Theme.paper.opacity(0.96), in: RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+        .padding(.horizontal, 10)
+        .background(Theme.paper.opacity(0.97), in: RoundedRectangle(cornerRadius: 18))
+        .shadow(color: .black.opacity(0.14), radius: 10, y: 2)
+    }
+
+    private func barButton(systemImage: String, label: String?, accessibility: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 15, weight: .bold))
+                if let label {
+                    Text(label)
+                        .font(.system(size: 13, weight: .semibold))
+                }
+            }
+            .foregroundStyle(Theme.ink)
+            .frame(minWidth: 40, minHeight: 40)
+            .padding(.horizontal, label == nil ? 0 : 10)
+            .background(Theme.panel, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibility)
     }
 
     private func statusValue(_ value: String, _ label: String, compact: Bool) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value)
-                .font(.system(size: compact ? 19 : 23, weight: .bold, design: .rounded).monospacedDigit())
+                .font(.system(size: compact ? 18 : 22, weight: .bold, design: .rounded).monospacedDigit())
                 .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             Text(label)
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 9, weight: .medium))
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.meta)
+                .lineLimit(1)
         }
+    }
+}
+
+// MARK: - Anweisung
+
+/// Die nächste Anweisung: Pfeil, Strecke bis dahin, der Satz der API und,
+/// wenn gleich danach die nächste kommt, ein kleines "Dann".
+struct ManeuverBanner: View {
+    let maneuver: TripViewModel.Maneuver
+    let compact: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: maneuver.instruction.symbolName)
+                    .font(.system(size: compact ? 30 : 36, weight: .bold))
+                    .frame(width: compact ? 40 : 48)
+                Text(Guidance.shortDistance(maneuver.distanceMeters))
+                    .font(.system(size: compact ? 30 : 36, weight: .bold, design: .rounded).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            Text(maneuver.instruction.text)
+                .font(.system(size: compact ? 14 : 16, weight: .semibold))
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+            if let then = maneuver.then {
+                HStack(spacing: 6) {
+                    Text("Dann")
+                        .font(.system(size: 11, weight: .bold))
+                        .textCase(.uppercase)
+                    Image(systemName: then.symbolName)
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundStyle(Color(hex: 0xCFC7BC))
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.18), radius: 10, y: 3)
+        .accessibilityElement(children: .combine)
     }
 }
 

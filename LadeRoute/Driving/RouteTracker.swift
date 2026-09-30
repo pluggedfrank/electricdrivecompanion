@@ -74,6 +74,28 @@ struct RouteTracker {
         )
     }
 
+    /// Der nächste Punkt der Route zu `point`, gesucht ab `startIndex`
+    /// vorwärts bis zum Ende. Für die Anweisungen der Zielführung: Sie liegen
+    /// der Reihe nach auf der Route, und die Suche ab der vorigen hält eine
+    /// Ausfahrt vom Gegenast eines Kreuzes fern. Gegenstück zur Suche in
+    /// verorteAnweisungen() in tools/lib/ansage.mjs.
+    func nearest(
+        to point: CLLocationCoordinate2D,
+        from startIndex: Int
+    ) -> (index: Int, offsetMeters: Double, progressMeters: Double)? {
+        guard points.count >= 2 else { return nil }
+        var best: (index: Int, offsetMeters: Double, progressMeters: Double)?
+        for i in max(0, startIndex) ..< points.count - 1 {
+            let (t, offset) = Self.project(point, onto: points[i], points[i + 1])
+            // Echt kleiner: Kommt die Route zweimal an denselben Punkt, gilt der erste.
+            if best == nil || offset < best!.offsetMeters {
+                best = (i, offset, cumulative[i] + t * (cumulative[i + 1] - cumulative[i]))
+            }
+            if best!.offsetMeters < 1 { break }
+        }
+        return best
+    }
+
     // MARK: Private
 
     private static let snapMeters: Double = 300

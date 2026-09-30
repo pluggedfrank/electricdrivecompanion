@@ -27,6 +27,7 @@ import * as umwege from '../lib/umwege.mjs';
 import * as tabelle from '../lib/umwegtabelle.mjs';
 import * as fahrt from '../lib/fahrt.mjs';
 import * as marken from '../lib/marken.mjs';
+import * as ansage from '../lib/ansage.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -2063,4 +2064,146 @@ test('kachelnMitFavoriten: ohne Favoriten schlaegt die Zeile eine schwaechere Sa
   assert.deepEqual(r.kacheln.map((k) => k.station.id), ['hpc']);
   assert.equal(r.ausweich.station.id, 'dc150');
   assert.equal(r.ausweich.grund, 'wenigerLeistung');
+});
+
+// ---------------------------------------------------------------- Ansage
+
+// Echte Antwort der Routing-API, Meerbusch nach Norddeich, mit Routenpunkten.
+// Erzeugt mit: Probelauf zielfuehrung-probe.mjs --fixture
+const zielfuehrung = () => {
+  const f = fixture('anweisungen-meerbusch-norddeich.json');
+  const lage = fahrt.routenLage(f.punkte.map(([lat, lon]) => ({ lat, lon })));
+  const anweisungen = ansage.verorteAnweisungen(ansage.anweisungenAusAntwort(f.anweisungen), lage);
+  return { f, lage, anweisungen };
+};
+
+/** Faehrt die Route in gleichen Schritten ab und sammelt, was gesagt wird. */
+const abfahren = (anweisungen, laenge, tempo, schritt) => {
+  const zustand = ansage.neuerAnsager();
+  const gesagt = [];
+  // Ein Schritt ueber das Ende hinaus: Dort steht die Simulation zuletzt.
+  for (let m = 0; m <= laenge + schritt; m += schritt) {
+    const r = ansage.schritt(zustand, anweisungen, m, tempo);
+    if (r.text) gesagt.push({ bei: m, index: r.index, stufe: r.stufe, text: r.text });
+  }
+  return gesagt;
+};
+
+test('entfernungGesprochen: gerundet und im Dativ', () => {
+  assert.equal(ansage.entfernungGesprochen(120), '100 Metern');
+  assert.equal(ansage.entfernungGesprochen(480), '500 Metern');
+  assert.equal(ansage.entfernungGesprochen(1000), 'einem Kilometer');
+  assert.equal(ansage.entfernungGesprochen(1480), '1,5 Kilometern');
+  assert.equal(ansage.entfernungGesprochen(2000), '2 Kilometern');
+  assert.equal(ansage.entfernungGesprochen(12_300), '12 Kilometern');
+});
+
+test('entfernungKurz: fuer die Anzeige', () => {
+  assert.equal(ansage.entfernungKurz(87), '90 m');
+  assert.equal(ansage.entfernungKurz(260), '250 m');
+  assert.equal(ansage.entfernungKurz(1540), '1,5 km');
+  assert.equal(ansage.entfernungKurz(209_000), '209 km');
+});
+
+test('ansageText: Entfernung vor den Satz der API, kombiniert ab "nah"', () => {
+  const links = { manoever: 'TURN_LEFT', text: 'Biegen Sie links ab auf Brühler Weg', kombiniert: null };
+  assert.equal(ansage.ansageText(links, 'frueh', 480), 'In 500 Metern biegen Sie links ab auf Brühler Weg');
+  assert.equal(ansage.ansageText(links, 'jetzt', 30), 'Biegen Sie links ab auf Brühler Weg');
+  const doppelt = { manoever: 'TAKE_EXIT', text: 'Nehmen Sie die Ausfahrt 25', kombiniert: 'Nehmen Sie die Ausfahrt 25 dann bleiben Sie links' };
+  assert.equal(ansage.ansageText(doppelt, 'frueh', 2000), 'In 2 Kilometern nehmen Sie die Ausfahrt 25');
+  assert.equal(ansage.ansageText(doppelt, 'nah', 600), 'In 600 Metern nehmen Sie die Ausfahrt 25 dann bleiben Sie links');
+  // "jetzt" kurz, ausser "nah" ist ausgefallen.
+  assert.equal(ansage.ansageText(doppelt, 'jetzt', 100), 'Nehmen Sie die Ausfahrt 25');
+  assert.equal(ansage.ansageText(doppelt, 'jetzt', 100, 0, { mitDann: true }), doppelt.kombiniert);
+  const folgen = { manoever: 'FOLLOW', text: 'Folgen Sie A31 Richtung Bottrop-Kirchhellen', kombiniert: null };
+  assert.equal(ansage.ansageText(folgen, 'frueh', 1500, 209_000), null);
+  assert.equal(ansage.ansageText(folgen, 'jetzt', 50, 209_088), 'Folgen Sie A31 Richtung Bottrop-Kirchhellen für 209 Kilometer');
+  // Kurz danach kommt die naechste Abbiegung: kein "Folgen Sie".
+  assert.equal(ansage.ansageText(folgen, 'jetzt', 50, 5_000), null);
+  const ziel = { manoever: 'ARRIVE_LEFT', text: 'Sie sind angekommen. Ihr Ziel liegt auf der linken Seite', kombiniert: null };
+  assert.equal(ansage.ansageText(ziel, 'nah', 190), 'In 200 Metern erreichen Sie Ihr Ziel');
+  assert.equal(ansage.ansageText(ziel, 'jetzt', 20), ziel.text);
+  assert.equal(ansage.ansageText({ manoever: 'DEPART', text: 'Abfahrt' }, 'jetzt', 0), null);
+});
+
+test('verorteAnweisungen: jede Anweisung an ihrer Stelle der Routenlinie', () => {
+  const { f, lage, anweisungen } = zielfuehrung();
+  assert.equal(anweisungen.length, f.anweisungen.length);
+  let vorher = -1;
+  for (const a of anweisungen) {
+    assert.ok(a.fortschritt >= vorher, `rueckwaerts bei ${a.text}`);
+    vorher = a.fortschritt;
+    // Dieselbe Route: Die Meter der API und die auf der eigenen Linie
+    // liegen dicht beieinander, wenn man die Gesamtlaengen abgleicht. Die
+    // eigene Rechnung kommt auf 332 km ein halbes Promille kuerzer heraus.
+    const erwartet = a.offset * (lage.laenge / f.laengeMeter);
+    assert.ok(Math.abs(a.fortschritt - erwartet) < 150, `${a.text}: ${a.fortschritt} statt ${erwartet}`);
+  }
+  assert.ok(Math.abs(lage.laenge - f.laengeMeter) < 0.01 * f.laengeMeter);
+});
+
+test('verorteAnweisungen: weicht die Linie ab, zaehlt der Meterwert, umgerechnet', () => {
+  const lage = fahrt.routenLage(geradeNachOsten(10));
+  const anweisungen = ansage.verorteAnweisungen([
+    { offset: 0, punkt: lage.punkte[0], manoever: 'DEPART', text: '' },
+    { offset: 4000, punkt: { lat: 51.2, lon: 6.05 }, manoever: 'TURN_LEFT', text: '' },
+    { offset: 8000, punkt: lage.punkte[100], manoever: 'ARRIVE', text: '' },
+  ], lage);
+  // 4000 von 8000 API-Metern ist die Haelfte der eigenen 10 km.
+  assert.ok(Math.abs(anweisungen[1].fortschritt - lage.laenge / 2) < 1);
+  assert.ok(Math.abs(anweisungen[2].fortschritt - lage.laenge) < 1);
+});
+
+test('schritt: bei 130 km/h fruehe, nahe und jetzige Ansage, jede einmal', () => {
+  const { lage, anweisungen } = zielfuehrung();
+  const gesagt = abfahren(anweisungen, lage.laenge, 36, 36);
+  const ausfahrt = anweisungen.findIndex((a) => a.text.startsWith('Nehmen Sie die Ausfahrt 9'));
+  const zurAusfahrt = gesagt.filter((g) => g.index === ausfahrt);
+  assert.deepEqual(zurAusfahrt.map((g) => g.stufe), ['frueh', 'nah', 'jetzt']);
+  assert.equal(zurAusfahrt[0].text, 'In 2 Kilometern nehmen Sie die Ausfahrt 9 auf A31 Richtung Norddeich');
+  assert.match(zurAusfahrt[1].text, /^In 600 Metern nehmen Sie die Ausfahrt 9 .* dann fahren Sie auf die Autobahn A31$/);
+  // Keine Stufe doppelt.
+  const schluessel = gesagt.map((g) => `${g.index}:${g.stufe}`);
+  assert.equal(new Set(schluessel).size, schluessel.length);
+  // Die lange A31 wird mit Strecke angesagt.
+  assert.ok(gesagt.some((g) => g.text === 'Folgen Sie A31 Richtung Bottrop-Kirchhellen für 209 Kilometer'),
+    gesagt.filter((g) => g.text.startsWith('Folgen Sie A31')).map((g) => g.text).join(' | '));
+  // "jetzt" ohne das "dann", das bei 600 m schon kam.
+  assert.equal(zurAusfahrt[2].text, 'Nehmen Sie die Ausfahrt 9 auf A31 Richtung Norddeich');
+  // Und am Ende das Ziel.
+  assert.equal(gesagt.at(-1).text, 'Sie sind angekommen. Ihr Ziel liegt auf der linken Seite');
+});
+
+test('schritt: was "dann ..." schon angekuendigt hat, kommt nur noch als "jetzt"', () => {
+  const { lage, anweisungen } = zielfuehrung();
+  const gesagt = abfahren(anweisungen, lage.laenge, 14, 14);
+  // Kurz vor dem Ziel: "Biegen Sie links ab auf Nordlandstraße dann biegen
+  // Sie rechts ab auf Nordmeerstraße", 150 m spaeter die Nordmeerstraße.
+  const nordmeer = anweisungen.findIndex((a) => a.text === 'Biegen Sie rechts ab auf Nordmeerstraße');
+  assert.ok(nordmeer > 0);
+  assert.deepEqual(gesagt.filter((g) => g.index === nordmeer).map((g) => g.stufe), ['jetzt']);
+});
+
+test('schritt: in der zehnfachen Simulation kommt jede Abbiegung wenigstens einmal', () => {
+  const { lage, anweisungen } = zielfuehrung();
+  const gesagt = abfahren(anweisungen, lage.laenge, 361, 72);
+  const angesagt = new Set(gesagt.map((g) => g.index));
+  anweisungen.forEach((a, i) => {
+    if (a.manoever === 'DEPART') return;
+    if (a.manoever === 'FOLLOW' && anweisungen[i + 1].fortschritt - a.fortschritt < 10_000) return;
+    // Liegt eine Anweisung weniger als einen Takt hinter der vorigen, ist
+    // sie womoeglich nie die naechste; die vorige hat sie dann mit
+    // "dann ..." angekuendigt. Das Ziel ist davon ausgenommen.
+    if (i > 0 && a.fortschritt - anweisungen[i - 1].fortschritt < 72 && !a.manoever.startsWith('ARRIVE')) return;
+    assert.ok(angesagt.has(i), `nicht angesagt: ${a.text}`);
+  });
+  assert.equal(gesagt.at(-1).text, 'Sie sind angekommen. Ihr Ziel liegt auf der linken Seite');
+});
+
+test('naechsteAnweisung: die Abfahrt zaehlt nicht, hinter dem Ziel kommt nichts', () => {
+  const { lage, anweisungen } = zielfuehrung();
+  assert.equal(anweisungen[ansage.naechsteAnweisung(anweisungen, 0)].manoever, 'TURN_LEFT');
+  // Bis 100 m hinter dem Ziel bleibt es die naechste Anweisung.
+  assert.equal(anweisungen[ansage.naechsteAnweisung(anweisungen, lage.laenge + 1)].manoever, 'ARRIVE_LEFT');
+  assert.equal(ansage.naechsteAnweisung(anweisungen, lage.laenge + 200), null);
 });

@@ -38,6 +38,7 @@ final class TripViewModel: ObservableObject {
         api = TomTomAPIClient(apiKey: apiKey)
         detourCalculator = DetourCalculator(api: api)
         routePlanner = RoutePlannerService(apiKey: apiKey)
+        speaker = Speaker()
 
         // Ohne receive(on:): Die Quelle ist selbst @MainActor und veröffentlicht
         // dort, ein Umweg über die Queue brächte nur eine Bildschirmaktualisierung
@@ -151,6 +152,32 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var drivingFallback: DrivingTile?
     @Published private(set) var drivingFallbackReason: FallbackReason?
 
+    // MARK: Zielführung
+
+    /// Die Anweisungen der Strecke, auf der Linie des SDK verortet.
+    @Published private(set) var guidance: [GuidanceInstruction] = []
+    /// Was die Anzeige oben links zeigt: die nächste Anweisung und die
+    /// Strecke bis dahin.
+    struct Maneuver: Equatable {
+        let instruction: GuidanceInstruction
+        let distanceMeters: Double
+        /// Die übernächste, wenn sie gleich dahinter kommt: "dann rechts".
+        let then: GuidanceInstruction?
+    }
+
+    @Published private(set) var nextManeuver: Maneuver?
+    /// Warum es keine Anweisungen gibt, wenn es keine gibt.
+    @Published private(set) var guidanceProblem: String?
+    /// Wird gerade neu geplant, weil das Auto die Route verlassen hat?
+    @Published private(set) var isRerouting = false
+    /// Ansagen an oder aus. Wird gemerkt; an ist die Vorgabe.
+    @Published var voiceEnabled = UserDefaults.standard.object(forKey: "voiceGuidance") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(voiceEnabled, forKey: "voiceGuidance")
+            if !voiceEnabled { speaker.stop() }
+        }
+    }
+
     // MARK: Bevorzugte Anbieter
 
     let brands: ChargingBrands
@@ -182,6 +209,8 @@ final class TripViewModel: ObservableObject {
     /// so aus derselben Position und können nicht auseinanderlaufen.
     enum DriveCommand {
         case start(simulatedPath: [CLLocationCoordinate2D]?)
+        /// Neues Tempo der Simulation: der Rest der Route in anderen Schritten.
+        case updateSimulatedPath([CLLocationCoordinate2D])
         case stop
     }
 
@@ -279,9 +308,17 @@ final class TripViewModel: ObservableObject {
 
     // MARK: Fahrt
 
-    /// Tempo der Simulation: 130 km/h, zehnfach. Meerbusch nach Norddeich
-    /// dauert so eine knappe Viertelstunde.
-    static let simulationSpeedMetersPerSecond: Double = 130 / 3.6 * 10
+    /// Die Simulation fährt 130 km/h mal `simulationFactor`. Zehnfach dauert
+    /// Meerbusch nach Norddeich eine knappe Viertelstunde, aber die Ansagen
+    /// überholen sich dann: 600 m vor der Ausfahrt sind knapp zwei Sekunden.
+    /// Dreifach reicht für einen Satz je Stufe. Die Ansagen richten sich
+    /// immer nach 130 km/h, gleich wie schnell die Simulation läuft.
+    static let simulationBaseSpeedMetersPerSecond: Double = 130 / 3.6
+    static let simulationFactors: [Double] = [1, 3, 10]
+    @Published private(set) var simulationFactor: Double = {
+        let stored = UserDefaults.standard.double(forKey: "simulationFactor")
+        return TripViewModel.simulationFactors.contains(stored) ? stored : 3
+    }()
     /// So oft meldet der simulierte Geber eine Position.
     static let simulationTickSeconds: Double = 0.2
 
@@ -297,17 +334,36 @@ final class TripViewModel: ObservableObject {
         drivingFallbackReason = nil
         isSimulatingDrive = simulated
         isDriving = true
+        drivenBeforeRerouteMeters = 0
+        resetGuidanceProgress()
+        if let first = route.geometry.first, let last = route.geometry.last {
+            loadGuidance(from: first, to: last, tracker: tracker)
+        }
 
         var path: [CLLocationCoordinate2D]?
         if simulated {
-            // Gleichmäßige Schritte entlang der Route: Der simulierte Geber
-            // springt je Takt einen Punkt weiter, der Abstand ist also das
-            // Tempo.
-            let step = Self.simulationSpeedMetersPerSecond * Self.simulationTickSeconds
-            path = stride(from: 0, through: tracker.lengthMeters, by: step)
-                .compactMap { tracker.coordinate(atProgress: $0) }
+            path = simulatedPath(on: tracker, from: 0)
         }
         driveCommands.send(.start(simulatedPath: path))
+    }
+
+    /// Gleichmäßige Schritte entlang der Route ab `start`: Der simulierte
+    /// Geber springt je Takt einen Punkt weiter, der Abstand ist das Tempo.
+    private func simulatedPath(on tracker: RouteTracker, from start: Double) -> [CLLocationCoordinate2D] {
+        let step = Self.simulationBaseSpeedMetersPerSecond * simulationFactor * Self.simulationTickSeconds
+        return stride(from: start, through: tracker.lengthMeters, by: step)
+            .compactMap { tracker.coordinate(atProgress: $0) }
+    }
+
+    /// 1-, 3-, 10-fach, reihum. Läuft die Simulation, fährt sie ab der
+    /// aktuellen Stelle im neuen Tempo weiter.
+    func cycleSimulationFactor() {
+        let factors = Self.simulationFactors
+        let index = factors.firstIndex(of: simulationFactor) ?? 0
+        simulationFactor = factors[(index + 1) % factors.count]
+        UserDefaults.standard.set(simulationFactor, forKey: "simulationFactor")
+        guard isDriving, isSimulatingDrive, let tracker else { return }
+        driveCommands.send(.updateSimulatedPath(simulatedPath(on: tracker, from: driveFix?.progressMeters ?? 0)))
     }
 
     func stopDriving() {
@@ -320,6 +376,13 @@ final class TripViewModel: ObservableObject {
         drivingFallback = nil
         drivingFallbackReason = nil
         mapTrailingInset = 0
+        guidanceTask?.cancel()
+        rerouteTask?.cancel()
+        guidance = []
+        nextManeuver = nil
+        guidanceProblem = nil
+        isRerouting = false
+        speaker.stop()
         driveCommands.send(.stop)
     }
 
@@ -330,7 +393,10 @@ final class TripViewModel: ObservableObject {
         self.tracker = tracker
         if driveStartProgress == nil { driveStartProgress = fix.progressMeters }
         driveFix = fix
+        updateSpeed(progress: fix.progressMeters)
         refreshDrivingTiles()
+        refreshGuidance()
+        watchForDeviation(fix: fix, at: coordinate)
     }
 
     /// Verbrauch als Prozent Akku je Kilometer.
@@ -345,8 +411,11 @@ final class TripViewModel: ObservableObject {
     /// man den Wert im Profil neu ein.
     var chargeNowPercent: Double {
         let start = vehicleStore.profile.currentChargePercent
-        guard let fix = driveFix, let begin = driveStartProgress else { return start }
-        return max(0, start - (fix.progressMeters - begin) / 1000 * percentPerKm)
+        guard let fix = driveFix, let begin = driveStartProgress else {
+            return max(0, start - drivenBeforeRerouteMeters / 1000 * percentPerKm)
+        }
+        let driven = drivenBeforeRerouteMeters + (fix.progressMeters - begin)
+        return max(0, start - driven / 1000 * percentPerKm)
     }
 
     /// Wie weit es bis zur Reserve noch reicht.
@@ -386,6 +455,138 @@ final class TripViewModel: ObservableObject {
         drivingTiles = set.tiles
         drivingFallback = set.fallback
         drivingFallbackReason = set.fallbackReason
+    }
+
+    // MARK: Zielführung, Ablauf
+
+    /// Holt die Anweisungen zur Strecke. Kostet eine Routing-Anfrage.
+    private func loadGuidance(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D, tracker: RouteTracker) {
+        guidanceTask?.cancel()
+        guidanceProblem = nil
+        guidanceTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let dto = try await api.routeInstructions(from: origin, to: destination)
+                guard !Task.isCancelled, isDriving else { return }
+                guidance = Guidance.locate(Guidance.instructions(from: dto), on: tracker)
+                if guidance.isEmpty { guidanceProblem = "Keine Anweisungen für diese Strecke." }
+                refreshGuidance()
+            } catch {
+                guard !Task.isCancelled, isDriving else { return }
+                guidance = []
+                guidanceProblem = "Ohne Ansagen: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func resetGuidanceProgress() {
+        announcer = Announcer()
+        nextManeuver = nil
+        speedMetersPerSecond = isSimulatingDrive ? Self.simulationBaseSpeedMetersPerSecond : 0
+        lastSpeedSample = nil
+        offRouteFixes = 0
+    }
+
+    /// Tempo aus dem Weg auf der Route, geglättet. In der Simulation fest,
+    /// damit die Ansagen so fallen wie auf der Autobahn, nur schneller.
+    private func updateSpeed(progress: Double) {
+        guard !isSimulatingDrive else { return }
+        let now = Date()
+        guard let last = lastSpeedSample else {
+            lastSpeedSample = (progress, now)
+            return
+        }
+        // Erst ab einer halben Sekunde messen, sonst rauscht es.
+        let seconds = now.timeIntervalSince(last.time)
+        guard seconds >= 0.5 else { return }
+        lastSpeedSample = (progress, now)
+        let measured = max(0, (progress - last.progress) / seconds)
+        speedMetersPerSecond = speedMetersPerSecond == 0 ? measured : speedMetersPerSecond * 0.7 + measured * 0.3
+    }
+
+    private func refreshGuidance() {
+        guard isDriving, let fix = driveFix, !guidance.isEmpty else { return }
+        let step = announcer.step(guidance, progress: fix.progressMeters, speed: speedMetersPerSecond)
+        if let index = step.index, let distance = step.distance {
+            let current = guidance[index]
+            var then: GuidanceInstruction?
+            if index + 1 < guidance.count {
+                let following = guidance[index + 1]
+                if !following.isFollow, following.progressMeters - current.progressMeters < 500 { then = following }
+            }
+            nextManeuver = Maneuver(instruction: current, distanceMeters: distance, then: then)
+        } else {
+            nextManeuver = nil
+        }
+        if let text = step.text, voiceEnabled {
+            speaker.speak(text)
+        }
+    }
+
+    /// Neben der Route: drei Positionen hintereinander mehr als 50 m daneben,
+    /// dann wird ab hier neu geplant. Nicht öfter als alle 20 Sekunden, und
+    /// nicht in der Simulation, die fährt die Route ab.
+    private func watchForDeviation(fix: RouteTracker.Fix, at coordinate: CLLocationCoordinate2D) {
+        guard !isSimulatingDrive else { return }
+        offRouteFixes = fix.offsetMeters > 50 ? offRouteFixes + 1 : 0
+        guard offRouteFixes >= 3, !isRerouting, let destination else { return }
+        if let last = lastRerouteAt, Date().timeIntervalSince(last) < 20 { return }
+        reroute(from: coordinate, to: destination)
+    }
+
+    private func reroute(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D) {
+        isRerouting = true
+        lastRerouteAt = Date()
+        if voiceEnabled { speaker.speak("Route wird neu berechnet") }
+        rerouteTask = Task { [weak self] in
+            guard let self else { return }
+            defer { isRerouting = false }
+            do {
+                let neu = try await routePlanner.planRoute(from: origin, to: destination)
+                guard !Task.isCancelled, isDriving else { return }
+                adoptRerouted(neu)
+            } catch {
+                // Kein Abbruch: Die alte Route bleibt, und nach 20 Sekunden
+                // wird es wieder versucht, falls das Auto noch daneben ist.
+                guidanceProblem = "Neuberechnung fehlgeschlagen: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    /// Übernimmt die neue Route mitten in der Fahrt.
+    ///
+    /// Die Stationen bleiben, sie werden nur neu auf die Linie gelegt: Eine
+    /// Umleitung ändert die Strecke meist um ein paar Kilometer, und eine neue
+    /// Suche kostete fünfzig Anfragen. Was weiter als 10 km neben der neuen
+    /// Route liegt, fällt heraus. Der Verbrauch zählt weiter.
+    private func adoptRerouted(_ neu: TomTomSDKRoute.Route) {
+        if let fix = driveFix, let begin = driveStartProgress {
+            drivenBeforeRerouteMeters += fix.progressMeters - begin
+        }
+        driveStartProgress = nil
+        route = neu
+        let tracker = RouteTracker(geometry: neu.geometry)
+        self.tracker = tracker
+        driveFix = nil
+
+        let bisher = Dictionary(fetchedStations.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let neuGelegt = GeoUtils.orderAlongRoute(
+            fetchedStations.map(\.station),
+            routeGeometry: neu.geometry,
+            maxDistanceMeters: Self.keepDistanceMeters
+        )
+        fetchedStations = neuGelegt.compactMap { station in
+            guard var item = bisher[station.id] else { return nil }
+            item.station = station
+            return item
+        }
+        applyLocalFilters()
+
+        guidance = []
+        resetGuidanceProgress()
+        if let first = neu.geometry.first, let last = neu.geometry.last {
+            loadGuidance(from: first, to: last, tracker: tracker)
+        }
     }
 
     // MARK: Aktionen
@@ -862,7 +1063,9 @@ final class TripViewModel: ObservableObject {
             lowerPowerStations = []
         }
 
-        planCharging()
+        // Während der Fahrt bleibt der Plan, mit dem losgefahren wurde. Nach
+        // einer Umleitung finge er sonst mit dem Ladestand vom Start neu an.
+        if !isDriving || chargingPlan == nil { planCharging() }
         // Während der Fahrt kommen Umwege und Belegungen nach; die Kacheln
         // sollen sie sofort zeigen, nicht erst bei der nächsten Position.
         refreshDrivingTiles()
@@ -936,6 +1139,16 @@ final class TripViewModel: ObservableObject {
     private var tracker: RouteTracker?
     /// Wo die Fahrt begann, für den Verbrauch seitdem.
     private var driveStartProgress: Double?
+    /// Gefahrene Meter auf früheren Routen dieser Fahrt, vor einer Umleitung.
+    private var drivenBeforeRerouteMeters: Double = 0
+    private var announcer = Announcer()
+    private let speaker: Speaker
+    private var guidanceTask: Task<Void, Never>?
+    private var rerouteTask: Task<Void, Never>?
+    private var speedMetersPerSecond: Double = 0
+    private var lastSpeedSample: (progress: Double, time: Date)?
+    private var offRouteFixes = 0
+    private var lastRerouteAt: Date?
     private let locationSource = UserLocationSource()
     private let apiKey: String
     private let api: TomTomAPIClient

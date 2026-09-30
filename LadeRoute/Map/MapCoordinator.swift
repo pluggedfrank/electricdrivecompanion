@@ -272,6 +272,9 @@ private extension MapCoordinator {
             }
             applyDrivingCamera()
 
+        case let .updateSimulatedPath(path):
+            simulatedLocationProvider?.updateCoordinates(path, interpolate: false)
+
         case .stop:
             map.cameraTrackingMode = .none
             if let simulated = simulatedLocationProvider {
@@ -317,7 +320,13 @@ private extension MapCoordinator {
         options.color = UIColor(hex: 0xB8361F)
 
         routeOnMap = try? map.addRoute(options)
-        map.zoomToRoutes(padding: 48)
+        // Während der Fahrt ist es eine Umleitung: Die Kamera folgt weiter
+        // dem Auto, auf der neuen Linie, statt auf die ganze Strecke zu zoomen.
+        if trip.isDriving {
+            applyDrivingCamera()
+        } else {
+            map.zoomToRoutes(padding: 48)
+        }
     }
 
     /// Setzt alle Nadeln neu. Für die Größenordnung dieses Prototyps (bis etwa
