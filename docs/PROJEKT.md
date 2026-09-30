@@ -232,6 +232,15 @@ sie nicht mit einem Wenden beginnt. Die Station gilt als geplanter Stopp, bis
 sie 500 m hinter dem Auto liegt. Die Ladeplanung rechnet während der Fahrt ab
 dem Auto mit dem Ladestand jetzt, nach Umleitung, Zwischenziel oder Ladestopp.
 
+**Über die Grenze** (Stand 30.09.2026): Das Register kennt nur Deutschland.
+Bisher hieß ein Treffer im Register: TomTom wird nicht gefragt, und auf dem Weg
+nach Amsterdam blieb der niederländische Teil leer. Jetzt sucht TomTom die
+Stücke außerhalb Deutschlands ab (Along-Route-Suche, 2 km in den deutschen Teil
+hinein), und beides wird zusammengelegt; TomTom-Treffer in 150 m Nähe eines
+Registerstandorts fallen weg. Die Länder kommen aus den Länderabschnitten der
+SDK-Route, ersatzweise aus der Abdeckung des Registers (kein Standort im Umkreis
+von 25 km gilt als Ausland). Rechnung und Tests: `tools/lib/quellen.mjs`.
+
 **Vorgaben seit 30.09.2026:** 300 kW und höchstens 5 Minuten Umweg. Ein noch
 nicht gerechneter Umweg zählt in der Planung nicht mehr als null, sondern als
 hin und zurück mit 30 km/h plus zwei Minuten.

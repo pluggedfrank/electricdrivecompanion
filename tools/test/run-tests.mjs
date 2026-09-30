@@ -29,6 +29,7 @@ import * as fahrt from '../lib/fahrt.mjs';
 import * as marken from '../lib/marken.mjs';
 import * as ansage from '../lib/ansage.mjs';
 import * as akku from '../lib/akku.mjs';
+import * as quellen from '../lib/quellen.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -2292,4 +2293,32 @@ test('planeStopps: ein unbekannter Umweg zaehlt nicht als null', () => {
   ];
   const ergebnis = ladeplanung.planeStopps({ routeLengthMeters: 450_000, stations, fahrzeug: AUTO });
   assert.equal(ergebnis.stopps[0].station.id, 'gerechnet');
+});
+
+// ---------------------------------------------------------------- Quellen
+
+test('auslandsStuecke: nur ausserhalb Deutschlands, mit Rand, Nachbarn zusammen', () => {
+  // 30 km nach Osten, alle 100 m ein Punkt: 0-100 DEU, 101-200 NLD, 201-250 BEL, 251-300 DEU
+  const punkte = geradeNachOsten(30);
+  const stuecke = quellen.auslandsStuecke(punkte, [
+    { von: 0, bis: 100, land: 'DEU' },
+    { von: 101, bis: 200, land: 'NLD' },
+    { von: 201, bis: 250, land: 'BEL' },
+    { von: 251, bis: 300, land: 'DEU' },
+  ]);
+  assert.equal(stuecke.length, 1);
+  // 2 km Rand auf jeder Seite: 20 Punkte davor, 20 dahinter.
+  assert.equal(stuecke[0][0], punkte[81]);
+  assert.equal(stuecke[0].at(-1), punkte[270]);
+  // Ganz in Deutschland: nichts zu suchen.
+  assert.deepEqual(quellen.auslandsStuecke(punkte, [{ von: 0, bis: 300, land: 'DEU' }]), []);
+});
+
+test('zusammenfuehren: TomTom-Treffer am Registerstandort faellt weg', () => {
+  const register = [{ id: 'bnetza:1', lat: 51.0, lon: 6.0 }];
+  const tomtom = [
+    { id: 'tt:gleich', lat: 51.0005, lon: 6.0 },   // 55 m daneben
+    { id: 'tt:fastned', lat: 52.3, lon: 4.9 },
+  ];
+  assert.deepEqual(quellen.zusammenfuehren(register, tomtom).map((s) => s.id), ['bnetza:1', 'tt:fastned']);
 });

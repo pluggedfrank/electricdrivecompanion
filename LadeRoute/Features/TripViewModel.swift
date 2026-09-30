@@ -278,6 +278,8 @@ final class TripViewModel: ObservableObject {
     /// Exports gewählt ist.
     enum StationSource: Equatable {
         case register
+        /// Register in Deutschland, TomTom im Ausland.
+        case mixed
         case tomtom
     }
 
@@ -287,6 +289,8 @@ final class TripViewModel: ObservableObject {
     var stationSourceNote: String {
         switch stationSource {
         case .register: return "Standorte: \(registerStore.sourceName), CC BY 4.0, \(registerStore.attribution)"
+        case .mixed:
+            return "Standorte in Deutschland: \(registerStore.sourceName), CC BY 4.0, \(registerStore.attribution). Im Ausland: TomTom Search"
         case .tomtom: return "Standorte: TomTom Search"
         }
     }
@@ -877,7 +881,7 @@ final class TripViewModel: ObservableObject {
 
         // Unter die Stufe des Registers geht es nur über TomTom, und über
         // die Untergrenze der TomTom-Suche nur mit einer neuen Suche.
-        let grenze = stationSource == .register ? registerStore.minPowerKW : Self.fetchTier.rawValue
+        let grenze = stationSource == .tomtom ? Self.fetchTier.rawValue : registerStore.minPowerKW
         if powerTier.rawValue < grenze, fetchedTier != powerTier {
             starteSuche(nurStationen: true)
             return
@@ -938,7 +942,8 @@ final class TripViewModel: ObservableObject {
         phase = .searchingStations
 
         // Das Register zuerst: keine Anfrage, keine Wartezeit, ganz
-        // Deutschland. Nur wenn es nichts hat, TomTom.
+        // Deutschland. Die Stücke im Ausland sucht TomTom dazu; hat das
+        // Register gar nichts, sucht TomTom die ganze Route ab.
         let wanted = powerTier.minPowerKW ?? 0
         if wanted >= registerStore.minPowerKW {
             let ausRegister = registerStore.stations(
@@ -946,11 +951,16 @@ final class TripViewModel: ObservableObject {
                 maxDistanceMeters: Self.keepDistanceMeters
             )
             if !ausRegister.isEmpty {
-                stationSource = .register
+                let foreign = StationSources.foreignPieces(geometry: route.geometry, ranges: countryRanges(of: route))
+                stationSource = foreign.isEmpty ? .register : .mixed
                 fetchedTier = powerTier
                 fetchedStations = editorialStore.annotate(withBrands(ausRegister))
                 applyLocalFilters()
                 phase = .ready
+                if !foreign.isEmpty {
+                    await addForeignStations(pieces: foreign, route: route, register: ausRegister, nummer: nummer)
+                    guard gilt(nummer) else { return }
+                }
                 starteUmwege()
                 return
             }
@@ -989,6 +999,58 @@ final class TripViewModel: ObservableObject {
         await widenSearch(route: route, options: options, nummer: nummer)
         guard gilt(nummer) else { return }
         starteUmwege()
+    }
+
+    /// Die Länder der Route. Aus den Abschnitten des SDK; fehlen die, aus der
+    /// Abdeckung des Registers.
+    private func countryRanges(of route: TomTomSDKRoute.Route) -> [StationSources.CountryRange] {
+        let sections = route.sections.countrySections.map {
+            StationSources.CountryRange(
+                from: $0.sectionLocation.startPointIndex,
+                to: $0.sectionLocation.endPointIndex,
+                country: $0.countryCode
+            )
+        }
+        if !sections.isEmpty { return sections }
+        return StationSources.coverageRanges(geometry: route.geometry, register: registerStore.stations)
+    }
+
+    /// Sucht die Stücke außerhalb Deutschlands bei TomTom ab und legt die
+    /// Treffer zum Register. Nur die Along-Route-Suche, ohne Umkreise: Die
+    /// Schnelllader im Ausland stehen wie hier an der Autobahn, und das
+    /// Search-Kontingent (2.500 im Monat) soll für mehr als eine Fahrt
+    /// reichen.
+    private func addForeignStations(
+        pieces: [[CLLocationCoordinate2D]],
+        route: TomTomSDKRoute.Route,
+        register: [ChargingStation],
+        nummer: Int
+    ) async {
+        isWideningSearch = true
+        defer { isWideningSearch = false }
+        var options = AlongRouteSearchOptions()
+        options.maxDetourSeconds = 30 * 60
+        options.minPowerKW = Self.fetchTier.minPowerKW
+
+        var found: [ChargingStation] = []
+        for piece in pieces where piece.count >= 2 {
+            do {
+                found += try await api.chargingStationsAlongRoute(routeGeometry: piece, options: options)
+            } catch {
+                print("Auslandssuche fehlgeschlagen: \(error.localizedDescription)")
+            }
+            guard gilt(nummer) else { return }
+        }
+        guard !found.isEmpty else { return }
+
+        let merged = StationSources.merge(register: register, tomtom: found)
+        let ordered = GeoUtils.orderAlongRoute(
+            merged,
+            routeGeometry: route.geometry,
+            maxDistanceMeters: Self.keepDistanceMeters
+        )
+        fetchedStations = editorialStore.annotate(withBrands(ordered))
+        applyLocalFilters()
     }
 
     /// Zweite Runde: Umkreissuchen entlang der Strecke.
