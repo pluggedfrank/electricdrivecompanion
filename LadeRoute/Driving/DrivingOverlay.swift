@@ -28,20 +28,28 @@ struct DrivingOverlay: View {
             let railWidth = landscape ? geometry.size.width * 0.30 : geometry.size.width * 0.40
             let leftWidth = geometry.size.width - railWidth - 32
             let barHeight: CGFloat = landscape ? 58 : 62
+            // Die Höhe der Kachelspalte steht fest. Vorher wuchs sie mit dem
+            // Inhalt, und im Querformat schob sie die ganze Ansicht samt
+            // Fahrleiste über den unteren Rand (30.09.2026). Jetzt passt die
+            // Zahl der Kacheln sich an: quer meist zwei, hoch drei.
+            let railHeight = max(0, geometry.size.height - 8 - (landscape ? 10 : barHeight + 18))
+            let maxTiles = landscape && railHeight < 380 ? 2 : 3
+            let leftHeight = max(0, geometry.size.height - 8 - barHeight - 22)
 
             ZStack(alignment: .topLeading) {
                 Color.clear
 
-                rail(compact: !landscape)
-                    .frame(width: railWidth)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
+                rail(compact: !landscape, maxTiles: maxTiles)
+                    .frame(width: railWidth, height: railHeight, alignment: .bottom)
+                    .clipped()
                     .padding(.top, 8)
-                    .padding(.bottom, landscape ? 10 : barHeight + 18)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(.trailing, 10)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
 
                 guidancePanel(compact: !landscape)
                     .frame(width: leftWidth, alignment: .leading)
+                    .frame(maxHeight: leftHeight, alignment: .top)
+                    .clipped()
                     .padding(.leading, 12)
                     .padding(.top, 8)
 
@@ -57,6 +65,7 @@ struct DrivingOverlay: View {
                     .padding(.bottom, 8)
                     .frame(maxHeight: .infinity, alignment: .bottomLeading)
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
             .onAppear {
                 trip.mapTrailingInset = railWidth + 20
                 trip.mapDrivingBottomInset = barHeight + 24
@@ -164,7 +173,7 @@ struct DrivingOverlay: View {
     // MARK: Kacheln
 
     @ViewBuilder
-    private func rail(compact: Bool) -> some View {
+    private func rail(compact: Bool, maxTiles: Int) -> some View {
         VStack(spacing: compact ? 8 : 10) {
             if trip.drivingTiles.isEmpty {
                 Text(emptyText)
@@ -176,7 +185,7 @@ struct DrivingOverlay: View {
             }
             // Umgekehrt: die fernste oben, die nächste unten. Die Nummer
             // bleibt die Reihenfolge ab dem Auto, 1 ist die nächste.
-            ForEach(Array(trip.drivingTiles.enumerated()).reversed(), id: \.element.id) { index, tile in
+            ForEach(Array(trip.drivingTiles.prefix(maxTiles).enumerated()).reversed(), id: \.element.id) { index, tile in
                 DrivingTileView(tile: tile, order: index + 1, compact: compact)
                     // Antippen holt die Belegung und öffnet oben links die
                     // Karte mit "Über diese Station".

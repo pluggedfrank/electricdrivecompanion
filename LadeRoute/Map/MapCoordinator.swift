@@ -282,12 +282,18 @@ private extension MapCoordinator {
                 simulated.enable()
                 simulatedLocationProvider = simulated
             }
+            // Der Standortknopf des SDK blinkte während der Fahrt: Die Kamera
+            // folgt, ist aber nie ganz zentriert, und "hiddenWhenCentered"
+            // schaltete ihn im Takt der Positionen an und aus. Während der
+            // Fahrt übernehmen "Zur Fahrt" und der Kameraknopf seine Aufgabe.
+            mapView?.currentLocationButtonVisibilityPolicy = .hidden
             applyDrivingCamera()
 
         case let .updateSimulatedPath(path):
             simulatedLocationProvider?.updateCoordinates(path, interpolate: false)
 
         case .stop:
+            mapView?.currentLocationButtonVisibilityPolicy = .hiddenWhenCentered
             map.cameraTrackingMode = .none
             if let simulated = simulatedLocationProvider {
                 simulated.removeObserver(self)
