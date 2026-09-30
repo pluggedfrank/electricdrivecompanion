@@ -4,11 +4,17 @@
 //
 //   node tools/zielfuehrung-probe.mjs
 //   node tools/zielfuehrung-probe.mjs --from=51.2560,6.6890 --to=53.6148,7.1621
-//   node tools/zielfuehrung-probe.mjs --json     alle Anweisungen als JSON, fuer Fixtures
+//   node tools/zielfuehrung-probe.mjs --json     alle Anweisungen als JSON ins Protokoll
+//   node tools/zielfuehrung-probe.mjs --fixture  Anweisungen und Routenpunkte als
+//        Testdatei nach tools/test/fixtures/anweisungen-meerbusch-norddeich.json
 //
 // Wozu: Bevor die App Anweisungen ansagt, soll feststehen, welche Felder
 // die Routing-API liefert, wie die Texte klingen und wie viele es auf einer
 // langen Strecke sind. Eine Anfrage.
+
+import { writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import * as ev from './lib/evsearch.mjs';
 import { resolveApiKey } from './lib/apikey.mjs';
@@ -72,4 +78,17 @@ if (args.json) {
   console.log('\nJSON-ANFANG');
   console.log(JSON.stringify(anweisungen));
   console.log('JSON-ENDE');
+}
+
+if (args.fixture) {
+  const ziel = join(dirname(fileURLToPath(import.meta.url)), 'test', 'fixtures', 'anweisungen-meerbusch-norddeich.json');
+  const punkteListe = route.legs.flatMap((l) => l.points.map((p) => [p.latitude, p.longitude]));
+  writeFileSync(ziel, JSON.stringify({
+    abgerufen: new Date().toISOString().slice(0, 10),
+    von: from, nach: to,
+    laengeMeter: route.summary.lengthInMeters,
+    punkte: punkteListe,
+    anweisungen,
+  }) + '\n');
+  console.log(`\nTestdatei geschrieben: ${ziel}`);
 }

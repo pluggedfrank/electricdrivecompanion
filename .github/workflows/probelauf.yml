@@ -73,6 +73,30 @@ jobs:
         # Argumente absichtlich ungequotet: Sie sollen in Woerter zerfallen.
         run: node "tools/$SKRIPT" $ARGUMENTE < /dev/null
 
+      # Testdateien aus einem Lauf (zielfuehrung-probe.mjs --fixture) gehen
+      # mit, damit niemand sie aus dem Protokoll abschreiben muss.
+      - name: Testdateien sichern
+        if: success()
+        run: |
+          git add -N tools/test/fixtures/ 2>/dev/null || true
+          if git diff --quiet -- tools/test/fixtures/; then
+            echo "Keine neuen Testdateien."
+            exit 0
+          fi
+          git config user.name "Probelauf"
+          git config user.email "probelauf@users.noreply.github.com"
+          git add tools/test/fixtures/
+          git commit -m "Testdaten aus $SKRIPT $ARGUMENTE" -m "Automatisch aus dem Workflow Probelauf, Lauf $GITHUB_RUN_ID."
+          for versuch in 1 2 3; do
+            git pull --rebase -q origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep 5
+          done
+          echo "Push gescheitert." >&2
+          exit 1
+        env:
+          SKRIPT: ${{ inputs.skript }}
+          ARGUMENTE: ${{ inputs.argumente }}
+
       - name: Umwegtabelle sichern
         if: always()
         run: |
