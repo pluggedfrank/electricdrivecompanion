@@ -51,6 +51,41 @@ struct StationListSheet: View {
         }
     }
 
+    /// Losfahren, echt oder simuliert.
+    ///
+    /// Die Simulation fährt die Route zehnfach schnell ab, mit derselben
+    /// Kamera und denselben Kacheln wie eine echte Fahrt. Zum Ausprobieren am
+    /// Schreibtisch und im Simulator, wo es sonst keine Bewegung gibt.
+    private var driveButtons: some View {
+        HStack(spacing: 8) {
+            Button {
+                trip.startDriving(simulated: false)
+            } label: {
+                Label("Losfahren", systemImage: "location.north.line.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Theme.signal, in: Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                trip.startDriving(simulated: true)
+            } label: {
+                Label("Fahrt simulieren", systemImage: "play.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.ink2)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Theme.panel, in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .textCase(nil)
+        .padding(.top, 4)
+    }
+
     /// Womit gerechnet wurde.
     ///
     /// Steht hier, weil ein Ladeplan ohne die Fahrzeugwerte nicht zu beurteilen
@@ -204,6 +239,7 @@ struct StationListSheet: View {
 
                 chargingPlanLine
                 vehicleLine
+                driveButtons
             }
         }
         .padding(.bottom, 4)

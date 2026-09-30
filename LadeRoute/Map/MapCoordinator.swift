@@ -35,6 +35,10 @@ final class MapCoordinator: NSObject {
     private var routeOnMap: TomTomSDKMapDisplay.Route?
     private var didCenterOnUser = false
     private var cancellables = Set<AnyCancellable>()
+    /// Der Standortgeber, den die Karte von Haus aus hat, solange eine
+    /// Simulation ihn ersetzt.
+    private var realLocationProvider: (any TomTomSDKLocationProvider.LocationProvider)?
+    private var simulatedLocationProvider: TomTomSDKLocationProvider.SimulatedLocationProvider?
 }
 
 // MARK: - MapViewDelegate
@@ -96,9 +100,16 @@ extension MapCoordinator: TomTomSDKMapDisplay.MapDelegate {
 
 extension MapCoordinator: TomTomSDKLocationProvider.LocationUpdateObserver {
     func didUpdateLocation(location: GeoLocation) {
-        // Nur die Kamera. Die Position zum Planen kommt aus UserLocationSource
-        // über CoreLocation; dieser Anbieter hier gehört der Karte und zeichnet
-        // den Pfeil.
+        // Während der Fahrt ist dieser Geber die Quelle der Position, echt
+        // oder simuliert. Der Pfeil auf der Karte und die Kacheln kommen so
+        // aus derselben Position.
+        if trip.isDriving {
+            trip.updateDrivePosition(location.location.coordinate)
+            return
+        }
+
+        // Sonst nur die Kamera. Die Position zum Planen kommt aus
+        // UserLocationSource über CoreLocation.
         //
         // Nur einmal zentrieren, sonst reißt es dem Nutzer die Karte weg.
         guard !didCenterOnUser else { return }
@@ -135,6 +146,13 @@ private extension MapCoordinator {
             .store(in: &cancellables)
 
         trip.mapCommands
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] command in
+                MainActor.assumeIsolated { self?.perform(command) }
+            }
+            .store(in: &cancellables)
+
+        trip.driveCommands
             .receive(on: DispatchQueue.main)
             .sink { [weak self] command in
                 MainActor.assumeIsolated { self?.perform(command) }
@@ -178,6 +196,52 @@ private extension MapCoordinator {
                 ),
                 animationDuration: 0.6
             )
+        }
+    }
+
+    /// Fahrt starten oder beenden.
+    ///
+    /// Die Kamera führt das SDK selbst nach, in Fahrtrichtung: Das ist der
+    /// Modus, den auch die TomTom-Navigation benutzt. Für die Simulation
+    /// bekommt die Karte einen simulierten Standortgeber untergeschoben, der
+    /// die Route in gleichmäßigen Schritten abfährt; nach dem Ende bekommt
+    /// sie ihren eigenen zurück.
+    func perform(_ command: TripViewModel.DriveCommand) {
+        guard let map else { return }
+
+        switch command {
+        case let .start(simulatedPath):
+            if let simulatedPath, !simulatedPath.isEmpty {
+                let simulated = TomTomSDKLocationProvider.SimulatedLocationProvider(
+                    delay: Measurement(value: TripViewModel.simulationTickSeconds, unit: UnitDuration.seconds)
+                )
+                simulated.updateCoordinates(simulatedPath, interpolate: false)
+                // Vom echten Geber abmelden: Er meldet weiter, im Simulator
+                // den gesetzten Standort, und die beiden Positionen würden
+                // sich abwechseln.
+                let real = map.locationProvider
+                real.removeObserver(self)
+                realLocationProvider = real
+                map.locationProvider = simulated
+                simulated.addObserver(self)
+                simulated.enable()
+                simulatedLocationProvider = simulated
+            }
+            map.cameraTrackingMode = .followDirection()
+
+        case .stop:
+            map.cameraTrackingMode = .none
+            if let simulated = simulatedLocationProvider {
+                simulated.removeObserver(self)
+                simulated.disable()
+                simulatedLocationProvider = nil
+            }
+            if let real = realLocationProvider {
+                map.locationProvider = real
+                real.addObserver(self)
+                realLocationProvider = nil
+            }
+            map.zoomToRoutes(padding: 48)
         }
     }
 

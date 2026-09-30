@@ -32,6 +32,8 @@ struct DetourCalculator {
         /// Umweg in Sekunden je Stations-ID. Fehlt eine Station, hat die
         /// Anfrage für sie nichts geliefert.
         let detourSeconds: [String: Double]
+        /// Umweg in Metern, wo die Routen ihre Länge mitgeliefert haben.
+        let detourMeters: [String: Double]
         let requestCount: Int
         let failureCount: Int
     }
@@ -50,7 +52,7 @@ struct DetourCalculator {
         let supports = DetourMatrix.supportPoints(along: routeGeometry)
         let work = stations.filter { $0.progressAlongRouteMeters != nil }
         guard supports.count >= 2, !work.isEmpty else {
-            return Outcome(detourSeconds: [:], requestCount: 0, failureCount: 0)
+            return Outcome(detourSeconds: [:], detourMeters: [:], requestCount: 0, failureCount: 0)
         }
 
         let brackets = work.map {
@@ -60,17 +62,17 @@ struct DetourCalculator {
         var requestCount = 0
         var failureCount = 0
 
-        func travelTime(_ points: [CLLocationCoordinate2D]) async throws -> Double {
+        func travelTime(_ points: [CLLocationCoordinate2D]) async throws -> (seconds: Double, meters: Double?) {
             if requestCount > 0 {
                 try? await Task.sleep(for: requestInterval)
             }
             try Task.checkCancellation()
             requestCount += 1
-            return try await api.travelTimeSeconds(via: points)
+            return try await api.routeLength(via: points)
         }
 
         // Die Zeit, die man ohnehin gefahren wäre, je Abschnitt einmal.
-        var baseline: [DetourMatrix.Bracket: Double] = [:]
+        var baseline: [DetourMatrix.Bracket: (seconds: Double, meters: Double?)] = [:]
         for segment in DetourMatrix.segments(brackets) {
             do {
                 baseline[segment] = try await travelTime(
@@ -84,6 +86,7 @@ struct DetourCalculator {
         }
 
         var result: [String: Double] = [:]
+        var resultMeters: [String: Double] = [:]
         for (index, station) in work.enumerated() {
             let bracket = brackets[index]
             guard let base = baseline[bracket] else { continue }
@@ -96,7 +99,10 @@ struct DetourCalculator {
                 ])
                 // Negatives ist Rauschen: Die Route über die Station kann
                 // nicht kürzer sein als die ohne. Wird auf null gesetzt.
-                result[station.id] = max(0, viaStation - base)
+                result[station.id] = max(0, viaStation.seconds - base.seconds)
+                if let via = viaStation.meters, let basis = base.meters {
+                    resultMeters[station.id] = max(0, via - basis)
+                }
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
@@ -105,6 +111,11 @@ struct DetourCalculator {
             await progress?(index + 1, work.count)
         }
 
-        return Outcome(detourSeconds: result, requestCount: requestCount, failureCount: failureCount)
+        return Outcome(
+            detourSeconds: result,
+            detourMeters: resultMeters,
+            requestCount: requestCount,
+            failureCount: failureCount
+        )
     }
 }

@@ -20,24 +20,12 @@ struct RootView: View {
             TomTomMapView(trip: trip)
                 .ignoresSafeArea()
 
-            mapControls
-
-            VStack(spacing: 10) {
-                header
-                searchField
-                if !trip.placeResults.isEmpty {
-                    placeResultList
-                }
-                if case let .failed(message) = trip.phase {
-                    errorBanner(message)
-                }
-                if trip.placeResults.isEmpty {
-                    statusPill
-                }
-                Spacer()
+            if trip.isDriving {
+                DrivingOverlay(trip: trip)
+            } else {
+                mapControls
+                planningChrome
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
         }
         .sheet(isPresented: $showsVehicleSheet) {
             VehicleProfileSheet(store: trip.vehicleStore)
@@ -48,7 +36,11 @@ struct RootView: View {
             trip.startLocating()
         }
         .onChange(of: trip.stations.count) { _, count in
-            showsResults = count > 0
+            showsResults = count > 0 && !trip.isDriving
+        }
+        .onChange(of: trip.isDriving) { _, driving in
+            // Während der Fahrt kein Blatt: Die Kacheln ersetzen die Liste.
+            showsResults = !driving && !trip.stations.isEmpty
         }
         .sheet(isPresented: $showsResults) {
             StationListSheet(trip: trip)
@@ -57,6 +49,26 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled()
         }
+    }
+
+    /// Kopf, Suche und Meldungen der Planung. Während der Fahrt ausgeblendet.
+    private var planningChrome: some View {
+        VStack(spacing: 10) {
+            header
+            searchField
+            if !trip.placeResults.isEmpty {
+                placeResultList
+            }
+            if case let .failed(message) = trip.phase {
+                errorBanner(message)
+            }
+            if trip.placeResults.isEmpty {
+                statusPill
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
 
     // MARK: Kartenbedienung

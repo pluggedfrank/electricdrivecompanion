@@ -25,6 +25,7 @@ import * as matrix from '../lib/matrix.mjs';
 import * as registerquelle from '../lib/registerquelle.mjs';
 import * as umwege from '../lib/umwege.mjs';
 import * as tabelle from '../lib/umwegtabelle.mjs';
+import * as fahrt from '../lib/fahrt.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -1825,4 +1826,106 @@ test('gerundet rundet kaufmaennisch auf zwei Stellen', () => {
   assert.equal(tabelle.gerundet(51.005), '51.01');
   assert.equal(tabelle.gerundet(6.294999), '6.29');
   assert.equal(tabelle.gerundet(7), '7.00');
+});
+
+
+// ------------------------------------------------------------- Fahransicht
+
+// Alle 100 m ein Punkt, wie bei einer echten Routengeometrie.
+const geradeNachOsten = (km, schritt = 100) =>
+  Array.from({ length: (km * 1000) / schritt + 1 }, (_, i) => ({
+    lat: 51.0,
+    lon: 6.0 + (i * schritt) / (111_320 * Math.cos((51 * Math.PI) / 180)),
+  }));
+
+test('verorte: Position neben der Route landet auf dem Lotfusspunkt', () => {
+  const lage = fahrt.routenLage(geradeNachOsten(20));
+  // 50 m noerdlich, bei km 7,5
+  const p = { lat: 51.0 + 50 / 111_132, lon: lage.punkte[75].lon };
+  const v = fahrt.verorte(lage, p, 0);
+  assert.ok(Math.abs(v.fortschritt - 7500) < 30, `bei ${v.fortschritt}`);
+  assert.ok(Math.abs(v.abstand - 50) < 3);
+  assert.equal(v.aufDerRoute, true);
+});
+
+test('verorte: bleibt auf dem Ast, auf dem das Auto faehrt', () => {
+  // Hin nach Osten und auf fast derselben Linie zurueck: eine Kehre.
+  const hin = geradeNachOsten(10);
+  const zurueck = [...hin].reverse().map((p) => ({ lat: p.lat + 20 / 111_132, lon: p.lon }));
+  const lage = fahrt.routenLage([...hin, ...zurueck]);
+  const p = { lat: 51.0 + 10 / 111_132, lon: hin[30].lon };
+  // Auf dem Rueckweg, letzter Treffer kurz davor (Index 165 von 202): dort
+  // muss es bleiben, obwohl der Hinweg zehn Meter daneben liegt.
+  const v = fahrt.verorte(lage, p, 165);
+  assert.ok(v.fortschritt > 10_000, `sprang auf den Hinweg: ${v.fortschritt}`);
+  // Am Anfang der Fahrt: Hinweg.
+  const w = fahrt.verorte(lage, p, 0);
+  assert.ok(w.fortschritt < 10_000);
+});
+
+test('verorte: weit weg heisst nicht auf der Route', () => {
+  const lage = fahrt.routenLage(geradeNachOsten(10));
+  const v = fahrt.verorte(lage, { lat: 51.05, lon: 6.05 }, 0);
+  assert.equal(v.aufDerRoute, false);
+});
+
+test('kacheln: drei vor dem Auto, gebuendelt, mit Akku bei Ankunft', () => {
+  const stationen = [
+    { id: 'hinten', progressMeters: 1_000, detourSeconds: 60 },
+    { id: 'a', progressMeters: 20_000, detourSeconds: 300 },
+    { id: 'a2', progressMeters: 21_000, detourSeconds: 0 },   // gleiche Ausfahrt, besser
+    { id: 'b', progressMeters: 50_000, detourSeconds: 120, detourMeters: 2_000 },
+    { id: 'c', progressMeters: 90_000 },
+    { id: 'd', progressMeters: 150_000 },
+  ];
+  const k = fahrt.kacheln({ stationen, fortschritt: 10_000, akkuJetzt: 40, prozentJeKm: 0.25 });
+  assert.deepEqual(k.map((x) => x.station.id), ['a2', 'b', 'c']);
+  assert.equal(k[0].weitere, 1);
+  assert.equal(k[0].meter, 11_000, 'Raststaette: kein Zugang');
+  assert.equal(k[1].meter, 41_000, 'halbe Umwegstrecke dazu');
+  assert.ok(Math.abs(k[1].akkuBeiAnkunft - (40 - 41 * 0.25)) < 1e-9);
+  // Reichweite bis 10 %: 30 / 0.25 = 120 km. c bei 80 km ist drin.
+  assert.deepEqual(k.map((x) => x.erreichbar), [true, true, true]);
+});
+
+test('kacheln: geplanter Stopp geht in der Gruppe vor, Linie der Reichweite', () => {
+  const stationen = [
+    { id: 'schnell', progressMeters: 30_000, detourSeconds: 0 },
+    { id: 'plan', progressMeters: 30_800, detourSeconds: 240 },
+    { id: 'weit', progressMeters: 200_000 },
+  ];
+  const k = fahrt.kacheln({
+    stationen, fortschritt: 0, akkuJetzt: 30, prozentJeKm: 0.25, geplant: new Set(['plan']),
+  });
+  assert.equal(k[0].station.id, 'plan');
+  assert.equal(k[0].geplant, true);
+  assert.equal(k[1].erreichbar, false, '200 km bei 80 km Reichweite');
+  assert.equal(fahrt.reichweitenLinie(k), 1);
+});
+
+test('zugangMeter: Meter vor Sekunden vor Luftlinie', () => {
+  assert.equal(fahrt.zugangMeter({ detourMeters: 3000, detourSeconds: 999 }), 1500);
+  assert.ok(Math.abs(fahrt.zugangMeter({ detourSeconds: 360 }) - 2500) < 1);
+  assert.equal(fahrt.zugangMeter({ distanceFromRouteMeters: 400 }), 400);
+});
+
+test('berechneUmwege schreibt Meter, wenn die Routenfunktion sie liefert', async () => {
+  const stuetzen = [0, 50_000, 100_000, 150_000].map((m, i) => ({ lat: 51, lon: 6 + i, progressMeters: m }));
+  const stationen = [{ id: 'innen', lat: 51, lon: 7.2, progressMeters: 60_000, detourSeconds: null }];
+  const route = async (p) => (p.length === 2 ? { sekunden: 1000, meter: 50_000 } : { sekunden: 1300, meter: 53_400 });
+  await umwege.berechneUmwege(route, stuetzen, stationen);
+  assert.equal(stationen[0].detourSeconds, 300);
+  assert.equal(stationen[0].detourMeters, 3400);
+  assert.equal(fahrt.zugangMeter(stationen[0]), 1700);
+});
+
+test('umwegtabelle: Meter werden mitgeschrieben und gelesen', () => {
+  const route = Array.from({ length: 11 }, (_, i) => ({ lat: 51.0, lon: 6.0 + i / 100 }));
+  const lage = tabelle.routenLage(route);
+  const station = { id: 's', progressMeters: lage.kumuliert[5] };
+  const t = tabelle.leereTabelle();
+  tabelle.eintragen(t, station, lage, 300, { meter: 3400.4, datum: '2026-09-30' });
+  assert.deepEqual(tabelle.nachschlagenEintrag(t, station, lage), {
+    sekunden: 300, meter: 3400, verkehr: false, datum: '2026-09-30',
+  });
 });

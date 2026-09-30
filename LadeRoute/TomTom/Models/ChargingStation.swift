@@ -25,7 +25,9 @@ struct ChargingStation: Identifiable, Hashable, Sendable {
     /// Von der Along-Route-Suche mitgeliefert, oder, wo sie fehlt, über die
     /// Matrix-API nachgerechnet. Deshalb beschreibbar.
     var detourSeconds: Double?
-    let detourMeters: Double?
+    /// Umweg in Metern, hin und zurück. Die Fahransicht nimmt die Hälfte als
+    /// Weg von der Abfahrt bis zur Säule.
+    var detourMeters: Double?
     /// Kommt der Umweg aus der eigenen Rechnung statt von TomTom?
     var detourIsComputed = false
     /// Stammt die Station aus dem Ladesäulenregister statt von TomTom?

@@ -110,6 +110,34 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var chosenPlaceName: String?
     @Published var mapIsReady = false
     @Published var mapBottomInset: CGFloat = 0
+    /// Platz rechts, den die Kacheln der Fahransicht belegen. Die Karte
+    /// rückt ihre Mitte entsprechend nach links.
+    @Published var mapTrailingInset: CGFloat = 0
+
+    // MARK: Fahrt
+
+    /// Läuft die Fahransicht?
+    @Published private(set) var isDriving = false
+    /// Fährt statt des Autos die Simulation? Zum Ausprobieren am Schreibtisch.
+    @Published private(set) var isSimulatingDrive = false
+    /// Wo das Auto auf der Route steht.
+    @Published private(set) var driveFix: RouteTracker.Fix?
+    /// Die Kacheln rechts, höchstens drei.
+    @Published private(set) var drivingTiles: [DrivingTile] = []
+
+    /// Was die Karte für die Fahrt tun soll.
+    ///
+    /// Die Karte ist während der Fahrt die Quelle der Position, in beiden
+    /// Fällen: Beim echten Fahren liefert ihr Standortgeber GPS, bei der
+    /// Simulation bekommt sie einen simulierten Geber untergeschoben, der die
+    /// Route abfährt. Der Pfeil auf der Karte und die Kacheln rechts kommen
+    /// so aus derselben Position und können nicht auseinanderlaufen.
+    enum DriveCommand {
+        case start(simulatedPath: [CLLocationCoordinate2D]?)
+        case stop
+    }
+
+    let driveCommands = PassthroughSubject<DriveCommand, Never>()
 
     /// Läuft gerade die zweite Suchrunde im Umkreis?
     ///
@@ -197,6 +225,106 @@ final class TripViewModel: ObservableObject {
     /// Liste, werden aber gekennzeichnet, damit niemand einen Stopp darauf plant.
     var unknownPowerCount: Int { stations.filter { !$0.station.hasKnownPower }.count }
 
+    // MARK: Fahrt
+
+    /// Tempo der Simulation: 130 km/h, zehnfach. Meerbusch nach Norddeich
+    /// dauert so eine knappe Viertelstunde.
+    static let simulationSpeedMetersPerSecond: Double = 130 / 3.6 * 10
+    /// So oft meldet der simulierte Geber eine Position.
+    static let simulationTickSeconds: Double = 0.2
+
+    /// Startet die Fahransicht, mit dem echten Standort oder simuliert.
+    func startDriving(simulated: Bool) {
+        guard let route, !isDriving else { return }
+        let tracker = RouteTracker(geometry: route.geometry)
+        self.tracker = tracker
+        driveStartProgress = nil
+        driveFix = nil
+        drivingTiles = []
+        isSimulatingDrive = simulated
+        isDriving = true
+
+        var path: [CLLocationCoordinate2D]?
+        if simulated {
+            // Gleichmäßige Schritte entlang der Route: Der simulierte Geber
+            // springt je Takt einen Punkt weiter, der Abstand ist also das
+            // Tempo.
+            let step = Self.simulationSpeedMetersPerSecond * Self.simulationTickSeconds
+            path = stride(from: 0, through: tracker.lengthMeters, by: step)
+                .compactMap { tracker.coordinate(atProgress: $0) }
+        }
+        driveCommands.send(.start(simulatedPath: path))
+    }
+
+    func stopDriving() {
+        guard isDriving else { return }
+        isDriving = false
+        isSimulatingDrive = false
+        tracker = nil
+        driveFix = nil
+        drivingTiles = []
+        mapTrailingInset = 0
+        driveCommands.send(.stop)
+    }
+
+    /// Eine neue Position während der Fahrt, von der Karte gemeldet.
+    func updateDrivePosition(_ coordinate: CLLocationCoordinate2D) {
+        guard isDriving, var tracker else { return }
+        guard let fix = tracker.locate(coordinate) else { return }
+        self.tracker = tracker
+        if driveStartProgress == nil { driveStartProgress = fix.progressMeters }
+        driveFix = fix
+        refreshDrivingTiles()
+    }
+
+    /// Verbrauch als Prozent Akku je Kilometer.
+    var percentPerKm: Double {
+        let profile = vehicleStore.profile
+        guard profile.usableBatteryKWh > 0 else { return 0 }
+        return profile.consumptionKWhPer100km / profile.usableBatteryKWh
+    }
+
+    /// Ladestand jetzt: Startwert aus dem Fahrzeugprofil minus das, was seit
+    /// dem Losfahren verbraucht ist. Ohne Ladestopps; nach einem Stopp stellt
+    /// man den Wert im Profil neu ein.
+    var chargeNowPercent: Double {
+        let start = vehicleStore.profile.currentChargePercent
+        guard let fix = driveFix, let begin = driveStartProgress else { return start }
+        return max(0, start - (fix.progressMeters - begin) / 1000 * percentPerKm)
+    }
+
+    /// Wie weit es bis zur Reserve noch reicht.
+    var rangeToReserveKm: Double {
+        guard percentPerKm > 0 else { return 0 }
+        return max(0, (chargeNowPercent - vehicleStore.profile.minChargeAtStopPercent) / percentPerKm)
+    }
+
+    var remainingKm: Double {
+        guard let tracker else { return 0 }
+        return max(0, (tracker.lengthMeters - (driveFix?.progressMeters ?? 0)) / 1000)
+    }
+
+    /// Ankunft, anteilig aus der Fahrzeit der Route. Grob, bis die
+    /// Zielführung eigene Zeiten liefert.
+    var arrivalTimeText: String {
+        guard let tracker, tracker.lengthMeters > 0, let route else { return "–" }
+        let total = route.summary.travelTime.converted(to: .seconds).value
+        let rest = total * (remainingKm * 1000 / tracker.lengthMeters)
+        return Date().addingTimeInterval(rest).formatted(date: .omitted, time: .shortened)
+    }
+
+    private func refreshDrivingTiles() {
+        guard isDriving, let fix = driveFix else { return }
+        drivingTiles = DrivingTiles.tiles(
+            stations: stations,
+            progressMeters: fix.progressMeters,
+            chargePercentNow: chargeNowPercent,
+            percentPerKm: percentPerKm,
+            reservePercent: vehicleStore.profile.minChargeAtStopPercent,
+            plannedStopIDs: plannedStopIDs
+        )
+    }
+
     // MARK: Aktionen
 
     func setDestination(_ coordinate: CLLocationCoordinate2D) {
@@ -227,6 +355,7 @@ final class TripViewModel: ObservableObject {
     }
 
     func clearTrip() {
+        stopDriving()
         // Erst abbrechen, dann leeren. Sonst schreibt ein laufender Suchlauf
         // gleich wieder Stationen in ein Modell, das nichts mehr anzeigen soll.
         suchlauf?.cancel()
@@ -449,7 +578,8 @@ final class TripViewModel: ObservableObject {
         for index in fetchedStations.indices
         where fetchedStations[index].station.detourSeconds == nil {
             guard let bekannt = detourTable.lookup(fetchedStations[index].station, on: layout) else { continue }
-            fetchedStations[index].station.detourSeconds = bekannt
+            fetchedStations[index].station.detourSeconds = bekannt.sekunden
+            fetchedStations[index].station.detourMeters = bekannt.meter
             fetchedStations[index].station.detourIsComputed = true
             ausTabelle += 1
         }
@@ -508,9 +638,11 @@ final class TripViewModel: ObservableObject {
             for index in fetchedStations.indices
             where fetchedStations[index].station.detourSeconds == nil {
                 guard let umweg = ergebnis.detourSeconds[fetchedStations[index].id] else { continue }
+                let meter = ergebnis.detourMeters[fetchedStations[index].id]
                 fetchedStations[index].station.detourSeconds = umweg
+                fetchedStations[index].station.detourMeters = meter
                 fetchedStations[index].station.detourIsComputed = true
-                detourTable.remember(umweg, for: fetchedStations[index].station, on: layout)
+                detourTable.remember(umweg, meters: meter, for: fetchedStations[index].station, on: layout)
             }
             detourTable.persist()
             applyLocalFilters()
@@ -648,6 +780,9 @@ final class TripViewModel: ObservableObject {
         }
 
         planCharging()
+        // Während der Fahrt kommen Umwege und Belegungen nach; die Kacheln
+        // sollen sie sofort zeigen, nicht erst bei der nächsten Position.
+        refreshDrivingTiles()
     }
 
     /// Startet die Zielsuche neu und bricht die vorige ab.
@@ -696,6 +831,10 @@ final class TripViewModel: ObservableObject {
     private var fetchedTier: PowerTier?
     private var cancellables = Set<AnyCancellable>()
     private var placeSearchTask: Task<Void, Never>?
+    /// Ordnet Positionen der Route zu, solange gefahren wird.
+    private var tracker: RouteTracker?
+    /// Wo die Fahrt begann, für den Verbrauch seitdem.
+    private var driveStartProgress: Double?
     private let locationSource = UserLocationSource()
     private let apiKey: String
     private let api: TomTomAPIClient

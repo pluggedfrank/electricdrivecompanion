@@ -337,6 +337,14 @@ actor TomTomAPIClient {
         via points: [CLLocationCoordinate2D],
         withTraffic: Bool = true
     ) async throws -> Double {
+        try await routeLength(via: points, withTraffic: withTraffic).seconds
+    }
+
+    /// Fahrzeit und Länge einer Route über die Punkte.
+    func routeLength(
+        via points: [CLLocationCoordinate2D],
+        withTraffic: Bool = true
+    ) async throws -> (seconds: Double, meters: Double?) {
         guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
         guard points.count >= 2 else { throw TomTomAPIError.emptyRoute }
 
@@ -357,7 +365,7 @@ actor TomTomAPIClient {
         do {
             let response = try JSONDecoder().decode(CalculateRouteResponse.self, from: data)
             guard let route = response.routes.first else { throw TomTomAPIError.emptyRoute }
-            return route.summary.travelTimeInSeconds
+            return (route.summary.travelTimeInSeconds, route.summary.lengthInMeters)
         } catch let error as TomTomAPIError {
             throw error
         } catch {

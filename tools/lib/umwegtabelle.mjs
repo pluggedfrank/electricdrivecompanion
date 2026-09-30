@@ -120,10 +120,14 @@ export function speichere(pfad, tabelle) {
 }
 
 export function nachschlagen(tabelle, station, lage) {
+  return nachschlagenEintrag(tabelle, station, lage)?.sekunden ?? null;
+}
+
+/** Der ganze Eintrag, mit Metern, sofern sie mitgeschrieben wurden. */
+export function nachschlagenEintrag(tabelle, station, lage) {
   const k = schluessel(station, lage);
   if (!k) return null;
-  const e = tabelle.eintraege[k];
-  return e ? e.sekunden : null;
+  return tabelle.eintraege[k] ?? null;
 }
 
 /**
@@ -133,13 +137,14 @@ export function nachschlagen(tabelle, station, lage) {
  * Umweg der Strasse enthalten, nicht den des Nachmittags, an dem gemessen
  * wurde. Ohne Verkehr ist der Wert der bessere, und er bleibt.
  */
-export function eintragen(tabelle, station, lage, sekunden, { mitVerkehr = false, datum } = {}) {
+export function eintragen(tabelle, station, lage, sekunden, { mitVerkehr = false, datum, meter } = {}) {
   const k = schluessel(station, lage);
   if (!k || sekunden == null) return false;
   const vorhanden = tabelle.eintraege[k];
   if (vorhanden && !vorhanden.verkehr && mitVerkehr) return false;
   tabelle.eintraege[k] = {
     sekunden: Math.round(sekunden),
+    ...(Number.isFinite(meter) ? { meter: Math.round(meter) } : {}),
     verkehr: mitVerkehr,
     datum: datum ?? new Date().toISOString().slice(0, 10),
   };

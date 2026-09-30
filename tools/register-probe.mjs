@@ -233,9 +233,11 @@ async function main() {
     let ausTabelle = 0;
     if (tabelle) {
       for (const s of stationen) {
-        const bekannt = umwegtabelle.nachschlagen(tabelle, s, lage);
+        const eintrag = umwegtabelle.nachschlagenEintrag(tabelle, s, lage);
+        const bekannt = eintrag?.sekunden ?? null;
         if (bekannt != null) {
           s.detourSeconds = bekannt;
+          if (Number.isFinite(eintrag.meter)) s.detourMeters = eintrag.meter;
           s.detourAusTabelle = true;
           ausTabelle++;
         }
@@ -250,7 +252,7 @@ async function main() {
     const routeSekunden = async (punkte) => {
       await ev.sleep(ev.MIN_REQUEST_INTERVAL_MS);
       const antwort = await routeAntwort(apiKey, punkte, modus);
-      return antwort.summary.travelTimeInSeconds;
+      return { sekunden: antwort.summary.travelTimeInSeconds, meter: antwort.summary.lengthInMeters };
     };
 
     let zuletzt = 0;
@@ -282,7 +284,7 @@ async function main() {
       for (const s of offen) {
         if (s.detourSeconds == null) continue;
         if (!s.umwegInnen) { aussen++; continue; }
-        if (umwegtabelle.eintragen(tabelle, s, lage, s.detourSeconds, { mitVerkehr })) neu++;
+        if (umwegtabelle.eintragen(tabelle, s, lage, s.detourSeconds, { mitVerkehr, meter: s.detourMeters })) neu++;
       }
       if (neu > 0) umwegtabelle.speichere(tabellenPfad, tabelle);
       console.log(

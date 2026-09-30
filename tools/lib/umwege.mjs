@@ -64,10 +64,19 @@ export function umwegAus(ueberStationSekunden, grundstreckeSekunden) {
   return Math.max(0, ueberStationSekunden - grundstreckeSekunden);
 }
 
+/** Eine Routenantwort als { sekunden, meter }, auch wenn nur Sekunden kamen. */
+function alsStrecke(antwort) {
+  if (typeof antwort === 'number') return { sekunden: antwort, meter: null };
+  return { sekunden: antwort?.sekunden ?? null, meter: antwort?.meter ?? null };
+}
+
 /**
  * Rechnet die Umwege, mit einer beliebigen Routenfunktion.
  *
- * `routeSekunden(punkte)` liefert die Fahrzeit einer Route ueber die Punkte.
+ * `routeSekunden(punkte)` liefert die Fahrzeit einer Route ueber die Punkte,
+ * als Zahl oder als { sekunden, meter }. Mit Metern bekommt die Station auch
+ * `detourMeters`; die Fahransicht braucht sie fuer die genaue Strecke bis zur
+ * Saeule.
  * Im Probelauf ist das die Routing API, im Test eine Tabelle. Schreibt das
  * Ergebnis in `station.detourSeconds` und `station.detourGerechnet`.
  *
@@ -83,7 +92,7 @@ export async function berechneUmwege(routeSekunden, stuetzen, stationen, { onFor
 
   for (const strecke of plan.grundstrecken) {
     try {
-      grund.set(strecke.schluessel, await routeSekunden(strecke.punkte));
+      grund.set(strecke.schluessel, alsStrecke(await routeSekunden(strecke.punkte)));
     } catch {
       fehler++;
     }
@@ -93,11 +102,14 @@ export async function berechneUmwege(routeSekunden, stuetzen, stationen, { onFor
   let gerechnet = 0;
   for (const [index, via] of plan.viaStrecken.entries()) {
     const basis = grund.get(via.schluessel);
-    if (basis == null) continue;
+    if (basis?.sekunden == null) continue;
 
     try {
-      const ueberStation = await routeSekunden(via.punkte);
-      via.station.detourSeconds = umwegAus(ueberStation, basis);
+      const ueberStation = alsStrecke(await routeSekunden(via.punkte));
+      via.station.detourSeconds = umwegAus(ueberStation.sekunden, basis.sekunden);
+      if (ueberStation.meter != null && basis.meter != null) {
+        via.station.detourMeters = Math.max(0, ueberStation.meter - basis.meter);
+      }
       via.station.detourGerechnet = true;
       via.station.umwegInnen = via.innen;
       gerechnet++;

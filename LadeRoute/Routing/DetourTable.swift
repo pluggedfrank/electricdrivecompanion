@@ -25,6 +25,8 @@ struct DetourTableFile: Codable {
 
     struct Entry: Codable {
         let sekunden: Double
+        /// Umweg in Metern. Ältere Einträge haben ihn nicht.
+        let meter: Double?
         let verkehr: Bool?
         let datum: String?
     }
@@ -130,10 +132,10 @@ final class DetourTable: @unchecked Sendable {
     var cachedCount: Int { lock.withLock { cached.count } }
 
     /// Der bekannte Umweg, aus dem Bundle oder dem Gerätecache.
-    func lookup(_ station: ChargingStation, on layout: DetourKey.RouteLayout) -> Double? {
+    func lookup(_ station: ChargingStation, on layout: DetourKey.RouteLayout) -> DetourTableFile.Entry? {
         guard let key = DetourKey.key(for: station, on: layout) else { return nil }
-        if let entry = bundled[key] { return entry.sekunden }
-        return lock.withLock { cached[key]?.sekunden }
+        if let entry = bundled[key] { return entry }
+        return lock.withLock { cached[key] }
     }
 
     /// Merkt sich einen gerechneten Umweg im Gerätecache.
@@ -141,10 +143,16 @@ final class DetourTable: @unchecked Sendable {
     /// Die App rechnet mit Verkehrslage, und das steht auch so im Eintrag.
     /// Für die Wiederholung derselben Strecke ist das gut genug; die Tabelle
     /// im Bundle bleibt die Quelle der Werte ohne Verkehr.
-    func remember(_ seconds: Double, for station: ChargingStation, on layout: DetourKey.RouteLayout) {
+    func remember(
+        _ seconds: Double,
+        meters: Double?,
+        for station: ChargingStation,
+        on layout: DetourKey.RouteLayout
+    ) {
         guard let key = DetourKey.key(for: station, on: layout), bundled[key] == nil else { return }
         let entry = DetourTableFile.Entry(
             sekunden: seconds.rounded(),
+            meter: meters?.rounded(),
             verkehr: true,
             datum: ISO8601DateFormatter().string(from: Date()).prefix(10).description
         )

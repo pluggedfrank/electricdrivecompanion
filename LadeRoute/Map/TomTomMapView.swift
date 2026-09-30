@@ -28,11 +28,13 @@ struct TomTomMapView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: TomTomSDKMapDisplay.MapView, context: Context) {
+        // Während der Fahrt liegt rechts die Kachelspalte und unten kein
+        // Blatt; die Mitte der Karte, und damit der Pfeil, rückt nach links.
         mapView.contentInsets = NSDirectionalEdgeInsets(
             top: 0,
             leading: 0,
-            bottom: trip.mapBottomInset,
-            trailing: 0
+            bottom: trip.isDriving ? 0 : trip.mapBottomInset,
+            trailing: trip.isDriving ? trip.mapTrailingInset : 0
         )
     }
 
