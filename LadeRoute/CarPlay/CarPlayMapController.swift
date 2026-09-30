@@ -14,7 +14,7 @@ import TomTomSDKMapDisplay
 import TomTomSDKRoute
 import UIKit
 
-final class CarPlayMapController: UIViewController, MapViewDelegate {
+final class CarPlayMapController: UIViewController, TomTomSDKMapDisplay.MapViewDelegate {
     init(trip: TripViewModel) {
         self.trip = trip
         super.init(nibName: nil, bundle: nil)
@@ -58,6 +58,8 @@ final class CarPlayMapController: UIViewController, MapViewDelegate {
     func mapView(_: MapView, onLoadFailed error: Error) {
         print("CarPlay-Karte nicht geladen: \(error.localizedDescription)")
     }
+
+    func mapView(_: MapView, onStyleLoad _: Result<StyleContainer, Error>) {}
 
     // MARK: Bedienung aus der Szene
 
