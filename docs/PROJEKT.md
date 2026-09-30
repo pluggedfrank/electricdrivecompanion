@@ -305,6 +305,24 @@ Wischen löscht oder bearbeitet. Beim Tippen in die Suche stehen passende
 gespeicherte Ziele oben. Gespeichert wird auf dem Gerät (UserDefaults).
 Nächste Ausbaustufe: eigene Kategorien.
 
+## CarPlay (Stand 30.09.2026)
+
+Gebaut für die Kategorie Navigation (`com.apple.developer.carplay-maps`). Die
+Berechtigung vergibt Apple auf Antrag (developer.apple.com/contact/carplay);
+bis sie da ist, steht sie nur im Simulator-Build (`CarPlay.entitlements`,
+`CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]` in project.yml). Nach der
+Freischaltung die Einschränkung auf den Simulator streichen.
+
+- Eigene TomTom-Karte im Auto-Display (`LadeRoute/CarPlay/`), Position aus
+  demselben Fahrtmodell wie das iPhone (`AppModel`).
+- Vor der Fahrt: „Ziele“ (Zuhause, Arbeit, Gespeichert, Zuletzt), „Losfahren“,
+  im Debug-Build „Simulieren“.
+- Während der Fahrt: Abbiegehinweis mit Strecke als CarPlay-Manöver (viele
+  Autos zeigen ihn auch im Kombiinstrument), Ankunft und Rest, orange bei Stau;
+  „Lader“ mit den Stationen der Kacheln und der Ausweichzeile, Antippen führt
+  über die Station; „Beenden“. Knopf auf der Karte wechselt die Ansicht.
+- Testen: Simulator, I/O, External Displays, CarPlay.
+
 ## Aufs iPhone
 
 Signiert wird automatisch mit dem Team aus `Secrets.xcconfig`

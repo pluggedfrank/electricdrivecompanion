@@ -582,6 +582,13 @@ final class TripViewModel: ObservableObject {
 
     /// Ankunft, anteilig aus der Fahrzeit der Route. Grob, bis die
     /// Zielführung eigene Zeiten liefert.
+    /// Restfahrzeit in Sekunden, mit Verkehr, anteilig aus der letzten
+    /// Messung. Für CarPlay und die Ankunft.
+    var remainingSeconds: Double? {
+        guard let estimate = remainingTimeEstimate, estimate.meters > 0 else { return nil }
+        return estimate.seconds * (remainingKm * 1000 / estimate.meters)
+    }
+
     var arrivalTimeText: String {
         guard let estimate = remainingTimeEstimate, estimate.meters > 0 else { return "–" }
         let rest = estimate.seconds * (remainingKm * 1000 / estimate.meters)

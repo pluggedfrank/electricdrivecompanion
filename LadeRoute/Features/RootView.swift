@@ -20,8 +20,9 @@ struct RootView: View {
         var id: UUID { place.id }
     }
 
-    init(apiKey: String) {
-        _trip = StateObject(wrappedValue: TripViewModel(apiKey: apiKey))
+    init(apiKey _: String) {
+        // Dasselbe Modell wie CarPlay, siehe AppModel.
+        _trip = StateObject(wrappedValue: AppModel.shared.trip)
     }
 
     var body: some View {

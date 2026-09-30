@@ -64,6 +64,11 @@ targets:
         # schriebe sie sonst in die .xcodeproj, und die wird bei jedem
         # xcodegen generate neu erzeugt. Die Auswahl waere jedes Mal weg.
         CODE_SIGN_STYLE: Automatic
+        # CarPlay-Navigation: die Berechtigung vergibt Apple auf Antrag. Bis sie
+        # da ist, steht sie nur im Simulator-Build; auf dem iPhone liesse sich
+        # die App sonst nicht mehr signieren, weil das Profil sie nicht kennt.
+        # Nach der Freischaltung die Einschraenkung auf den Simulator streichen.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": CarPlay.entitlements
     dependencies:
       - package: TomTomCore
         product: TomTomSDKMapDisplay
