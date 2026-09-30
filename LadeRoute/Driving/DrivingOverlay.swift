@@ -45,6 +45,11 @@ struct DrivingOverlay: View {
                     .padding(.leading, 12)
                     .padding(.top, 8)
 
+                mapControls
+                    .padding(.leading, 12)
+                    .padding(.bottom, barHeight + 18)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+
                 drivingBar(compact: !landscape)
                     .frame(height: barHeight)
                     .frame(width: landscape ? leftWidth : geometry.size.width - 20)
@@ -66,6 +71,44 @@ struct DrivingOverlay: View {
             }
             .presentationDetents([.height(260)])
         }
+    }
+
+    // MARK: Übersicht
+
+    /// Links über der Fahrleiste: die ganze Route zeigen, und in der
+    /// Übersicht Plus, Minus und zurück zur mitfahrenden Kamera.
+    private var mapControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if trip.drivingOverview {
+                roundButton("plus", label: "Hineinzoomen") { trip.mapCommands.send(.zoomIn) }
+                roundButton("minus", label: "Herauszoomen") { trip.mapCommands.send(.zoomOut) }
+                Button { trip.drivingOverview = false } label: {
+                    Label("Zur Fahrt", systemImage: "location.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .frame(height: 44)
+                        .background(Theme.river, in: Capsule())
+                        .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+                }
+                .buttonStyle(.plain)
+            } else {
+                roundButton("map", label: "Ganze Route zeigen") { trip.drivingOverview = true }
+            }
+        }
+    }
+
+    private func roundButton(_ systemImage: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.ink)
+                .frame(width: 44, height: 44)
+                .background(Theme.paper.opacity(0.97), in: Circle())
+                .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     // MARK: Anweisung
@@ -240,7 +283,10 @@ struct DrivingOverlay: View {
                 systemImage: trip.cameraNorthUp ? "location.north.line.fill" : "location.north.line",
                 label: nil,
                 accessibility: trip.cameraNorthUp ? "Karte: Norden oben. Tippen für Fahrtrichtung." : "Karte: Fahrtrichtung oben. Tippen für Norden oben."
-            ) { trip.cameraNorthUp.toggle() }
+            ) {
+                // Aus der Übersicht führt der Kameraknopf zurück zur Fahrt.
+                if trip.drivingOverview { trip.drivingOverview = false } else { trip.cameraNorthUp.toggle() }
+            }
         }
         .padding(.horizontal, 10)
         .background(Theme.paper.opacity(0.97), in: RoundedRectangle(cornerRadius: 18))

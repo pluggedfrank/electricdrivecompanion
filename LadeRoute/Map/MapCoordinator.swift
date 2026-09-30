@@ -166,6 +166,18 @@ private extension MapCoordinator {
             }
             .store(in: &cancellables)
 
+        trip.$drivingOverview
+            .dropFirst()
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, self.trip.isDriving else { return }
+                    self.applyDrivingCamera()
+                }
+            }
+            .store(in: &cancellables)
+
         trip.$cameraNorthUp
             .dropFirst()
             .receive(on: DispatchQueue.main)
@@ -301,6 +313,13 @@ private extension MapCoordinator {
     /// Norden oben ist die Wahl für alle, die die Karte lieber stehen lassen.
     func applyDrivingCamera() {
         guard let map else { return }
+        // In der Übersicht folgt die Kamera nicht; sie zeigt die ganze Route,
+        // und Plus und Minus zoomen frei.
+        if trip.drivingOverview {
+            map.cameraTrackingMode = .none
+            map.zoomToRoutes(padding: 48)
+            return
+        }
         map.cameraTrackingMode = trip.cameraNorthUp ? .followRouteNorthUp() : .followRouteDirection()
     }
 

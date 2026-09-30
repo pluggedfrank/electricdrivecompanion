@@ -147,6 +147,11 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var isSimulatingDrive = false
     /// Wo das Auto auf der Route steht.
     @Published private(set) var driveFix: RouteTracker.Fix?
+    /// Übersicht während der Fahrt: die ganze Route statt der mitfahrenden
+    /// Kamera, mit Plus und Minus. Die Fahrt-Kamera begrenzt den Zoom auf
+    /// ein paar hundert Meter, und wer wissen will, wo er auf der Strecke
+    /// ist, sah das nicht (Rückmeldung von der ersten iPhone-Fahrt).
+    @Published var drivingOverview = false
     /// Norden oben statt Fahrtrichtung oben. Wird gemerkt.
     @Published var cameraNorthUp = UserDefaults.standard.bool(forKey: "cameraNorthUp") {
         didSet { UserDefaults.standard.set(cameraNorthUp, forKey: "cameraNorthUp") }
@@ -378,6 +383,7 @@ final class TripViewModel: ObservableObject {
         drivingFallback = nil
         drivingFallbackReason = nil
         isSimulatingDrive = simulated
+        drivingOverview = false
         isDriving = true
         // Der Bildschirm bleibt an, solange gefahren wird.
         UIApplication.shared.isIdleTimerDisabled = true
@@ -448,6 +454,7 @@ final class TripViewModel: ObservableObject {
         simulatedStop = nil
         isAdjustingCharge = false
         realPositionSubscription = nil
+        drivingOverview = false
         locationSource.endDriving()
         UIApplication.shared.isIdleTimerDisabled = false
         speaker.stop()
