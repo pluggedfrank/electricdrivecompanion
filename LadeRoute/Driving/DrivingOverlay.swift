@@ -677,10 +677,19 @@ struct DrivingTileView: View {
                 distance
                 arrival
             } else {
-                HStack(alignment: .firstTextBaseline) {
-                    distance
-                    Spacer(minLength: 4)
-                    arrival
+                // Nebeneinander, wenn es passt, sonst untereinander. Im
+                // Querformat stand in der schmaleren Spalte nur "…" statt
+                // der Entfernung (30.09.2026).
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline) {
+                        distance
+                        Spacer(minLength: 4)
+                        arrival
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        distance
+                        arrival
+                    }
                 }
             }
 
@@ -744,6 +753,8 @@ struct DrivingTileView: View {
                 .padding(.trailing, 5)
             Text(kmText)
                 .font(.system(size: compact ? 30 : 38, weight: .bold, design: .rounded).monospacedDigit())
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text("km")
                 .font(.system(size: compact ? 13 : 15, weight: .semibold))
                 .foregroundStyle(secondary)
