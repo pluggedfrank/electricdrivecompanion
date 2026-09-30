@@ -152,6 +152,25 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var drivingFallback: DrivingTile?
     @Published private(set) var drivingFallbackReason: FallbackReason?
 
+    // MARK: Ladestand unterwegs
+
+    /// Ladestopps und von Hand gesetzte Werte dieser Fahrt.
+    @Published private(set) var chargeEvents: [ChargeEvent] = []
+    /// Was nach einem Ladestopp gesetzt wurde, für den Hinweis oben links.
+    struct ChargeNotice: Equatable {
+        let stationName: String
+        let percent: Double
+        let minutes: Double
+    }
+
+    @Published var chargeNotice: ChargeNotice?
+    /// Steht das Auto an einer Säule? Name der Station, sobald erkannt.
+    @Published private(set) var chargingAt: String?
+    /// Die Simulation hält an einem geplanten Stopp und wartet auf "Weiter".
+    @Published private(set) var simulatedStop: ChargingStop?
+    /// Offen, wenn der Ladestand von Hand eingestellt wird.
+    @Published var isAdjustingCharge = false
+
     // MARK: Zielführung
 
     /// Die Anweisungen der Strecke, auf der Linie des SDK verortet.
@@ -335,6 +354,12 @@ final class TripViewModel: ObservableObject {
         isSimulatingDrive = simulated
         isDriving = true
         drivenBeforeRerouteMeters = 0
+        chargeEvents = []
+        chargeNotice = nil
+        chargingAt = nil
+        simulatedStop = nil
+        handledSimulatedStops = []
+        stopDetector.reset()
         resetGuidanceProgress()
         if let first = route.geometry.first, let last = route.geometry.last {
             loadGuidance(from: first, to: last, tracker: tracker)
@@ -382,6 +407,9 @@ final class TripViewModel: ObservableObject {
         nextManeuver = nil
         guidanceProblem = nil
         isRerouting = false
+        chargingAt = nil
+        simulatedStop = nil
+        isAdjustingCharge = false
         speaker.stop()
         driveCommands.send(.stop)
     }
@@ -394,6 +422,7 @@ final class TripViewModel: ObservableObject {
         if driveStartProgress == nil { driveStartProgress = fix.progressMeters }
         driveFix = fix
         updateSpeed(progress: fix.progressMeters)
+        watchForChargingStop(at: coordinate)
         refreshDrivingTiles()
         refreshGuidance()
         watchForDeviation(fix: fix, at: coordinate)
@@ -410,12 +439,24 @@ final class TripViewModel: ObservableObject {
     /// dem Losfahren verbraucht ist. Ohne Ladestopps; nach einem Stopp stellt
     /// man den Wert im Profil neu ein.
     var chargeNowPercent: Double {
-        let start = vehicleStore.profile.currentChargePercent
-        guard let fix = driveFix, let begin = driveStartProgress else {
-            return max(0, start - drivenBeforeRerouteMeters / 1000 * percentPerKm)
-        }
-        let driven = drivenBeforeRerouteMeters + (fix.progressMeters - begin)
-        return max(0, start - driven / 1000 * percentPerKm)
+        ChargeTracker.chargeNow(
+            start: vehicleStore.profile.currentChargePercent,
+            events: chargeEvents,
+            drivenMeters: drivenMeters,
+            percentPerKm: percentPerKm
+        )
+    }
+
+    /// Seit Abfahrt gefahren, über Umleitungen hinweg.
+    var drivenMeters: Double {
+        guard let fix = driveFix, let begin = driveStartProgress else { return drivenBeforeRerouteMeters }
+        return drivenBeforeRerouteMeters + max(0, fix.progressMeters - begin)
+    }
+
+    /// Setzt den Ladestand jetzt, von Hand oder nach einem Ladestopp.
+    func setChargeNow(_ percent: Double) {
+        chargeEvents.append(ChargeEvent(drivenMeters: drivenMeters, percent: min(100, max(0, percent))))
+        refreshDrivingTiles()
     }
 
     /// Wie weit es bis zur Reserve noch reicht.
@@ -455,6 +496,70 @@ final class TripViewModel: ObservableObject {
         drivingTiles = set.tiles
         drivingFallback = set.fallback
         drivingFallbackReason = set.fallbackReason
+    }
+
+    // MARK: Ladestopps
+
+    /// Beim echten Fahren: Hat das Auto an einer Säule gestanden? Beim
+    /// Wegfahren wird der Akku auf den geschätzten Stand gesetzt; der Hinweis
+    /// oben links nennt ihn, Antippen korrigiert ihn. Die Simulation hält
+    /// stattdessen an den geplanten Stopps.
+    private func watchForChargingStop(at coordinate: CLLocationCoordinate2D) {
+        if isSimulatingDrive {
+            watchSimulatedStop()
+            return
+        }
+        let event = stopDetector.step(time: Date(), position: coordinate, stations: fetchedStations.map(\.station))
+        switch event {
+        case let .arrived(station):
+            chargingAt = station.name
+        case let .departed(station, minutes):
+            chargingAt = nil
+            applyChargingStop(stationName: station.name, stationPowerKW: station.maxPowerKW, minutes: minutes)
+        case nil:
+            break
+        }
+    }
+
+    private func applyChargingStop(stationName: String, stationPowerKW: Double?, minutes: Double) {
+        let estimate = ChargeTracker.estimate(
+            chargePercent: chargeNowPercent,
+            stopMinutes: minutes,
+            stationPowerKW: stationPowerKW,
+            vehicle: vehicleStore.profile
+        )
+        setChargeNow(estimate)
+        chargeNotice = ChargeNotice(stationName: stationName, percent: estimate, minutes: minutes)
+        if voiceEnabled {
+            speaker.speak("Akku nach dem Ladestopp auf \(Int(estimate.rounded())) Prozent geschätzt.")
+        }
+    }
+
+    /// Die Simulation fährt an geplanten Stopps nicht ab, sie hält auf der
+    /// Route, auf Höhe der Station, und wartet auf "Laden und weiter".
+    private func watchSimulatedStop() {
+        guard simulatedStop == nil, let fix = driveFix, let plan = chargingPlan else { return }
+        guard let stop = plan.stops.first(where: {
+            !handledSimulatedStops.contains($0.id) && $0.progressMeters <= fix.progressMeters
+        }) else { return }
+        handledSimulatedStops.insert(stop.id)
+        simulatedStop = stop
+        chargingAt = stop.station.name
+        driveCommands.send(.updateSimulatedPath([fix.snapped]))
+    }
+
+    /// Nach dem simulierten Stopp: laden, so lange der Plan es vorsieht, und
+    /// weiterfahren.
+    func finishSimulatedStop() {
+        guard let stop = simulatedStop, let tracker else { return }
+        simulatedStop = nil
+        chargingAt = nil
+        applyChargingStop(
+            stationName: stop.station.name,
+            stationPowerKW: stop.station.maxPowerKW,
+            minutes: stop.chargingSeconds / 60 + 2
+        )
+        driveCommands.send(.updateSimulatedPath(simulatedPath(on: tracker, from: driveFix?.progressMeters ?? 0)))
     }
 
     // MARK: Zielführung, Ablauf
@@ -529,9 +634,18 @@ final class TripViewModel: ObservableObject {
     private func watchForDeviation(fix: RouteTracker.Fix, at coordinate: CLLocationCoordinate2D) {
         guard !isSimulatingDrive else { return }
         offRouteFixes = fix.offsetMeters > 50 ? offRouteFixes + 1 : 0
+        // Wer zu einer Säule abbiegt, verlässt die Route mit Absicht. Im
+        // Umkreis von 1 km um eine Station wird nicht neu geplant, sonst
+        // hieße es auf dem Weg dorthin alle 20 Sekunden "Route wird neu
+        // berechnet". Nach dem Stopp, weiter weg, greift es wieder.
+        if offRouteFixes >= 3, isNearAnyStation(coordinate, within: 1000) { return }
         guard offRouteFixes >= 3, !isRerouting, let destination else { return }
         if let last = lastRerouteAt, Date().timeIntervalSince(last) < 20 { return }
         reroute(from: coordinate, to: destination)
+    }
+
+    private func isNearAnyStation(_ coordinate: CLLocationCoordinate2D, within meters: Double) -> Bool {
+        fetchedStations.contains { GeoUtils.distance($0.station.coordinate, coordinate) <= meters }
     }
 
     private func reroute(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D) {
@@ -1148,6 +1262,8 @@ final class TripViewModel: ObservableObject {
     private var speedMetersPerSecond: Double = 0
     private var lastSpeedSample: (progress: Double, time: Date)?
     private var offRouteFixes = 0
+    private var stopDetector = StopDetector()
+    private var handledSimulatedStops = Set<String>()
     private var lastRerouteAt: Date?
     private let locationSource = UserLocationSource()
     private let apiKey: String

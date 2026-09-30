@@ -28,6 +28,7 @@ import * as tabelle from '../lib/umwegtabelle.mjs';
 import * as fahrt from '../lib/fahrt.mjs';
 import * as marken from '../lib/marken.mjs';
 import * as ansage from '../lib/ansage.mjs';
+import * as akku from '../lib/akku.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -2206,4 +2207,77 @@ test('naechsteAnweisung: die Abfahrt zaehlt nicht, hinter dem Ziel kommt nichts'
   // Bis 100 m hinter dem Ziel bleibt es die naechste Anweisung.
   assert.equal(anweisungen[ansage.naechsteAnweisung(anweisungen, lage.laenge + 1)].manoever, 'ARRIVE_LEFT');
   assert.equal(ansage.naechsteAnweisung(anweisungen, lage.laenge + 200), null);
+});
+
+// ---------------------------------------------------------------- Akku
+
+test('akkuJetzt: ab Start heruntergerechnet, nach einem Ladestopp vom neuen Stand', () => {
+  const p = { start: 80, prozentJeKm: 0.25 };
+  assert.equal(akku.akkuJetzt({ ...p, gefahrenMeter: 100_000 }), 55);
+  const ereignisse = [{ beiMeter: 200_000, prozent: 75 }];
+  // Vor dem Stopp zaehlt er noch nicht.
+  assert.equal(akku.akkuJetzt({ ...p, ereignisse, gefahrenMeter: 150_000 }), 42.5);
+  assert.equal(akku.akkuJetzt({ ...p, ereignisse, gefahrenMeter: 200_000 }), 75);
+  assert.equal(akku.akkuJetzt({ ...p, ereignisse, gefahrenMeter: 240_000 }), 65);
+  // Nie unter null.
+  assert.equal(akku.akkuJetzt({ ...p, gefahrenMeter: 1_000_000 }), 0);
+});
+
+test('ladungNach: Umkehrung der Ladezeit', () => {
+  const sekunden = ladeplanung.ladezeitSekunden(11.55, 50, AUTO.chargingCurve, 300);
+  const erreicht = akku.ladungNach(11.55, sekunden, AUTO.chargingCurve, 300, 77);
+  assert.ok(Math.abs(erreicht - 50) < 0.5, `erreicht ${erreicht}`);
+  // Nie ueber voll, auch nach Stunden.
+  assert.equal(akku.ladungNach(60, 5 * 3600, AUTO.chargingCurve, 300, 77), 77);
+  // Eine 50-kW-Saeule laedt in derselben Zeit weniger.
+  assert.ok(akku.ladungNach(11.55, 1200, AUTO.chargingCurve, 50, 77) < akku.ladungNach(11.55, 1200, AUTO.chargingCurve, 300, 77));
+});
+
+test('ladeSchaetzung: 22 Minuten an 300 kW ab 15 Prozent', () => {
+  const p = akku.ladeSchaetzung({ akkuProzent: 15, haltMinuten: 22, saeulenKW: 300, fahrzeug: AUTO });
+  // 20 Minuten Laden, die Kurve faellt ab 40 Prozent: knapp 80 Prozent.
+  assert.ok(p > 70 && p < 90, `geschaetzt ${p}`);
+  // Zwei Minuten sind nur An- und Abstecken.
+  assert.equal(akku.ladeSchaetzung({ akkuProzent: 15, haltMinuten: 2, saeulenKW: 300, fahrzeug: AUTO }), 15);
+});
+
+// Ein Punkt so viele Meter oestlich einer Saeule.
+const oestlich = (s, meter) => ({ lat: s.lat, lon: s.lon + meter / (111_320 * Math.cos((s.lat * Math.PI) / 180)) });
+
+test('haltSchritt: 20 Minuten an der Saeule, dann weiter', () => {
+  const saeule = { id: 'kamen', lat: 51.6, lon: 7.6 };
+  const z = akku.neuerHalt();
+  const ereignisse = [];
+  const schritt = (zeit, position) => {
+    const e = akku.haltSchritt(z, { zeit, position, stationen: [saeule] });
+    if (e) ereignisse.push({ ...e, zeit });
+  };
+  schritt(0, oestlich(saeule, 2000));
+  schritt(10, oestlich(saeule, 100));
+  for (let t = 20; t <= 1200; t += 10) schritt(t, oestlich(saeule, 20));
+  schritt(1210, oestlich(saeule, 200));
+  schritt(1220, oestlich(saeule, 400));
+  assert.deepEqual(ereignisse.map((e) => e.art), ['angekommen', 'weiter']);
+  assert.equal(ereignisse[0].zeit, 130);
+  assert.ok(Math.abs(ereignisse[1].minuten - 1210 / 60) < 0.01);
+  assert.equal(ereignisse[1].station.id, 'kamen');
+});
+
+test('haltSchritt: vorbeifahren und kurz halten zaehlt nicht', () => {
+  const saeule = { id: 'x', lat: 51.6, lon: 7.6 };
+  const z = akku.neuerHalt();
+  const ereignisse = [];
+  // Vorbei mit 30 m/s.
+  for (let m = -1000, t = 0; m <= 1000; m += 30, t += 1) {
+    const e = akku.haltSchritt(z, { zeit: t, position: oestlich(saeule, m), stationen: [saeule] });
+    if (e) ereignisse.push(e);
+  }
+  // Eine Minute gestanden, dann weiter.
+  for (let t = 100; t <= 160; t += 10) {
+    const e = akku.haltSchritt(z, { zeit: t, position: oestlich(saeule, 50), stationen: [saeule] });
+    if (e) ereignisse.push(e);
+  }
+  const e = akku.haltSchritt(z, { zeit: 170, position: oestlich(saeule, 500), stationen: [saeule] });
+  if (e) ereignisse.push(e);
+  assert.deepEqual(ereignisse, []);
 });

@@ -55,6 +55,13 @@ struct DrivingOverlay: View {
             .onAppear { trip.mapTrailingInset = railWidth + 20 }
             .onChange(of: railWidth) { _, width in trip.mapTrailingInset = width + 20 }
         }
+        .sheet(isPresented: $trip.isAdjustingCharge) {
+            ChargeAdjustSheet(initial: trip.chargeNowPercent) { percent in
+                trip.setChargeNow(percent)
+                trip.chargeNotice = nil
+            }
+            .presentationDetents([.height(260)])
+        }
     }
 
     // MARK: Anweisung
@@ -70,6 +77,14 @@ struct DrivingOverlay: View {
                 notice(problem, systemImage: "speaker.slash")
             } else if trip.guidance.isEmpty {
                 notice("Anweisungen werden geladen …", systemImage: "hourglass")
+            }
+            if let stop = trip.simulatedStop {
+                SimulatedStopCard(stop: stop, chargeNow: trip.chargeNowPercent) { trip.finishSimulatedStop() }
+            } else if let name = trip.chargingAt {
+                notice("Ladestopp bei \(name)", systemImage: "bolt.car")
+            }
+            if let charged = trip.chargeNotice {
+                ChargeNoticeCard(notice: charged, onAdjust: { trip.isAdjustingCharge = true }, onClose: { trip.chargeNotice = nil })
             }
             if let fix = trip.driveFix, !fix.isOnRoute {
                 notice("Nicht auf der Route, \(Int(fix.offsetMeters)) m daneben", systemImage: "exclamationmark.triangle")
@@ -193,7 +208,13 @@ struct DrivingOverlay: View {
             Spacer(minLength: 0)
             statusValue(trip.arrivalTimeText, "Ankunft", compact: compact)
             statusValue("\(Int(trip.remainingKm.rounded())) km", "bis Ziel", compact: compact)
-            statusValue("\(Int(trip.chargeNowPercent.rounded())) %", "Akku jetzt", compact: compact)
+            // Antippen stellt den Ladestand ein, etwa nach einem Stopp, den
+            // die Erkennung nicht bemerkt hat.
+            Button { trip.isAdjustingCharge = true } label: {
+                statusValue("\(Int(trip.chargeNowPercent.rounded())) %", "Akku jetzt", compact: compact)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Tippen, um den Ladestand einzustellen")
             Spacer(minLength: 0)
 
             barButton(
@@ -245,6 +266,115 @@ struct DrivingOverlay: View {
                 .foregroundStyle(Theme.meta)
                 .lineLimit(1)
         }
+    }
+}
+
+// MARK: - Ladestopp
+
+/// Die Simulation hält am geplanten Stopp.
+struct SimulatedStopCard: View {
+    let stop: ChargingStop
+    let chargeNow: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Ladestopp, Simulation", systemImage: "bolt.car.fill")
+                .font(.system(size: 11, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(Theme.river)
+            Text(stop.station.name)
+                .font(.system(size: 15, weight: .semibold))
+                .lineLimit(2)
+            Text("Ankunft mit \(Int(chargeNow.rounded())) %, geplant \(Int((stop.chargingSeconds / 60).rounded())) min laden")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.meta)
+            Button(action: onContinue) {
+                Text("Laden und weiter")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(Theme.river, in: RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+        }
+        .foregroundStyle(Theme.ink)
+        .padding(12)
+        .background(Theme.paper.opacity(0.97), in: RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+    }
+}
+
+/// Nach einem Ladestopp: was gesetzt wurde, mit "Ändern".
+struct ChargeNoticeCard: View {
+    let notice: TripViewModel.ChargeNotice
+    let onAdjust: () -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "battery.100.bolt")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.free)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Akku auf \(Int(notice.percent.rounded())) % geschätzt")
+                    .font(.system(size: 14, weight: .semibold))
+                Text("\(Int(notice.minutes.rounded())) min bei \(notice.stationName)")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.meta)
+                    .lineLimit(1)
+                Button("Ändern", action: onAdjust)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.river)
+            }
+            Spacer(minLength: 0)
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.meta)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Hinweis schließen")
+        }
+        .foregroundStyle(Theme.ink)
+        .padding(12)
+        .background(Theme.paper.opacity(0.97), in: RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+    }
+}
+
+/// Ladestand von Hand einstellen.
+struct ChargeAdjustSheet: View {
+    let initial: Double
+    let onApply: (Double) -> Void
+    @State private var percent: Double = 0
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Akku jetzt")
+                .font(.system(size: 13, weight: .semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(Theme.meta)
+            Text("\(Int(percent)) %")
+                .font(.system(size: 44, weight: .bold, design: .rounded).monospacedDigit())
+            Slider(value: $percent, in: 0 ... 100, step: 1)
+                .tint(Theme.river)
+            Button {
+                onApply(percent)
+                dismiss()
+            } label: {
+                Text("Übernehmen")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(20)
+        .onAppear { percent = initial.rounded() }
     }
 }
 

@@ -214,8 +214,15 @@ Gebaut nach dem Konzept „Fahransicht LadeRoute"
 Die Rechnung dahinter (Lage auf der Route, Kachelauswahl, Ausweichen) hat ihr
 Gegenstück mit Tests in `tools/lib/fahrt.mjs`.
 
-Offen: Der Akku wird ab Abfahrt heruntergerechnet, nach einem Ladestopp aber
-nicht aufgefüllt.
+**Akku nach dem Ladestopp** (Stand 30.09.2026): Steht das Auto zwei Minuten
+innerhalb von 150 m einer Säule, gilt das als Ladestopp. Beim Wegfahren setzt
+die App den Akku auf eine Schätzung aus Standzeit, Säulenleistung und
+Ladekurve (zwei Minuten gehen für An- und Abstecken ab). Ein Hinweis oben links
+nennt den Wert, „Ändern" oder ein Tipp auf „Akku jetzt" stellt ihn von Hand
+ein. Im Umkreis von 1 km um eine Station wird nicht neu geplant, damit der Weg
+zur Säule keine Neuberechnung auslöst. Die Simulation hält an den geplanten
+Stopps und fährt nach „Laden und weiter" mit dem geschätzten Stand weiter.
+Rechnung und Tests: `tools/lib/akku.mjs`.
 
 ### Zielführung, Stand 30.09.2026
 
@@ -554,8 +561,8 @@ Zwei Stränge, die parallel laufen können.
 4. ~~Fahransicht bauen.~~ Stand siehe oben.
 5. ~~Ansage bauen.~~ Eigenbau, Stand siehe oben. Offen: Ansage im
    Hintergrund (Audio-Hintergrundmodus), Spurempfehlung.
-6. Akku nach einem Ladestopp auffüllen: Ankunft an der Säule erkennen, nach
-   der Weiterfahrt den Stand abfragen oder schätzen.
+6. ~~Akku nach einem Ladestopp auffüllen.~~ Stand siehe oben. Offen: eine
+   Station antippen und über sie routen.
 7. Fahren. Eine echte Strecke, danach entscheiden, was die Liste können muss.
 
 **State of Charge**
