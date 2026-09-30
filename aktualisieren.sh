@@ -145,6 +145,57 @@ if [ "$NICHTS_GEHOLT" -eq 0 ]; then
   [ "$STILL" -eq 1 ] || git log --oneline "$VORHER..$NACHHER" | sed 's/^/  /'
 fi
 
+# --- Team fuer das iPhone ----------------------------------------------
+
+# Ohne Team-Kennung baut Xcode nur fuer den Simulator. Sie steht in
+# Secrets.xcconfig, die nicht im Repo liegt. Ist sie leer, wird sie hier
+# gesucht: zuerst in den Xcode-Einstellungen (die Teams der dort
+# angemeldeten Konten), dann im Entwicklerzertifikat im Schluesselbund.
+# Findet sich genau ein Team, wird es eingetragen; bei mehreren werden sie
+# genannt, und eines kommt von Hand hinein. Die Kennung ist kein Geheimnis,
+# sie steht in jeder signierten App.
+if [ -f Secrets.xcconfig ] && ! grep -qE '^DEVELOPMENT_TEAM *= *[A-Z0-9]{10}' Secrets.xcconfig; then
+  # Je Team eine Zeile "frei kennung name". Das kostenlose Personal Team
+  # zaehlt nur, wenn es kein bezahltes gibt: Mit ihm laeuft die App sieben
+  # Tage, und die Hintergrundortung braucht ohnehin das bezahlte.
+  xcode_teams() {
+    for schluessel in IDEProvisioningTeamByIdentifier IDEProvisioningTeams; do
+      defaults read com.apple.dt.Xcode "$schluessel" 2>/dev/null | awk '
+        /isFreeProvisioningTeam/ { frei = $3; gsub(/[";]/, "", frei) }
+        /teamID/                 { id = $3; gsub(/[";]/, "", id) }
+        /teamName/               { name = $0; sub(/.*teamName = /, "", name); gsub(/[";]/, "", name) }
+        /}/ { if (id != "") print (frei == "" ? "0" : frei), id, name; frei = ""; id = ""; name = "" }'
+    done | sort -u
+  }
+  ALLE=$(xcode_teams)
+  BEZAHLT=$(printf '%s\n' "$ALLE" | awk '$1 == "0" && $2 ~ /^[A-Z0-9]{10}$/ { print $2 }' | sort -u)
+  TEAMS=${BEZAHLT:-$(printf '%s\n' "$ALLE" | awk '$2 ~ /^[A-Z0-9]{10}$/ { print $2 }' | sort -u)}
+  if [ -z "$TEAMS" ] && command -v openssl > /dev/null 2>&1; then
+    TEAMS=$(security find-certificate -a -c "Apple Development" -p 2>/dev/null |
+      awk '/BEGIN CERT/{n++} {print > ("/tmp/laderoute-zert-" n ".pem")}' ;
+      for datei in /tmp/laderoute-zert-*.pem; do
+        [ -f "$datei" ] && openssl x509 -in "$datei" -noout -subject 2>/dev/null
+        rm -f "$datei"
+      done | grep -oE 'OU ?= ?[A-Z0-9]{10}' | grep -oE '[A-Z0-9]{10}$' | sort -u)
+  fi
+  ZAHL=$(printf '%s' "$TEAMS" | grep -c . || true)
+  if [ "$ZAHL" -eq 1 ]; then
+    if grep -q '^DEVELOPMENT_TEAM' Secrets.xcconfig; then
+      sed -i '' "s/^DEVELOPMENT_TEAM.*/DEVELOPMENT_TEAM = $TEAMS/" Secrets.xcconfig
+    else
+      printf '\nDEVELOPMENT_TEAM = %s\n' "$TEAMS" >> Secrets.xcconfig
+    fi
+    sage "Team $TEAMS in Secrets.xcconfig eingetragen. Die App laesst sich jetzt aufs iPhone laden."
+  elif [ "$ZAHL" -gt 1 ]; then
+    sage "Mehrere Teams gefunden:"
+    printf '%s\n' "$ALLE" | awk '{ id = $2; $1 = ""; $2 = ""; sub(/^ +/, ""); print "  " id "  " $0 }'
+    sage "Das richtige in Secrets.xcconfig eintragen, Zeile: DEVELOPMENT_TEAM = KENNUNG"
+    sage "Welches welches ist: developer.apple.com, Account, Membership details."
+  else
+    sage "Kein Team gefunden. In Xcode unter Settings, Accounts mit der Apple-ID anmelden, dann noch einmal: lade"
+  fi
+fi
+
 # --- Projekt nachziehen ------------------------------------------------
 
 # Ob das Projekt neu erzeugt werden muss, entscheidet der Zustand auf der

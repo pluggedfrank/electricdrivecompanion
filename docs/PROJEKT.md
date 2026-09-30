@@ -268,6 +268,15 @@ Rechnung und Tests: `tools/lib/ansage.mjs`, gegen eine echte Antwort
 Meerbusch–Norddeich (`tools/test/fixtures/anweisungen-meerbusch-norddeich.json`,
 erzeugt mit dem Probelauf `zielfuehrung-probe.mjs --fixture`).
 
+## Aufs iPhone
+
+Signiert wird automatisch mit dem Team aus `Secrets.xcconfig`
+(`DEVELOPMENT_TEAM`). `lade` trägt es selbst ein, wenn es fehlt: aus den
+Konten in Xcode, bezahltes Team vor dem kostenlosen Personal Team. Bundle-ID
+`de.plugged.laderoute`, Xcode legt sie beim ersten Lauf im Developer-Konto an.
+Einmal am iPhone: Einstellungen, Datenschutz & Sicherheit, Entwicklermodus
+einschalten (verlangt einen Neustart).
+
 ## Was der Schlüssel darf
 
 Stand 10.09.2026, aus dem Selbstbedienungskatalog des Dashboards.
