@@ -23,22 +23,40 @@ struct DrivingTile: Identifiable, Equatable {
     var id: String { station.id }
 }
 
+/// Warum die Ausweichzeile diese Station vorschlägt.
+enum FallbackReason: Equatable {
+    /// Ein anderer Anbieter mit der gewünschten Leistung.
+    case otherProvider
+    /// Ein Favorit, aber mit weniger Leistung.
+    case lowerPower
+    /// Ein anderer Anbieter mit weniger Leistung.
+    case otherProviderLowerPower
+}
+
 /// Kacheln und, wenn es knapp wird, eine Ausweichstation.
 struct DrivingTileSet: Equatable {
     var tiles: [DrivingTile] = []
     var fallback: DrivingTile?
+    var fallbackReason: FallbackReason?
 }
 
 enum DrivingTiles {
     /// Kacheln mit Favoriten, und eine Ausweichzeile, wenn es knapp wird.
     ///
-    /// Gegenstück zu kachelnMitFavoriten() in tools/lib/fahrt.mjs. Sind
-    /// Favoriten gewählt, zeigen die Kacheln nur deren Stationen. Liegt die
-    /// nächste davon hinter der Reserve, oder kommt gar keine mehr, gibt es
-    /// eine Ausweichstation eines anderen Anbieters: die fernste, die noch
-    /// erreichbar ist, weil sie am weitesten bringt.
+    /// Gegenstück zu kachelnMitFavoriten() in tools/lib/fahrt.mjs, die Tests
+    /// dort sind der Maßstab. Knapp wird es, wenn die nächste Kachel hinter
+    /// der Reserve liegt oder gar keine mehr kommt. Dann sucht die Zeile in
+    /// dieser Reihenfolge, und die erste Stufe mit einem Treffer gewinnt:
+    ///
+    ///   1. andere Anbieter mit der gewünschten Leistung
+    ///   2. Favoriten mit weniger Leistung (lowerPower, ab 150 kW)
+    ///   3. irgendein Anbieter mit weniger Leistung
+    ///
+    /// Ohne Favoriten entfällt Stufe 1, und 2 und 3 fallen zusammen. In jeder
+    /// Stufe die fernste noch erreichbare Station, weil sie am weitesten bringt.
     static func tilesWithFavorites(
         stations: [AnnotatedStation],
+        lowerPower: [AnnotatedStation],
         isFavorite: (AnnotatedStation) -> Bool,
         favoritesActive: Bool,
         progressMeters: Double,
@@ -48,41 +66,41 @@ enum DrivingTiles {
         plannedStopIDs: Set<String>,
         passedMeters: Double = 100
     ) -> DrivingTileSet {
-        guard favoritesActive else {
-            return DrivingTileSet(tiles: tiles(
-                stations: stations,
-                progressMeters: progressMeters,
-                chargePercentNow: chargePercentNow,
-                percentPerKm: percentPerKm,
-                reservePercent: reservePercent,
-                plannedStopIDs: plannedStopIDs
-            ))
-        }
-
-        let favoriteTiles = tiles(
-            stations: stations.filter(isFavorite),
+        let shown = tiles(
+            stations: favoritesActive ? stations.filter(isFavorite) : stations,
             progressMeters: progressMeters,
             chargePercentNow: chargePercentNow,
             percentPerKm: percentPerKm,
             reservePercent: reservePercent,
             plannedStopIDs: plannedStopIDs
         )
-        let tight = favoriteTiles.first.map { !$0.isReachable } ?? true
-        guard tight, percentPerKm > 0 else { return DrivingTileSet(tiles: favoriteTiles) }
+        let tight = shown.first.map { !$0.isReachable } ?? true
+        guard tight, percentPerKm > 0 else { return DrivingTileSet(tiles: shown) }
 
         let rangeMeters = max(0, (chargePercentNow - reservePercent) / percentPerKm * 1000)
-        let candidate = stations
-            .filter { !isFavorite($0) }
-            .compactMap { item -> (AnnotatedStation, Double)? in
-                guard let position = item.station.progressAlongRouteMeters,
-                      position > progressMeters + passedMeters else { return nil }
-                let meters = position - progressMeters + accessMeters(item.station)
-                return meters <= rangeMeters ? (item, meters) : nil
-            }
-            .max { $0.1 < $1.1 }
+        func farthestReachable(_ pool: [AnnotatedStation]) -> (AnnotatedStation, Double)? {
+            pool
+                .compactMap { item -> (AnnotatedStation, Double)? in
+                    guard let position = item.station.progressAlongRouteMeters,
+                          position > progressMeters + passedMeters else { return nil }
+                    let meters = position - progressMeters + accessMeters(item.station)
+                    return meters <= rangeMeters ? (item, meters) : nil
+                }
+                .max { $0.1 < $1.1 }
+        }
 
-        let fallback = candidate.map { item, meters in
-            DrivingTile(
+        let stages: [(FallbackReason, [AnnotatedStation])] = favoritesActive
+            ? [
+                (.otherProvider, stations.filter { !isFavorite($0) }),
+                (.lowerPower, lowerPower.filter(isFavorite)),
+                (.otherProviderLowerPower, lowerPower.filter { !isFavorite($0) }),
+            ]
+            : [(.lowerPower, lowerPower)]
+
+        for (reason, pool) in stages {
+            guard let hit = farthestReachable(pool) else { continue }
+            let (item, meters) = hit
+            let fallback = DrivingTile(
                 station: item,
                 meters: meters,
                 arrivalPercent: chargePercentNow - meters / 1000 * percentPerKm,
@@ -90,8 +108,9 @@ enum DrivingTiles {
                 isPlannedStop: plannedStopIDs.contains(item.id),
                 moreHere: 0
             )
+            return DrivingTileSet(tiles: shown, fallback: fallback, fallbackReason: reason)
         }
-        return DrivingTileSet(tiles: favoriteTiles, fallback: fallback)
+        return DrivingTileSet(tiles: shown)
     }
 
     /// Weg von der Route bis zur Säule, einfach.

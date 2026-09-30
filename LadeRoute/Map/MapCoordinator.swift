@@ -166,6 +166,17 @@ private extension MapCoordinator {
             }
             .store(in: &cancellables)
 
+        trip.$cameraNorthUp
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self, self.trip.isDriving else { return }
+                    self.applyDrivingCamera()
+                }
+            }
+            .store(in: &cancellables)
+
         trip.$stations
             .combineLatest(trip.$selectedStationID)
             .receive(on: DispatchQueue.main)
@@ -259,7 +270,7 @@ private extension MapCoordinator {
                 simulated.enable()
                 simulatedLocationProvider = simulated
             }
-            map.cameraTrackingMode = .followDirection()
+            applyDrivingCamera()
 
         case .stop:
             map.cameraTrackingMode = .none
@@ -275,6 +286,19 @@ private extension MapCoordinator {
             }
             map.zoomToRoutes(padding: 48)
         }
+    }
+
+    /// Die Kamera während der Fahrt.
+    ///
+    /// Zuerst lief .followDirection(): Richtung aus der GPS-Position, flach
+    /// von oben. Bei jeder kleinen Kurve drehte sich die Karte mit, und aus
+    /// der Vogelperspektive war nicht zu erkennen, was vorn kommt. Der
+    /// Routenmodus ist der, den die TomTom-Navigation benutzt: Die Richtung
+    /// kommt aus der Route, Neigung und Zoom richten sich nach der Straßenart.
+    /// Norden oben ist die Wahl für alle, die die Karte lieber stehen lassen.
+    func applyDrivingCamera() {
+        guard let map else { return }
+        map.cameraTrackingMode = trip.cameraNorthUp ? .followRouteNorthUp() : .followRouteDirection()
     }
 
     func redrawRoute(_ route: TomTomSDKRoute.Route?) {

@@ -2019,3 +2019,48 @@ test('kachelnMitFavoriten: Favoriten gewaehlt, aber keiner auf der Strecke', () 
   assert.deepEqual(r.kacheln, []);
   assert.equal(r.ausweich.station.id, 'b', 'die fernste erreichbare');
 });
+
+
+test('kachelnMitFavoriten: Stufe 2, Favorit mit weniger Leistung vor fremdem', () => {
+  // 20 % Akku: 40 km Reichweite. Kein fremder 300er erreichbar.
+  const stationen = [
+    { id: 'fremd300', progressMeters: 45_000 },
+    { id: 'fav300', progressMeters: 60_000 },
+  ];
+  const niedrigereLeistung = [
+    { id: 'fremd150', progressMeters: 38_000 },
+    { id: 'fav150', progressMeters: 30_000 },
+  ];
+  const r = fahrt.kachelnMitFavoriten({
+    stationen, niedrigereLeistung, istFavorit: (s) => s.id.startsWith('fav'),
+    fortschritt: 0, akkuJetzt: 20, prozentJeKm: 0.25,
+  });
+  assert.equal(r.ausweich.station.id, 'fav150', 'Favorit geht vor, auch wenn der fremde weiter liegt');
+  assert.equal(r.ausweich.grund, 'wenigerLeistung');
+});
+
+test('kachelnMitFavoriten: Stufe 1 schlaegt Stufe 2, gewuenschte Leistung zuerst', () => {
+  const stationen = [
+    { id: 'fremd300', progressMeters: 25_000 },
+    { id: 'fav300', progressMeters: 60_000 },
+  ];
+  const niedrigereLeistung = [{ id: 'fav150', progressMeters: 35_000 }];
+  const r = fahrt.kachelnMitFavoriten({
+    stationen, niedrigereLeistung, istFavorit: (s) => s.id.startsWith('fav'),
+    fortschritt: 0, akkuJetzt: 20, prozentJeKm: 0.25,
+  });
+  assert.equal(r.ausweich.station.id, 'fremd300');
+  assert.equal(r.ausweich.grund, 'andererAnbieter');
+});
+
+test('kachelnMitFavoriten: ohne Favoriten schlaegt die Zeile eine schwaechere Saeule vor', () => {
+  const stationen = [{ id: 'hpc', progressMeters: 70_000 }];
+  const niedrigereLeistung = [{ id: 'dc150', progressMeters: 30_000 }];
+  const r = fahrt.kachelnMitFavoriten({
+    stationen, niedrigereLeistung, istFavorit: () => false,
+    fortschritt: 0, akkuJetzt: 20, prozentJeKm: 0.25,
+  });
+  assert.deepEqual(r.kacheln.map((k) => k.station.id), ['hpc']);
+  assert.equal(r.ausweich.station.id, 'dc150');
+  assert.equal(r.ausweich.grund, 'wenigerLeistung');
+});

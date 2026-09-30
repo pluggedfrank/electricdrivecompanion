@@ -140,42 +140,70 @@ export function reichweitenLinie(liste) {
 /**
  * Kacheln mit Favoriten, und eine Ausweichzeile, wenn es knapp wird.
  *
- * Sind Favoriten gewaehlt, zeigen die Kacheln nur deren Stationen. Liegt
- * die naechste davon hinter der Reserve, oder kommt gar keine mehr, gibt es
- * eine Ausweichstation eines anderen Anbieters: die fernste, die noch
- * erreichbar ist. Die fernste, nicht die naechste, weil sie am weitesten
- * bringt; erreichbar heisst ohnehin mit Reserve.
+ * Sind Favoriten gewaehlt, zeigen die Kacheln nur deren Stationen. Knapp
+ * wird es, wenn die naechste Kachel hinter der Reserve liegt oder gar keine
+ * mehr kommt. Dann sucht die Ausweichzeile in dieser Reihenfolge:
  *
- * Ohne Favoriten ist das Ergebnis dasselbe wie kacheln(), ohne Ausweichzeile.
+ *   1. andere Anbieter mit der gewuenschten Leistung
+ *   2. Favoriten mit weniger Leistung (niedrigereLeistung, ab 150 kW)
+ *   3. irgendein Anbieter mit weniger Leistung
+ *
+ * Innerhalb einer Stufe die fernste, die noch erreichbar ist, weil sie am
+ * weitesten bringt; erreichbar heisst ohnehin mit Reserve. Die erste Stufe,
+ * die etwas findet, gewinnt. Ohne Favoriten entfaellt Stufe 1, und 2 und 3
+ * fallen zusammen: Dann schlaegt die Zeile nur eine schwaechere Saeule vor.
+ *
+ * Wunsch vom 30.09.: "erst weiter Stationen der gewuenschten Ladeleistung
+ * anzeigen und dann notfalls auch auf 150 kW runtergehen".
  */
 export function kachelnMitFavoriten(parameter) {
-  const { stationen, istFavorit, fortschritt, akkuJetzt, prozentJeKm, reserve = 10, vorbei = 100 } = parameter;
+  const {
+    stationen, istFavorit, fortschritt, akkuJetzt, prozentJeKm,
+    reserve = 10, vorbei = 100, niedrigereLeistung = [],
+  } = parameter;
   const favoriten = stationen.filter((s) => istFavorit(s));
   // Aktiv, sobald Favoriten gewaehlt sind, auch wenn auf dieser Strecke
   // keiner liegt: Dann gibt es eben nur die Ausweichzeile.
   const aktiv = parameter.favoritenAktiv ?? favoriten.length > 0;
-  if (!aktiv) return { kacheln: kacheln(parameter), ausweich: null };
 
-  const liste = kacheln({ ...parameter, stationen: favoriten });
+  const liste = kacheln({ ...parameter, stationen: aktiv ? favoriten : stationen });
   const knapp = liste.length === 0 || !liste[0].erreichbar;
   if (!knapp) return { kacheln: liste, ausweich: null };
 
   const reichweite = Math.max(0, ((akkuJetzt - reserve) / prozentJeKm) * 1000);
-  const kandidaten = stationen
-    .filter((s) => !istFavorit(s) && Number.isFinite(s.progressMeters) && s.progressMeters > fortschritt + vorbei)
-    .map((s) => ({ s, meter: s.progressMeters - fortschritt + zugangMeter(s) }))
-    .filter((k) => k.meter <= reichweite)
-    .sort((a, b) => b.meter - a.meter);
-  const beste = kandidaten[0];
-  const ausweich = beste
-    ? {
-        station: beste.s,
-        meter: beste.meter,
-        akkuBeiAnkunft: akkuJetzt - (beste.meter / 1000) * prozentJeKm,
-        erreichbar: true,
-        geplant: false,
-        weitere: 0,
-      }
-    : null;
-  return { kacheln: liste, ausweich };
+  const fernsteErreichbare = (pool) => {
+    const beste = pool
+      .filter((s) => Number.isFinite(s.progressMeters) && s.progressMeters > fortschritt + vorbei)
+      .map((s) => ({ s, meter: s.progressMeters - fortschritt + zugangMeter(s) }))
+      .filter((k) => k.meter <= reichweite)
+      .sort((a, b) => b.meter - a.meter)[0];
+    return beste ?? null;
+  };
+
+  const stufen = aktiv
+    ? [
+        { grund: 'andererAnbieter', pool: stationen.filter((s) => !istFavorit(s)) },
+        { grund: 'wenigerLeistung', pool: niedrigereLeistung.filter((s) => istFavorit(s)) },
+        { grund: 'andererAnbieterWenigerLeistung', pool: niedrigereLeistung.filter((s) => !istFavorit(s)) },
+      ]
+    : [{ grund: 'wenigerLeistung', pool: niedrigereLeistung }];
+
+  for (const stufe of stufen) {
+    const treffer = fernsteErreichbare(stufe.pool);
+    if (treffer) {
+      return {
+        kacheln: liste,
+        ausweich: {
+          station: treffer.s,
+          meter: treffer.meter,
+          akkuBeiAnkunft: akkuJetzt - (treffer.meter / 1000) * prozentJeKm,
+          erreichbar: true,
+          geplant: false,
+          weitere: 0,
+          grund: stufe.grund,
+        },
+      };
+    }
+  }
+  return { kacheln: liste, ausweich: null };
 }

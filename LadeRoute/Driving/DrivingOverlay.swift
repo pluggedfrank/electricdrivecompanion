@@ -31,9 +31,12 @@ struct DrivingOverlay: View {
                     .padding(.trailing, 10)
                     .frame(maxWidth: .infinity, alignment: .trailing)
 
-                stopButton
-                    .padding(.leading, 14)
-                    .padding(.top, 8)
+                HStack(spacing: 8) {
+                    stopButton
+                    cameraButton
+                }
+                .padding(.leading, 14)
+                .padding(.top, 8)
 
                 statusBar(compact: !landscape)
                     .padding(.leading, 14)
@@ -81,7 +84,7 @@ struct DrivingOverlay: View {
             // Ganz unten, direkt über dem Auto: die Ausweichstation, wenn
             // der nächste Favorit zu weit ist.
             if let fallback = trip.drivingFallback {
-                FallbackRow(tile: fallback, compact: compact)
+                FallbackRow(tile: fallback, reason: trip.drivingFallbackReason, compact: compact)
                     .onTapGesture { trip.selectStation(id: fallback.id) }
                     .transition(.opacity)
             }
@@ -150,6 +153,27 @@ struct DrivingOverlay: View {
         .buttonStyle(.plain)
     }
 
+    /// Fahrtrichtung oben oder Norden oben.
+    private var cameraButton: some View {
+        Button {
+            trip.cameraNorthUp.toggle()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: trip.cameraNorthUp ? "location.north.line.fill" : "location.north.line")
+                    .font(.system(size: 12, weight: .bold))
+                Text(trip.cameraNorthUp ? "Norden oben" : "Fahrtrichtung")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(Theme.ink)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Theme.paper.opacity(0.96), in: Capsule())
+            .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(trip.cameraNorthUp ? "Karte: Norden oben. Tippen für Fahrtrichtung." : "Karte: Fahrtrichtung oben. Tippen für Norden oben.")
+    }
+
     private func statusBar(compact: Bool) -> some View {
         HStack(spacing: compact ? 14 : 22) {
             statusValue(trip.arrivalTimeText, "Ankunft", compact: compact)
@@ -183,16 +207,27 @@ struct DrivingOverlay: View {
 /// nur, wenn der nächste Favorit hinter der Reserve liegt.
 struct FallbackRow: View {
     let tile: DrivingTile
+    let reason: FallbackReason?
     let compact: Bool
+
+    private var headline: String {
+        switch reason {
+        case .lowerPower: return "Ausweichen, weniger Leistung"
+        case .otherProviderLowerPower: return "Ausweichen, anderer Anbieter, weniger Leistung"
+        case .otherProvider, .none: return "Ausweichen, anderer Anbieter"
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 5) {
                 Image(systemName: "arrow.uturn.right")
                     .font(.system(size: 10, weight: .bold))
-                Text("Ausweichen, kein Favorit")
+                Text(headline)
                     .font(.system(size: 10, weight: .bold))
                     .textCase(.uppercase)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .foregroundStyle(Theme.busy)
 

@@ -140,11 +140,16 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var isSimulatingDrive = false
     /// Wo das Auto auf der Route steht.
     @Published private(set) var driveFix: RouteTracker.Fix?
+    /// Norden oben statt Fahrtrichtung oben. Wird gemerkt.
+    @Published var cameraNorthUp = UserDefaults.standard.bool(forKey: "cameraNorthUp") {
+        didSet { UserDefaults.standard.set(cameraNorthUp, forKey: "cameraNorthUp") }
+    }
     /// Die Kacheln rechts, höchstens drei.
     @Published private(set) var drivingTiles: [DrivingTile] = []
     /// Eine Station eines anderen Anbieters, wenn der nächste Favorit
     /// hinter der Reserve liegt.
     @Published private(set) var drivingFallback: DrivingTile?
+    @Published private(set) var drivingFallbackReason: FallbackReason?
 
     // MARK: Bevorzugte Anbieter
 
@@ -289,6 +294,7 @@ final class TripViewModel: ObservableObject {
         driveFix = nil
         drivingTiles = []
         drivingFallback = nil
+        drivingFallbackReason = nil
         isSimulatingDrive = simulated
         isDriving = true
 
@@ -312,6 +318,7 @@ final class TripViewModel: ObservableObject {
         driveFix = nil
         drivingTiles = []
         drivingFallback = nil
+        drivingFallbackReason = nil
         mapTrailingInset = 0
         driveCommands.send(.stop)
     }
@@ -367,6 +374,7 @@ final class TripViewModel: ObservableObject {
         let favorites = brandPreferences.favorites
         let set = DrivingTiles.tilesWithFavorites(
             stations: stations,
+            lowerPower: lowerPowerStations,
             isFavorite: { item in item.station.brandID.map(favorites.contains) ?? false },
             favoritesActive: favoritesActive,
             progressMeters: fix.progressMeters,
@@ -377,6 +385,7 @@ final class TripViewModel: ObservableObject {
         )
         drivingTiles = set.tiles
         drivingFallback = set.fallback
+        drivingFallbackReason = set.fallbackReason
     }
 
     // MARK: Aktionen
@@ -834,30 +843,44 @@ final class TripViewModel: ObservableObject {
     /// zeigt die Stationen wieder, statt sie neu zu suchen.
     private func applyLocalFilters() {
         let minPower = powerTier.minPowerKW
-        let maxDetour = maxDetourMinutes * 60
 
         stations = fetchedStations.filter { item in
-            let station = item.station
+            if let minPower, !item.station.meetsMinPower(minPower) { return false }
+            return passesDistanceAndDetour(item.station)
+        }
 
-            if let minPower, !station.meetsMinPower(minPower) { return false }
-
-            if let abstand = station.distanceFromRouteMeters,
-               abstand > maxDistanceFromRouteMeters {
-                return false
+        // Die Reserve der Ausweichzeile: dieselben Grenzen für Abstand und
+        // Umweg, aber Leistung unter der gewählten Stufe, bis 150 kW hinab.
+        // Darunter nicht: Eine 50-kW-Säule fährt niemand gezielt an.
+        if let minPower, minPower > Self.lowestFallbackPowerKW {
+            lowerPowerStations = fetchedStations.filter { item in
+                guard let power = item.station.maxPowerKW,
+                      power >= Self.lowestFallbackPowerKW, power < minPower else { return false }
+                return passesDistanceAndDetour(item.station)
             }
-
-            // Der Umweg gilt nur, wo einer bekannt ist. Treffer aus der
-            // Umkreissuche bringen keinen mit; sie über einen fehlenden Wert
-            // auszuschließen, würde die halbe Liste kosten.
-            if let umweg = station.detourSeconds, umweg > maxDetour { return false }
-
-            return true
+        } else {
+            lowerPowerStations = []
         }
 
         planCharging()
         // Während der Fahrt kommen Umwege und Belegungen nach; die Kacheln
         // sollen sie sofort zeigen, nicht erst bei der nächsten Position.
         refreshDrivingTiles()
+    }
+
+    /// So weit geht die Ausweichzeile mit der Leistung hinunter.
+    static let lowestFallbackPowerKW: Double = 150
+
+    private func passesDistanceAndDetour(_ station: ChargingStation) -> Bool {
+        if let abstand = station.distanceFromRouteMeters,
+           abstand > maxDistanceFromRouteMeters {
+            return false
+        }
+        // Der Umweg gilt nur, wo einer bekannt ist. Treffer aus der
+        // Umkreissuche bringen keinen mit; sie über einen fehlenden Wert
+        // auszuschließen, würde die halbe Liste kosten.
+        if let umweg = station.detourSeconds, umweg > maxDetourMinutes * 60 { return false }
+        return true
     }
 
     /// Startet die Zielsuche neu und bricht die vorige ab.
@@ -902,6 +925,9 @@ final class TripViewModel: ObservableObject {
     /// Zählt die Strecken. Ergebnisse einer älteren zählen nicht mehr.
     private var streckenNummer = 0
     private var fetchedStations: [AnnotatedStation] = []
+    /// Stationen unter der gewählten Leistung, bis 150 kW: die Reserve der
+    /// Ausweichzeile.
+    private var lowerPowerStations: [AnnotatedStation] = []
     /// Mit welcher Untergrenze zuletzt gesucht wurde.
     private var fetchedTier: PowerTier?
     private var cancellables = Set<AnyCancellable>()
