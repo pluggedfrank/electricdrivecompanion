@@ -270,6 +270,12 @@ Eigenbau aus der Routing-API, ohne Navigation SDK:
   Fassung sperrte im Umkreis von 1 km jeder aufbewahrten Station, in der Stadt
   also fast immer; auf der ersten iPhone-Fahrt kam deshalb nach dem Abbiegen
   keine Ansage mehr. Regel und Tests: `tools/lib/abweichung.mjs`.
+- **Verkehr:** Die Route wird mit der Verkehrslage geplant (SDK-Vorgabe
+  `considerTraffic: .yes`). Während der Fahrt alle fünf Minuten der Rest der
+  aktuellen Route mit der Verkehrslage von jetzt nachgerechnet (Stützpunkte)
+  und mit einer frisch geplanten Route verglichen; ab drei Minuten Gewinn
+  Wechsel mit Ansage, nicht auf den letzten 5 km. Zwei Routing-Anfragen je
+  Prüfung. Die Karte zeigt Verkehrsfluss und Meldungen.
 - **Fahransicht neu aufgeteilt:** Anweisung oben links, Kacheln rechts,
   Fahrleiste unten mit Beenden, Ankunft, Reststrecke, Akku, Ansage an/aus,
   Kamera. In der Simulation ein Tempoknopf 1×/3×/10×.

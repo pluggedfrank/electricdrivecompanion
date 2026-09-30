@@ -435,6 +435,43 @@ actor TomTomAPIClient {
         }
     }
 
+    /// Fahrzeit entlang einer vorgegebenen Linie, mit der Verkehrslage von
+    /// jetzt. TomTom rekonstruiert die Route aus den Stützpunkten, statt
+    /// selbst zu planen. Für den Vergleich mit einer frisch geplanten Route:
+    /// Die Fahrzeit vom Start kennt keinen Stau, der seitdem entstanden ist.
+    func travelTimeAlong(_ geometry: [CLLocationCoordinate2D]) async throws -> Double {
+        guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
+        guard let first = geometry.first, let last = geometry.last, geometry.count >= 2 else {
+            throw TomTomAPIError.emptyRoute
+        }
+        let path = "\(first.latitude),\(first.longitude):\(last.latitude),\(last.longitude)"
+        var components = URLComponents(string: "\(Self.baseURL)/routing/1/calculateRoute/\(path)/json")
+        components?.queryItems = [
+            URLQueryItem(name: "key", value: apiKey),
+            URLQueryItem(name: "routeType", value: "fastest"),
+            URLQueryItem(name: "traffic", value: "true"),
+            URLQueryItem(name: "travelMode", value: "car"),
+        ]
+        guard let url = components?.url else { throw TomTomAPIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 20
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["supportingPoints": geometry.map { ["latitude": $0.latitude, "longitude": $0.longitude] }]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        let data = try await perform(request)
+        do {
+            let response = try JSONDecoder().decode(CalculateRouteResponse.self, from: data)
+            guard let route = response.routes.first else { throw TomTomAPIError.emptyRoute }
+            return route.summary.travelTimeInSeconds
+        } catch let error as TomTomAPIError {
+            throw error
+        } catch {
+            throw TomTomAPIError.decoding(underlying: error)
+        }
+    }
+
     /// Die TomTom-Station, die an dieser Stelle steht.
     ///
     /// Für Registerstandorte: Das Register kennt keine TomTom-Kennung, und

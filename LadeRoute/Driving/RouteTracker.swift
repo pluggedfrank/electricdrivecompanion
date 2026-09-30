@@ -74,6 +74,17 @@ struct RouteTracker {
         )
     }
 
+    /// Die Linie ab `progress` bis zum Ende, für die Nachrechnung der
+    /// Restzeit mit der Verkehrslage von jetzt.
+    func remainingGeometry(from progress: Double) -> [CLLocationCoordinate2D] {
+        guard points.count >= 2, progress < lengthMeters else { return Array(points.suffix(1)) }
+        let i = index(atProgress: max(0, progress))
+        var rest: [CLLocationCoordinate2D] = []
+        if let here = coordinate(atProgress: progress) { rest.append(here) }
+        rest.append(contentsOf: points[(i + 1)...])
+        return rest
+    }
+
     /// Der nächste Punkt der Route zu `point`, gesucht ab `startIndex`
     /// vorwärts bis zum Ende. Für die Anweisungen der Zielführung: Sie liegen
     /// der Reihe nach auf der Route, und die Suche ab der vorigen hält eine

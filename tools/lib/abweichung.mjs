@@ -42,3 +42,24 @@ export function neuPlanen({ abseits, sekundenSeit = Infinity, position, zwischen
   if (angezeigt.some((s) => distance(s, position) <= REGELN.angezeigtMeter)) return false;
   return true;
 }
+
+/**
+ * Lohnt eine frisch geplante Route?
+ *
+ *  jetztSekunden  Rest der aktuellen Route, mit der Verkehrslage von jetzt
+ *                 nachgerechnet (die Schaetzung vom Start kennt neue Staus
+ *                 nicht)
+ *  neuSekunden    die frisch geplante Route ab hier
+ *  restMeter      was von der aktuellen Route noch bleibt
+ *
+ * Erst ab drei Minuten Gewinn: Ein Wechsel kostet Aufmerksamkeit, und die
+ * Verkehrsprognose schwankt um eine, zwei Minuten. Auf den letzten 5 km
+ * nicht mehr, da lohnt kein Umdenken.
+ */
+export const SCHNELLER = { mindestGewinnSekunden: 180, keinWechselUnterMeter: 5000 };
+
+export function schnellerNehmen({ jetztSekunden, neuSekunden, restMeter }) {
+  if (!Number.isFinite(jetztSekunden) || !Number.isFinite(neuSekunden)) return false;
+  if (restMeter < SCHNELLER.keinWechselUnterMeter) return false;
+  return jetztSekunden - neuSekunden >= SCHNELLER.mindestGewinnSekunden;
+}

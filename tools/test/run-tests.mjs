@@ -2363,3 +2363,10 @@ test('gespeichertBei: dasselbe Ziel innerhalb von 30 m', () => {
   assert.equal(ziele.gespeichertBei(liste, oestlich(liste[0], 20), geo.distance)?.id, 'a');
   assert.equal(ziele.gespeichertBei(liste, oestlich(liste[0], 60), geo.distance), null);
 });
+
+test('schnellerNehmen: erst ab drei Minuten Gewinn, nicht auf den letzten 5 km', () => {
+  assert.equal(abweichung.schnellerNehmen({ jetztSekunden: 3600, neuSekunden: 3400, restMeter: 100_000 }), true);
+  assert.equal(abweichung.schnellerNehmen({ jetztSekunden: 3600, neuSekunden: 3480, restMeter: 100_000 }), false);
+  assert.equal(abweichung.schnellerNehmen({ jetztSekunden: 900, neuSekunden: 500, restMeter: 4000 }), false);
+  assert.equal(abweichung.schnellerNehmen({ jetztSekunden: NaN, neuSekunden: 500, restMeter: 50_000 }), false);
+});

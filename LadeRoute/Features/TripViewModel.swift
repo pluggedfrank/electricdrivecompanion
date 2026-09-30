@@ -217,6 +217,8 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var guidanceProblem: String?
     /// Wird gerade neu geplant, weil das Auto die Route verlassen hat?
     @Published private(set) var isRerouting = false
+    /// Kurz nach dem Wechsel auf eine schnellere Route: um wie viel.
+    @Published var fasterRouteNotice: String?
     /// Ansagen an oder aus. Wird gemerkt; an ist die Vorgabe.
     @Published var voiceEnabled = UserDefaults.standard.object(forKey: "voiceGuidance") as? Bool ?? true {
         didSet {
@@ -402,6 +404,8 @@ final class TripViewModel: ObservableObject {
                 }
         }
         drivenBeforeRerouteMeters = 0
+        lastFasterRouteCheck = Date()
+        fasterRouteNotice = nil
         chargeEvents = []
         chargeNotice = nil
         chargingAt = nil
@@ -451,6 +455,9 @@ final class TripViewModel: ObservableObject {
         mapTrailingInset = 0
         guidanceTask?.cancel()
         rerouteTask?.cancel()
+        fasterRouteTask?.cancel()
+        fasterRouteTask = nil
+        fasterRouteNotice = nil
         guidance = []
         nextManeuver = nil
         guidanceProblem = nil
@@ -479,6 +486,7 @@ final class TripViewModel: ObservableObject {
         updateSpeed(progress: fix.progressMeters, measured: measuredSpeed)
         watchForChargingStop(at: coordinate)
         releaseViaIfPassed()
+        checkForFasterRoute()
         refreshDrivingTiles()
         refreshGuidance()
         watchForDeviation(fix: fix, at: coordinate)
@@ -838,6 +846,53 @@ final class TripViewModel: ObservableObject {
         // wo das Auto gerade ist.
         if isSimulatingDrive {
             driveCommands.send(.updateSimulatedPath(simulatedPath(on: tracker, from: 0)))
+        }
+    }
+
+    // MARK: Schnellere Route
+
+    /// Alle fünf Minuten: Gibt es ab hier eine schnellere Route?
+    ///
+    /// Zwei Anfragen, beide mit der Verkehrslage von jetzt: der Rest der
+    /// aktuellen Route, nachgerechnet entlang ihrer Linie, und eine frisch
+    /// geplante Route. Die Fahrzeit vom Start zu nehmen wäre falsch, sie
+    /// kennt keinen Stau, der seitdem entstanden ist. Ab drei Minuten Gewinn
+    /// wird gewechselt, nicht mehr auf den letzten 5 km. Regel und Tests:
+    /// schnellerNehmen() in tools/lib/abweichung.mjs.
+    private func checkForFasterRoute() {
+        guard isDriving, !isRerouting, fasterRouteTask == nil, simulatedStop == nil,
+              let destination, let fix = driveFix, fix.isOnRoute, fix.offsetMeters <= 50,
+              let tracker else { return }
+        let now = Date()
+        if let last = lastFasterRouteCheck, now.timeIntervalSince(last) < 300 { return }
+        lastFasterRouteCheck = now
+
+        let restMeters = tracker.lengthMeters - fix.progressMeters
+        guard restMeters >= 5000 else { return }
+        let remaining = tracker.remainingGeometry(from: fix.progressMeters)
+        let origin = fix.snapped
+        let heading = fix.courseDegrees
+        let via = viaStation.map { [$0.coordinate] } ?? []
+
+        fasterRouteTask = Task { [weak self] in
+            guard let self else { return }
+            defer { fasterRouteTask = nil }
+            do {
+                let currentSeconds = try await api.travelTimeAlong(remaining)
+                let candidate = try await routePlanner.planRoute(from: origin, to: destination, via: via, heading: heading)
+                let newSeconds = candidate.summary.travelTime.converted(to: .seconds).value
+                guard !Task.isCancelled, isDriving, !isRerouting else { return }
+                let gain = currentSeconds - newSeconds
+                // schnellerNehmen() in tools/lib/abweichung.mjs
+                guard restMeters >= 5000, gain >= 180 else { return }
+                let minutes = Int((gain / 60).rounded())
+                if voiceEnabled { speaker.speak("Schnellere Route gefunden, \(minutes) Minuten gespart") }
+                fasterRouteNotice = "Schnellere Route: \(minutes) min gespart"
+                adoptRerouted(candidate, heading: heading)
+            } catch {
+                // Kein Hinweis: Die aktuelle Route gilt weiter, in fünf
+                // Minuten kommt der nächste Versuch.
+            }
         }
     }
 
@@ -1575,6 +1630,8 @@ final class TripViewModel: ObservableObject {
     private var lastDriveCoordinate: CLLocationCoordinate2D?
     private var realPositionSubscription: AnyCancellable?
     private var needsReplan = false
+    private var fasterRouteTask: Task<Void, Never>?
+    private var lastFasterRouteCheck: Date?
     private var availabilityRequestedAt: [String: Date] = [:]
     private var availabilityLookupTried = Set<String>()
     /// Wo auf der aktuellen Route die Station liegt, über die geroutet wird.

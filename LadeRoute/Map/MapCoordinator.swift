@@ -57,6 +57,11 @@ extension MapCoordinator: TomTomSDKMapDisplay.MapViewDelegate {
         map.locationProvider.addObserver(self)
         map.locationIndicatorType = .navigationChevron(scale: 1)
         map.activateLocationProvider()
+        // Verkehr auf der Karte: Fluss als farbige Straßen, Meldungen als
+        // Symbole. Die Route selbst ist ohnehin mit Verkehrslage geplant;
+        // hier sieht man, warum sie so verläuft.
+        map.showTraffic()
+        map.showTrafficIncidents()
 
         // Startausschnitt: Deutschland, bis die erste GPS-Position da ist.
         map.applyCamera(CameraUpdate(

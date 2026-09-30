@@ -152,6 +152,13 @@ struct DrivingOverlay: View {
             if let charged = trip.chargeNotice {
                 ChargeNoticeCard(notice: charged, onAdjust: { trip.isAdjustingCharge = true }, onClose: { trip.chargeNotice = nil })
             }
+            if let faster = trip.fasterRouteNotice {
+                notice(faster, systemImage: "hare")
+                    .task {
+                        try? await Task.sleep(for: .seconds(20))
+                        trip.fasterRouteNotice = nil
+                    }
+            }
             if let fix = trip.driveFix, !fix.isOnRoute {
                 notice("Nicht auf der Route, \(Int(fix.offsetMeters)) m daneben", systemImage: "exclamationmark.triangle")
             }
