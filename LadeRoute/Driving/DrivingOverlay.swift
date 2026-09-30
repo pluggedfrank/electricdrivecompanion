@@ -278,7 +278,14 @@ struct DrivingOverlay: View {
             }
 
             Spacer(minLength: 0)
-            statusValue(trip.arrivalTimeText, "Ankunft", compact: compact)
+            // Bei Stau steht unter der Ankunft die Verzögerung statt des
+            // Wortes "Ankunft", in Rot. Kein zusätzlicher Platz.
+            statusValue(
+                trip.arrivalTimeText,
+                trip.trafficDelayText ?? "Ankunft",
+                compact: compact,
+                labelColor: trip.trafficDelayText == nil ? Theme.meta : Theme.signal
+            )
             statusValue("\(Int(trip.remainingKm.rounded())) km", "bis Ziel", compact: compact)
             // Antippen stellt den Ladestand ein, etwa nach einem Stopp, den
             // die Erkennung nicht bemerkt hat.
@@ -328,19 +335,23 @@ struct DrivingOverlay: View {
         .accessibilityLabel(accessibility)
     }
 
-    private func statusValue(_ value: String, _ label: String, compact: Bool) -> some View {
+    private func statusValue(_ value: String, _ label: String, compact: Bool, labelColor: Color = Theme.meta) -> some View {
         VStack(alignment: .leading, spacing: 1) {
+            // Bis auf die Hälfte schrumpfen statt abschneiden: Nach Rom
+            // stand im Hochformat "159…" statt "1598 km" (30.09.2026).
             Text(value)
                 .font(.system(size: compact ? 18 : 22, weight: .bold, design: .rounded).monospacedDigit())
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.5)
+                .allowsTightening(true)
             Text(label)
                 .font(.system(size: 9, weight: .medium))
                 .textCase(.uppercase)
-                .foregroundStyle(Theme.meta)
+                .foregroundStyle(labelColor)
                 .lineLimit(1)
         }
+        .layoutPriority(1)
     }
 }
 

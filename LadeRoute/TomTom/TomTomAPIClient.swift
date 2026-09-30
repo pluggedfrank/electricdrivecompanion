@@ -439,7 +439,7 @@ actor TomTomAPIClient {
     /// jetzt. TomTom rekonstruiert die Route aus den Stützpunkten, statt
     /// selbst zu planen. Für den Vergleich mit einer frisch geplanten Route:
     /// Die Fahrzeit vom Start kennt keinen Stau, der seitdem entstanden ist.
-    func travelTimeAlong(_ geometry: [CLLocationCoordinate2D]) async throws -> Double {
+    func travelTimeAlong(_ geometry: [CLLocationCoordinate2D]) async throws -> (seconds: Double, delaySeconds: Double) {
         guard !apiKey.isEmpty, apiKey != "YOUR_API_KEY" else { throw TomTomAPIError.missingAPIKey }
         guard let first = geometry.first, let last = geometry.last, geometry.count >= 2 else {
             throw TomTomAPIError.emptyRoute
@@ -464,7 +464,7 @@ actor TomTomAPIClient {
         do {
             let response = try JSONDecoder().decode(CalculateRouteResponse.self, from: data)
             guard let route = response.routes.first else { throw TomTomAPIError.emptyRoute }
-            return route.summary.travelTimeInSeconds
+            return (route.summary.travelTimeInSeconds, route.summary.trafficDelayInSeconds ?? 0)
         } catch let error as TomTomAPIError {
             throw error
         } catch {

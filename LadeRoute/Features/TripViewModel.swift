@@ -219,6 +219,9 @@ final class TripViewModel: ObservableObject {
     @Published private(set) var isRerouting = false
     /// Kurz nach dem Wechsel auf eine schnellere Route: um wie viel.
     @Published var fasterRouteNotice: String?
+    /// Verzögerung durch Verkehr auf dem Rest der Route, in Sekunden. Aus
+    /// der Planung, dann bei jeder Prüfung auf eine schnellere Route neu.
+    @Published private(set) var trafficDelaySeconds: Double = 0
     /// Ansagen an oder aus. Wird gemerkt; an ist die Vorgabe.
     @Published var voiceEnabled = UserDefaults.standard.object(forKey: "voiceGuidance") as? Bool ?? true {
         didSet {
@@ -330,11 +333,12 @@ final class TripViewModel: ObservableObject {
         stations.first { $0.id == selectedStationID } ?? fetchedStations.first { $0.id == selectedStationID }
     }
 
-    var routeSummary: (distanceKm: Double, durationMinutes: Double)? {
+    var routeSummary: (distanceKm: Double, durationMinutes: Double, delayMinutes: Double)? {
         guard let summary = route?.summary else { return nil }
         return (
             summary.length.converted(to: .kilometers).value,
-            summary.travelTime.converted(to: .minutes).value
+            summary.travelTime.converted(to: .minutes).value,
+            summary.trafficDelay.converted(to: .minutes).value
         )
     }
 
@@ -404,6 +408,7 @@ final class TripViewModel: ObservableObject {
                 }
         }
         drivenBeforeRerouteMeters = 0
+        takeTimeEstimate(from: route)
         lastFasterRouteCheck = Date()
         fasterRouteNotice = nil
         chargeEvents = []
@@ -538,10 +543,27 @@ final class TripViewModel: ObservableObject {
     /// Ankunft, anteilig aus der Fahrzeit der Route. Grob, bis die
     /// Zielführung eigene Zeiten liefert.
     var arrivalTimeText: String {
-        guard let tracker, tracker.lengthMeters > 0, let route else { return "–" }
-        let total = route.summary.travelTime.converted(to: .seconds).value
-        let rest = total * (remainingKm * 1000 / tracker.lengthMeters)
+        guard let estimate = remainingTimeEstimate, estimate.meters > 0 else { return "–" }
+        let rest = estimate.seconds * (remainingKm * 1000 / estimate.meters)
         return Date().addingTimeInterval(rest).formatted(date: .omitted, time: .shortened)
+    }
+
+    /// Verzögerung durch Verkehr, zum Anzeigen: "+12 min Stau", unter
+    /// einer Minute nichts.
+    var trafficDelayText: String? {
+        let minutes = Int((trafficDelaySeconds / 60).rounded())
+        return minutes >= 1 ? "+\(minutes) min Stau" : nil
+    }
+
+    /// Restfahrzeit und Reststrecke bei der letzten Messung, mit Verkehr.
+    /// Die Ankunft rechnet anteilig damit weiter, bis die nächste Prüfung
+    /// (alle fünf Minuten) neue Zahlen bringt.
+    private func takeTimeEstimate(from route: TomTomSDKRoute.Route) {
+        remainingTimeEstimate = (
+            route.summary.travelTime.converted(to: .seconds).value,
+            route.summary.length.converted(to: .meters).value
+        )
+        trafficDelaySeconds = route.summary.trafficDelay.converted(to: .seconds).value
     }
 
     private func refreshDrivingTiles() {
@@ -821,6 +843,7 @@ final class TripViewModel: ObservableObject {
         }
         driveStartProgress = nil
         route = neu
+        takeTimeEstimate(from: neu)
         let tracker = RouteTracker(geometry: neu.geometry)
         self.tracker = tracker
         driveFix = nil
@@ -878,7 +901,14 @@ final class TripViewModel: ObservableObject {
             guard let self else { return }
             defer { fasterRouteTask = nil }
             do {
-                let currentSeconds = try await api.travelTimeAlong(remaining)
+                let current = try await api.travelTimeAlong(remaining)
+                let currentSeconds = current.seconds
+                // Auch ohne Wechsel: neue Restzeit und Verzögerung für die
+                // Ankunft und den Stauhinweis.
+                if isDriving {
+                    remainingTimeEstimate = (current.seconds, restMeters)
+                    trafficDelaySeconds = current.delaySeconds
+                }
                 let candidate = try await routePlanner.planRoute(from: origin, to: destination, via: via, heading: heading)
                 let newSeconds = candidate.summary.travelTime.converted(to: .seconds).value
                 guard !Task.isCancelled, isDriving, !isRerouting else { return }
@@ -1631,6 +1661,7 @@ final class TripViewModel: ObservableObject {
     private var realPositionSubscription: AnyCancellable?
     private var needsReplan = false
     private var fasterRouteTask: Task<Void, Never>?
+    private var remainingTimeEstimate: (seconds: Double, meters: Double)?
     private var lastFasterRouteCheck: Date?
     private var availabilityRequestedAt: [String: Date] = [:]
     private var availabilityLookupTried = Set<String>()

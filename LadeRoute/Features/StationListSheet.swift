@@ -252,6 +252,10 @@ struct StationListSheet: View {
                     Text(String(format: "%.0f km", summary.distanceKm))
                     Text("·")
                     Text(formattedDuration(minutes: summary.durationMinutes))
+                    if summary.delayMinutes >= 1 {
+                        Text("+\(Int(summary.delayMinutes.rounded())) min Stau")
+                            .foregroundStyle(Theme.signal)
+                    }
                     if trip.editorialCount > 0 {
                         Text("·")
                         HStack(spacing: 4) {
