@@ -2113,6 +2113,29 @@ test('beschilderung: E, L und K nur, wenn sonst nichts dasteht', () => {
   assert.equal(a.text, 'Biegen Sie links ab auf A57');
 });
 
+test('anzeige: gross, was auf dem Schild steht, darunter die Aktion', () => {
+  const f = JSON.parse(readFileSync(join(here, 'fixtures', 'anweisungen-meerbusch-norddeich.json'), 'utf8'));
+  const alle = ansage.anweisungenAusAntwort(f.anweisungen);
+  const zu = (text) => ansage.anzeige(alle.find((a) => a.text === text));
+  assert.deepEqual(zu('Nehmen Sie die Ausfahrt 8 auf A42 Richtung Oberhausen'), { ziel: 'Oberhausen', aktion: 'Ausfahrt 8 · A42' });
+  assert.deepEqual(zu('Bleiben Sie bei A31 Richtung Emden links'), { ziel: 'Emden', aktion: 'Links bleiben · A31' });
+  assert.deepEqual(zu('Fahren Sie auf die Autobahn A42'), { ziel: 'A42', aktion: 'Auffahren' });
+  assert.deepEqual(zu('Biegen Sie rechts ab auf Moerser Straße'), { ziel: 'Moerser Straße', aktion: 'Rechts abbiegen' });
+  assert.deepEqual(zu('Biegen Sie rechts ab auf Auricher Straße/B210 Richtung Norddeich'),
+    { ziel: 'Auricher Straße', aktion: 'Rechts abbiegen · B210 · Richtung Norddeich' });
+  assert.deepEqual(zu('Nehmen Sie am Kreisverkehr die zweite Ausfahrt auf B72'), { ziel: 'B72', aktion: 'Kreisverkehr, 2. Ausfahrt' });
+  assert.deepEqual(zu('Sie sind angekommen. Ihr Ziel liegt auf der linken Seite'), { ziel: 'Ziel links', aktion: null });
+  // Keine E-, L- oder K-Nummer neben einem anderen Namen, nie leer.
+  for (const a of alle) {
+    const { ziel, aktion } = ansage.anzeige(a);
+    assert.ok(ziel && ziel.length <= 40, JSON.stringify({ text: a.text, ziel }));
+    assert.ok(!/\b[EKL]\d/.test(`${ziel} ${aktion ?? ''}`) || !a.strasse, a.text);
+  }
+  // Nur eine L-Nummer, sonst nichts: die bleibt.
+  assert.deepEqual(ansage.anzeige({ manoever: 'TURN_RIGHT', nummern: ['L137'], strasse: null, schild: null, text: 'x' }),
+    { ziel: 'L137', aktion: 'Rechts abbiegen' });
+});
+
 test('sprechbar: Strassennummern so, wie man sie sagt', () => {
   assert.equal(ansage.sprechbar('Folgen Sie B1 Richtung Dortmund'), 'Folgen Sie B eins Richtung Dortmund');
   assert.equal(ansage.sprechbar('Kölner Straße/B8'), 'Kölner Straße, B 8');

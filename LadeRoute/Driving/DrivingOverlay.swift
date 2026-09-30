@@ -200,9 +200,9 @@ struct DrivingOverlay: View {
 
     private func notice(_ text: String, systemImage: String) -> some View {
         Label(text, systemImage: systemImage)
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(Theme.ink)
-            .lineLimit(2)
+            .lineLimit(4)
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(Theme.paper.opacity(0.96), in: RoundedRectangle(cornerRadius: 14))
@@ -566,17 +566,30 @@ struct ManeuverBanner: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
-            Text(maneuver.instruction.text)
-                .font(.system(size: compact ? 14 : 16, weight: .semibold))
-                .lineLimit(3)
+            // Groß, was auf dem Schild steht; darunter die Aktion. Der ganze
+            // Satz bleibt der Stimme vorbehalten (Rückmeldung vom 30.09.2026:
+            // "Nehmen Sie die Ausfahrt ..." ist zum Ablesen zu lang).
+            let display = maneuver.instruction.display
+            Text(display.headline)
+                .font(.system(size: compact ? 22 : 26, weight: .bold))
+                .lineLimit(2)
+                .minimumScaleFactor(0.75)
                 .fixedSize(horizontal: false, vertical: true)
+            if let action = display.action {
+                Text(action)
+                    .font(.system(size: compact ? 16 : 18, weight: .semibold))
+                    .foregroundStyle(Color(hex: 0xCFC7BC))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if let then = maneuver.then {
                 HStack(spacing: 6) {
                     Text("Dann")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .textCase(.uppercase)
                     Image(systemName: then.symbolName)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                 }
                 .foregroundStyle(Color(hex: 0xCFC7BC))
             }

@@ -751,19 +751,30 @@ final class TripViewModel: ObservableObject {
     /// nähme die Anfrage womöglich eine andere Route als das SDK.
     private func loadGuidance(for route: TomTomSDKRoute.Route, tracker: RouteTracker, heading: Double? = nil) {
         guard let first = route.geometry.first, let last = route.geometry.last else { return }
-        var points = [first]
-        if let via = viaStation { points.append(via.coordinate) }
-        points.append(last)
+        // Nur Start und Ziel: Die Stützpunkte tragen die ganze Linie, auch den
+        // Weg über eine Station. Mit der Station als drittem Punkt lehnte
+        // TomTom die Anfrage ab (30.09.2026, Route über eine Ladestation).
+        var viaPoints = [first]
+        if let via = viaStation { viaPoints.append(via.coordinate) }
+        viaPoints.append(last)
         guidanceTask?.cancel()
         guidanceProblem = nil
         guidanceTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let dto = try await api.routeInstructions(
-                    through: points,
-                    heading: heading,
-                    supportingPoints: route.geometry
-                )
+                let dto: [CalculateRouteResponse.Instruction]
+                do {
+                    dto = try await api.routeInstructions(
+                        through: [first, last],
+                        heading: heading,
+                        supportingPoints: route.geometry
+                    )
+                } catch TomTomAPIError.http(status: 400, _) {
+                    // Die Stützpunkte passen nicht: dann ohne, über die
+                    // Station. Die Texte weichen dann womöglich von der
+                    // Linie ab, besser als gar keine Ansage.
+                    dto = try await api.routeInstructions(through: viaPoints, heading: heading)
+                }
                 guard !Task.isCancelled, isDriving else { return }
                 guidance = Guidance.locate(Guidance.instructions(from: dto), on: tracker)
                 if guidance.isEmpty { guidanceProblem = "Keine Anweisungen für diese Strecke." }

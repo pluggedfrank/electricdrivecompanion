@@ -459,7 +459,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         if maneuver.instruction.id != currentManeuverID {
             sessionPaused = false
             let cp = CPManeuver()
-            cp.instructionVariants = [maneuver.instruction.text]
+            // Längste zuerst: CarPlay zeigt die längste, die passt.
+            let display = maneuver.instruction.display
+            let compact = [display.action, display.headline].compactMap { $0 }.joined(separator: " · ")
+            var variants: [String] = []
+            for v in [maneuver.instruction.text, compact, display.headline].sorted(by: { $0.count > $1.count })
+                where !variants.contains(v) { variants.append(v) }
+            cp.instructionVariants = variants
             cp.symbolImage = Self.maneuverImage(maneuver.instruction.symbolName)
             cp.initialTravelEstimates = estimates
             session.upcomingManeuvers = [cp]

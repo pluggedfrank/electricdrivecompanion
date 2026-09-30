@@ -39,6 +39,7 @@ struct CalculateRouteResponse: Decodable {
         let roadNumbers: [String]?
         let signpostText: String?
         let exitNumber: String?
+        let roundaboutExitNumber: Int?
     }
 
     struct Point: Decodable {

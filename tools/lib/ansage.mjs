@@ -24,7 +24,69 @@ export function anweisungenAusAntwort(instructions) {
     manoever: a.maneuver,
     text: beschilderung(a.message),
     kombiniert: a.combinedMessage ? beschilderung(a.combinedMessage) : null,
+    strasse: a.street ?? null,
+    nummern: a.roadNumbers ?? [],
+    schild: a.signpostText ?? null,
+    ausfahrt: a.exitNumber ?? null,
+    kreiselAusfahrt: a.roundaboutExitNumber ?? null,
   }));
+}
+
+const AKTIONEN = {
+  TURN_LEFT: 'Links abbiegen', TURN_RIGHT: 'Rechts abbiegen',
+  SHARP_LEFT: 'Scharf links', SHARP_RIGHT: 'Scharf rechts',
+  BEAR_LEFT: 'Links halten', BEAR_RIGHT: 'Rechts halten',
+  KEEP_LEFT: 'Links bleiben', KEEP_RIGHT: 'Rechts bleiben',
+  STRAIGHT: 'Geradeaus', FOLLOW: 'Weiter',
+  ENTER_MOTORWAY: 'Auffahren', ENTER_FREEWAY: 'Auffahren', ENTER_HIGHWAY: 'Auffahren',
+  TAKE_EXIT: 'Ausfahrt', MOTORWAY_EXIT_LEFT: 'Ausfahrt links', MOTORWAY_EXIT_RIGHT: 'Ausfahrt rechts',
+  SWITCH_MOTORWAY_LEFT: 'Links wechseln', SWITCH_MOTORWAY_RIGHT: 'Rechts wechseln',
+  SWITCH_PARALLEL_ROAD: 'Parallelfahrbahn', SWITCH_MAIN_ROAD: 'Hauptfahrbahn',
+  MAKE_UTURN: 'Wenden', TRY_MAKE_UTURN: 'Wenden',
+  TAKE_FERRY: 'Fähre', DEPART: 'Start',
+  ARRIVE: 'Ziel', ARRIVE_LEFT: 'Ziel links', ARRIVE_RIGHT: 'Ziel rechts',
+  WAYPOINT_REACHED: 'Zwischenziel', WAYPOINT_LEFT: 'Zwischenziel links', WAYPOINT_RIGHT: 'Zwischenziel rechts',
+};
+
+/** Manoever, bei denen das Schild zaehlt, nicht der Strassenname. */
+const SCHILDMANOEVER = new Set([
+  'ENTER_MOTORWAY', 'ENTER_FREEWAY', 'ENTER_HIGHWAY', 'TAKE_EXIT', 'MOTORWAY_EXIT_LEFT',
+  'MOTORWAY_EXIT_RIGHT', 'KEEP_LEFT', 'KEEP_RIGHT', 'FOLLOW', 'STRAIGHT',
+  'SWITCH_MOTORWAY_LEFT', 'SWITCH_MOTORWAY_RIGHT', 'SWITCH_PARALLEL_ROAD', 'SWITCH_MAIN_ROAD',
+]);
+
+/**
+ * Der Abbiegehinweis zum schnellen Ablesen (Rueckmeldung vom 30.09.2026):
+ * "Nehmen Sie die Ausfahrt 8 auf A42 Richtung Oberhausen" ist gut zum
+ * Hoeren, aber zu lang fuer einen Blick aufs Telefon. Daraus wird
+ *   ziel:   "Oberhausen"           gross
+ *   aktion: "Ausfahrt 8 · A42"     darunter
+ * Auf der Autobahn zaehlt das Schild (Richtung), in der Stadt die Strasse.
+ * E-, L- und K-Nummern bleiben weg, ausser es gibt sonst nichts.
+ * Ohne passendes Ziel steht die Aktion gross ("Ziel links").
+ * Gegenstueck: Guidance.display in Swift.
+ */
+export function anzeige(a) {
+  let aktion = AKTIONEN[a.manoever] ?? null;
+  if (a.manoever === 'TAKE_EXIT' && a.ausfahrt) aktion = `Ausfahrt ${a.ausfahrt}`;
+  if (a.manoever?.startsWith('ROUNDABOUT')) {
+    aktion = a.kreiselAusfahrt ? `Kreisverkehr, ${a.kreiselAusfahrt}. Ausfahrt` : 'Kreisverkehr';
+  }
+  const nummern = a.nummern ?? [];
+  const nummer = nummern.find((n) => !/^[EKL]\d/.test(n)) ?? (a.strasse ? null : nummern[0] ?? null);
+  const strasse = a.strasse ?? null;
+  const richtung = a.schild ?? null;
+
+  const reihenfolge = SCHILDMANOEVER.has(a.manoever)
+    ? [richtung, nummer, strasse]
+    : [strasse, nummer, richtung];
+  const ziel = reihenfolge.find(Boolean) ?? null;
+
+  const zusatz = [];
+  if (nummer && nummer !== ziel) zusatz.push(nummer);
+  if (richtung && richtung !== ziel) zusatz.push(`Richtung ${richtung}`);
+  if (!ziel) return { ziel: aktion ?? a.text, aktion: null };
+  return { ziel, aktion: [aktion, ...zusatz].filter(Boolean).join(' · ') || null };
 }
 
 /**

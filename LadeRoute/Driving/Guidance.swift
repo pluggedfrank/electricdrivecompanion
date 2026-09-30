@@ -20,6 +20,12 @@ struct GuidanceInstruction: Identifiable, Equatable {
     let combinedText: String?
     /// Meter ab Routenbeginn auf der Linie des SDK.
     var progressMeters: Double = 0
+    /// Einzelteile der API für die kurze Anzeige, siehe display.
+    var street: String?
+    var roadNumbers: [String] = []
+    var signpost: String?
+    var exitNumber: String?
+    var roundaboutExit: Int?
 
     var isDeparture: Bool { maneuver == "DEPART" }
     var isFollow: Bool { maneuver == "FOLLOW" }
@@ -29,6 +35,59 @@ struct GuidanceInstruction: Identifiable, Equatable {
     static func == (a: GuidanceInstruction, b: GuidanceInstruction) -> Bool {
         a.id == b.id && a.progressMeters == b.progressMeters && a.text == b.text
     }
+
+    struct Display: Equatable {
+        /// Groß: Richtung, Straße oder Nummer, sonst die Aktion.
+        let headline: String
+        /// Darunter: "Ausfahrt 8 · A42", "Rechts abbiegen · Richtung Norddeich".
+        let action: String?
+    }
+
+    /// Der Abbiegehinweis zum schnellen Ablesen. Auf der Autobahn zählt das
+    /// Schild (Richtung), in der Stadt die Straße; E-, L- und K-Nummern
+    /// bleiben weg, außer es gibt sonst nichts. Gegenstück zu anzeige() in
+    /// tools/lib/ansage.mjs.
+    var display: Display {
+        var action = Self.actions[maneuver]
+        if maneuver == "TAKE_EXIT", let exitNumber { action = "Ausfahrt \(exitNumber)" }
+        if maneuver.hasPrefix("ROUNDABOUT") {
+            action = roundaboutExit.map { "Kreisverkehr, \($0). Ausfahrt" } ?? "Kreisverkehr"
+        }
+        let number = roadNumbers.first { $0.range(of: #"^[EKL]\d"#, options: .regularExpression) == nil }
+            ?? (street == nil ? roadNumbers.first : nil)
+        let order = Self.signpostManeuvers.contains(maneuver)
+            ? [signpost, number, street]
+            : [street, number, signpost]
+        guard let headline = order.compactMap({ $0 }).first else {
+            return Display(headline: action ?? text, action: nil)
+        }
+        var parts = [action].compactMap { $0 }
+        if let number, number != headline { parts.append(number) }
+        if let signpost, signpost != headline { parts.append("Richtung \(signpost)") }
+        return Display(headline: headline, action: parts.isEmpty ? nil : parts.joined(separator: " · "))
+    }
+
+    private static let actions: [String: String] = [
+        "TURN_LEFT": "Links abbiegen", "TURN_RIGHT": "Rechts abbiegen",
+        "SHARP_LEFT": "Scharf links", "SHARP_RIGHT": "Scharf rechts",
+        "BEAR_LEFT": "Links halten", "BEAR_RIGHT": "Rechts halten",
+        "KEEP_LEFT": "Links bleiben", "KEEP_RIGHT": "Rechts bleiben",
+        "STRAIGHT": "Geradeaus", "FOLLOW": "Weiter",
+        "ENTER_MOTORWAY": "Auffahren", "ENTER_FREEWAY": "Auffahren", "ENTER_HIGHWAY": "Auffahren",
+        "TAKE_EXIT": "Ausfahrt", "MOTORWAY_EXIT_LEFT": "Ausfahrt links", "MOTORWAY_EXIT_RIGHT": "Ausfahrt rechts",
+        "SWITCH_MOTORWAY_LEFT": "Links wechseln", "SWITCH_MOTORWAY_RIGHT": "Rechts wechseln",
+        "SWITCH_PARALLEL_ROAD": "Parallelfahrbahn", "SWITCH_MAIN_ROAD": "Hauptfahrbahn",
+        "MAKE_UTURN": "Wenden", "TRY_MAKE_UTURN": "Wenden",
+        "TAKE_FERRY": "Fähre", "DEPART": "Start",
+        "ARRIVE": "Ziel", "ARRIVE_LEFT": "Ziel links", "ARRIVE_RIGHT": "Ziel rechts",
+        "WAYPOINT_REACHED": "Zwischenziel", "WAYPOINT_LEFT": "Zwischenziel links", "WAYPOINT_RIGHT": "Zwischenziel rechts",
+    ]
+
+    private static let signpostManeuvers: Set<String> = [
+        "ENTER_MOTORWAY", "ENTER_FREEWAY", "ENTER_HIGHWAY", "TAKE_EXIT", "MOTORWAY_EXIT_LEFT",
+        "MOTORWAY_EXIT_RIGHT", "KEEP_LEFT", "KEEP_RIGHT", "FOLLOW", "STRAIGHT",
+        "SWITCH_MOTORWAY_LEFT", "SWITCH_MOTORWAY_RIGHT", "SWITCH_PARALLEL_ROAD", "SWITCH_MAIN_ROAD",
+    ]
 
     /// Ein SF Symbol für das Manöver.
     var symbolName: String {
@@ -60,7 +119,12 @@ enum Guidance {
                 point: CLLocationCoordinate2D(latitude: a.point.latitude, longitude: a.point.longitude),
                 maneuver: a.maneuver,
                 text: signed(a.message),
-                combinedText: a.combinedMessage.map(signed)
+                combinedText: a.combinedMessage.map(signed),
+                street: a.street,
+                roadNumbers: a.roadNumbers ?? [],
+                signpost: a.signpostText,
+                exitNumber: a.exitNumber,
+                roundaboutExit: a.roundaboutExitNumber
             )
         }
     }
