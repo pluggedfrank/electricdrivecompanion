@@ -260,7 +260,9 @@ async function main() {
   const volle = [];
   let anfragen = 0;
   const fehlerJeStueck = [];
+  let kontingentLeer = false;
   for (const [si, stueck] of stuecke.entries()) {
+    if (kontingentLeer) break;
     const segs = splitIntoSegments(stueck, 50_000);
     let fehler = 0;
     for (const [i, seg] of segs.entries()) {
@@ -272,6 +274,13 @@ async function main() {
       if (ergebnis.fehler) {
         fehler++;
         console.log(`  S${si + 1}/${i + 1} ab km ${startKm}: FEHLER ${ergebnis.fehler} (${ergebnis.ms} ms)`);
+        // Kontingent leer: Jede weitere Anfrage scheitert genauso. So sieht
+        // es auch die App, nur sagt sie es nicht (Lauf vom 30.09.2026).
+        if (/InsufficientFunds/.test(ergebnis.fehler)) {
+          console.log('  Search-Kontingent aufgebraucht, Suche abgebrochen.');
+          kontingentLeer = true;
+          break;
+        }
         continue;
       }
       const leist = ergebnis.stationen.map((s) => ev.maxPowerKW(s));
@@ -364,7 +373,7 @@ async function main() {
   }
 
   // --- Vergleich: verdraengen 50-kW-Saeulen im 20er-Limit die schnellen?
-  if (vergleich > 0 && volle.length > 0) {
+  if (vergleich > 0 && volle.length > 0 && !kontingentLeer) {
     const stufe = Math.min(...stufen);
     console.log(`\nVergleich auf ${Math.min(vergleich, volle.length)} vollen Abschnitten, Serverfilter ${stufe} statt ${FETCH_KW} kW:`);
     for (const v of volle.slice(0, vergleich)) {
