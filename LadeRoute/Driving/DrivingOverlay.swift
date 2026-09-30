@@ -6,6 +6,10 @@
 //  Regeln daraus, die hier umgesetzt sind: höchstens drei Kacheln, kein
 //  Scrollen, die große Zahl ist die Strecke auf der Route, daneben der Akku
 //  bei Ankunft, der geplante Stopp dunkel, eine Linie, wo die Reserve endet.
+//
+//  Die nächste Station steht unten, die fernste oben, wie die Straße vor
+//  einem: Was als Nächstes kommt, ist am Auto. Wunsch vom 30.09. nach der
+//  ersten Simulation; das Konzept hatte es andersherum.
 
 import SwiftUI
 
@@ -22,7 +26,7 @@ struct DrivingOverlay: View {
 
                 rail(compact: !landscape)
                     .frame(width: railWidth)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
                     .padding(.vertical, landscape ? 10 : 70)
                     .padding(.trailing, 10)
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -54,16 +58,25 @@ struct DrivingOverlay: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.paper.opacity(0.96), in: RoundedRectangle(cornerRadius: 14))
             }
-            ForEach(Array(trip.drivingTiles.enumerated()), id: \.element.id) { index, tile in
-                if index == reachLineIndex {
-                    reachLine
-                }
+            // Umgekehrt: die fernste oben, die nächste unten. Die Nummer
+            // bleibt die Reihenfolge ab dem Auto, 1 ist die nächste.
+            ForEach(Array(trip.drivingTiles.enumerated()).reversed(), id: \.element.id) { index, tile in
                 DrivingTileView(tile: tile, order: index + 1, compact: compact)
                     // Antippen holt die Belegung. Über die Station routen
                     // kommt mit der Zielführung; bis dahin gäbe es nichts,
                     // wohin eine neue Route führen könnte.
                     .onTapGesture { trip.selectStation(id: tile.id) }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    // Neue kommen oben herein, vorbeigefahrene gehen unten
+                    // hinaus, wie die Straße.
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .move(edge: .bottom).combined(with: .opacity)
+                    ))
+                // Die Linie der Reserve unter der ersten Station, die nicht
+                // mehr erreichbar ist: darüber liegt, was zu weit ist.
+                if index == reachLineIndex {
+                    reachLine
+                }
             }
             if let offRoute = trip.driveFix, !offRoute.isOnRoute {
                 Text("Nicht auf der Route, \(Int(offRoute.offsetMeters)) m daneben")
