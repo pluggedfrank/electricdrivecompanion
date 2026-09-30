@@ -115,6 +115,19 @@ enum Guidance {
         value == value.rounded() ? String(Int(value)) : comma(String(value))
     }
 
+    /// Macht den Text der Routing-API sprechbar: "B1" wird "B eins" statt
+    /// "B eine", "A52" wird "A 52", "A57/E31" wird "A 57", und ein übriger
+    /// Schrägstrich wird zur Pause. Gegenstück zu sprechbar() in
+    /// tools/lib/ansage.mjs.
+    static func speakable(_ text: String) -> String {
+        var s = text
+        s = s.replacingOccurrences(of: #"\b([A-Z]{1,2}\d{1,4})/E\d{1,3}\b"#, with: "$1", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"\s*/\s*"#, with: ", ", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"\b([A-Z]{1,2})1\b"#, with: "$1 eins", options: .regularExpression)
+        s = s.replacingOccurrences(of: #"\b([A-Z]{1,2})(\d{1,4})\b"#, with: "$1 $2", options: .regularExpression)
+        return s
+    }
+
     /// "500 Metern", "1,5 Kilometern", "einem Kilometer": für "In ..."
     static func spokenDistance(_ meters: Double) -> String {
         if meters >= 950 {

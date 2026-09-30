@@ -86,6 +86,26 @@ export function stufeFuer(abstand, tempo) {
 
 const komma = (x) => String(x).replace('.', ',');
 
+/**
+ * Macht den Text der Routing-API sprechbar.
+ *
+ * Die iOS-Stimme las "B1" als "B eine" (Rueckmeldung vom 30.09.2026) und
+ * einen Schraegstrich als Wort. Deshalb:
+ * - "A57/E31": Die Europastrasse steht nur doppelt da, gesagt wird die erste.
+ * - uebrige Schraegstriche werden zur Pause: "Moerser Straße/L137" wird
+ *   "Moerser Straße, L 137".
+ * - Strassennummern bekommen ein Leerzeichen, "A52" wird "A 52", und die 1
+ *   heisst "eins": "B1" wird "B eins".
+ * Gegenstueck: Guidance.speakable in Swift.
+ */
+export function sprechbar(text) {
+  return String(text)
+    .replace(/\b([A-Z]{1,2}\d{1,4})\/E\d{1,3}\b/g, '$1')
+    .replace(/\s*\/\s*/g, ', ')
+    .replace(/\b([A-Z]{1,2})1\b/g, '$1 eins')
+    .replace(/\b([A-Z]{1,2})(\d{1,4})\b/g, '$1 $2');
+}
+
 /** "500 Metern", "1,5 Kilometern", "einem Kilometer": fuer "In ..." */
 export function entfernungGesprochen(m) {
   if (m >= 950) {

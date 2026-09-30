@@ -2102,6 +2102,22 @@ test('entfernungGesprochen: gerundet und im Dativ', () => {
   assert.equal(ansage.entfernungGesprochen(12_300), '12 Kilometern');
 });
 
+test('sprechbar: Strassennummern so, wie man sie sagt', () => {
+  assert.equal(ansage.sprechbar('Folgen Sie B1 Richtung Dortmund'), 'Folgen Sie B eins Richtung Dortmund');
+  assert.equal(ansage.sprechbar('Fahren Sie auf die Autobahn A57/E31'), 'Fahren Sie auf die Autobahn A 57');
+  assert.equal(ansage.sprechbar('Biegen Sie rechts ab auf Moerser Straße/L137'), 'Biegen Sie rechts ab auf Moerser Straße, L 137');
+  assert.equal(ansage.sprechbar('Folgen Sie A3/E35 Richtung Köln'), 'Folgen Sie A 3 Richtung Köln');
+  assert.equal(ansage.sprechbar('Fahren Sie auf A1 und dann auf A10'), 'Fahren Sie auf A eins und dann auf A 10');
+  assert.equal(ansage.sprechbar('Biegen Sie links ab auf Brühler Weg'), 'Biegen Sie links ab auf Brühler Weg');
+  // Alle Anweisungen der Testroute: kein Schraegstrich, keine Nummer am Buchstaben.
+  const f = JSON.parse(readFileSync(join(here, 'fixtures', 'anweisungen-meerbusch-norddeich.json'), 'utf8'));
+  for (const a of f.anweisungen) {
+    const s = ansage.sprechbar(a.message);
+    assert.ok(!s.includes('/'), s);
+    assert.ok(!/\b[A-Z]{1,2}\d/.test(s), s);
+  }
+});
+
 test('entfernungKurz: fuer die Anzeige', () => {
   assert.equal(ansage.entfernungKurz(87), '90 m');
   assert.equal(ansage.entfernungKurz(260), '250 m');
