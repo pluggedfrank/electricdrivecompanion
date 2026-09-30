@@ -37,6 +37,13 @@ final class MapCoordinator: NSObject {
     private var cancellables = Set<AnyCancellable>()
     /// Der Standortgeber, den die Karte von Haus aus hat, solange eine
     /// Simulation ihn ersetzt.
+    /// Jede Nadel, die gerade auf der Karte steht.
+    ///
+    /// Das SDK hat ein pauschales `removeAnnotations()`, und das hat nicht
+    /// alles entfernt: Am 30.09. standen während der Fahrt die neunzig
+    /// Nadeln der Liste unter den drei der Fahransicht, und zwei trugen die
+    /// Nummer 3. Deshalb werden die Nadeln hier gemerkt und einzeln entfernt.
+    private var placedMarkers: [TomTomSDKMapDisplay.Marker] = []
     private var realLocationProvider: (any TomTomSDKLocationProvider.LocationProvider)?
     private var simulatedLocationProvider: TomTomSDKLocationProvider.SimulatedLocationProvider?
 }
@@ -283,8 +290,7 @@ private extension MapCoordinator {
     func redrawMarkers() {
         guard let map else { return }
 
-        // Marker sind im SDK Annotationen, es gibt kein removeMarkers.
-        map.removeAnnotations()
+        clearMarkers(on: map)
 
         if trip.isDriving {
             redrawDrivingMarkers(on: map)
@@ -306,10 +312,24 @@ private extension MapCoordinator {
                 tag: annotated.id
             )
 
-            // Der Rückgabewert wird nicht gebraucht: Adressiert wird über
-            // das Tag, entfernt wird über removeAnnotations().
-            _ = try? map.addMarker(options: options)
+            place(options, on: map)
         }
+    }
+
+    /// Setzt eine Nadel und merkt sie sich.
+    func place(_ options: MarkerOptions, on map: TomTomMap) {
+        if let marker = try? map.addMarker(options: options) {
+            placedMarkers.append(marker)
+        }
+    }
+
+    /// Entfernt jede gemerkte Nadel einzeln, dann zur Sicherheit pauschal.
+    func clearMarkers(on map: TomTomMap) {
+        for marker in placedMarkers {
+            map.remove(annotation: marker)
+        }
+        placedMarkers.removeAll()
+        map.removeAnnotations()
     }
 
     /// Während der Fahrt: die Stationen der Kacheln, nummeriert wie die
@@ -329,7 +349,7 @@ private extension MapCoordinator {
                 ),
                 tag: tile.id
             )
-            _ = try? map.addMarker(options: options)
+            place(options, on: map)
         }
 
         let progress = trip.driveFix?.progressMeters ?? 0
@@ -345,7 +365,7 @@ private extension MapCoordinator {
                 ),
                 tag: item.id
             )
-            _ = try? map.addMarker(options: options)
+            place(options, on: map)
         }
     }
 }
