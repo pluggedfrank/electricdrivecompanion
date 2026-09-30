@@ -1056,6 +1056,14 @@ final class TripViewModel: ObservableObject {
         destinationQuery = saved.name
     }
 
+    /// Zielsuche für CarPlay: dieselbe Search-API, ohne das Suchfeld des
+    /// iPhones zu berühren.
+    func findPlaces(_ text: String) async -> [Place] {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2 else { return [] }
+        return (try? await api.findPlaces(matching: trimmed, near: currentLocation)) ?? []
+    }
+
     func clearPlaceSearch() {
         destinationQuery = ""
         placeResults = []

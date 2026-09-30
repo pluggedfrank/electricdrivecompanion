@@ -1,6 +1,10 @@
 //  StationListSheet.swift
 //  Die Trefferliste. Hier wird sichtbar, was der eigene Datenbestand beiträgt:
 //  jede Station mit Redaktionsurteil bekommt den roten Punkt und den Klartext.
+//
+//  Schriftgrößen seit dem 30.09.2026 eine Stufe größer und weniger Kleintext:
+//  Das Blatt wird auch im Auto aufgezogen, und 11-Punkt-Fußnoten liest dort
+//  niemand. Was nur erklärt, wie gerechnet wird, ist gekürzt oder weg.
 
 import SwiftUI
 
@@ -24,16 +28,16 @@ struct StationListSheet: View {
                                 .foregroundStyle(Theme.river)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Route über")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.system(size: 12, weight: .semibold))
                                     .textCase(.uppercase)
                                     .foregroundStyle(Theme.meta)
                                 Text(via.name)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.system(size: 17, weight: .semibold))
                                     .foregroundStyle(Theme.ink)
                             }
                             Spacer()
                             Button("Aufheben") { trip.clearVia() }
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(Theme.river)
                                 .buttonStyle(.plain)
                         }
@@ -75,7 +79,7 @@ struct StationListSheet: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("\(trip.stationsForList.count) Ladestationen")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                 }
             }
@@ -93,10 +97,10 @@ struct StationListSheet: View {
                 trip.startDriving(simulated: false)
             } label: {
                 Label("Losfahren", systemImage: "location.north.line.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 18)
+                    .frame(height: 44)
                     .background(Theme.signal, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -104,11 +108,11 @@ struct StationListSheet: View {
             Button {
                 trip.startDriving(simulated: true)
             } label: {
-                Label("Fahrt simulieren", systemImage: "play.fill")
-                    .font(.system(size: 13, weight: .semibold))
+                Label("Simulieren", systemImage: "play.fill")
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.ink2)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 14)
+                    .frame(height: 44)
                     .background(Theme.panel, in: Capsule())
             }
             .buttonStyle(.plain)
@@ -129,11 +133,10 @@ struct StationListSheet: View {
         let fahrzeug = trip.vehicleStore.profile
         Text(
             "\(Int(fahrzeug.usableBatteryKWh)) kWh · "
-                + String(format: "%.1f", fahrzeug.consumptionKWhPer100km) + " kWh/100 km · "
                 + "Start \(Int(fahrzeug.currentChargePercent)) % · "
-                + "Reichweite \(Int(fahrzeug.remainingRangeKm)) km"
+                + "\(Int(fahrzeug.remainingRangeKm)) km Reichweite"
         )
-        .font(.system(size: 11).monospacedDigit())
+        .font(.system(size: 13).monospacedDigit())
         .foregroundStyle(Theme.faint)
         .textCase(nil)
     }
@@ -154,27 +157,30 @@ struct StationListSheet: View {
 
             HStack(alignment: .top, spacing: 7) {
                 Image(systemName: symbol(for: plan, vorläufig: vorläufig))
-                    .font(.system(size: 12))
+                    .font(.system(size: 16))
                     .foregroundStyle(farbe(for: plan, vorläufig: vorläufig))
                     .padding(.top, 1)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(vorläufig ? "Noch keine durchgehende Ladeplanung" : planHeadline(plan))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(farbe(for: plan, vorläufig: vorläufig))
 
                     if vorläufig {
                         Text("Die Umkreissuche läuft noch, es fehlen Stationen.")
-                            .font(.system(size: 11))
+                            .font(.system(size: 14))
                             .foregroundStyle(Theme.meta)
                     } else if plan.isFeasible, !plan.stops.isEmpty {
-                        Text(planDetail(plan))
-                            .font(.system(size: 11))
-                            .foregroundStyle(Theme.meta)
-                            .fixedSize(horizontal: false, vertical: true)
+                        // Ein Stopp je Zeile statt einer langen Kette.
+                        ForEach(Array(planDetail(plan).enumerated()), id: \.offset) { _, line in
+                            Text(line)
+                                .font(.system(size: 14).monospacedDigit())
+                                .foregroundStyle(Theme.ink2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     } else if let text = problemDetail(plan) {
                         Text(text)
-                            .font(.system(size: 11))
+                            .font(.system(size: 14))
                             .foregroundStyle(Theme.meta)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -228,7 +234,7 @@ struct StationListSheet: View {
             : "\(plan.stops.count) Ladestopps, \(laden) min laden"
     }
 
-    private func planDetail(_ plan: ChargingPlan) -> String {
+    private func planDetail(_ plan: ChargingPlan) -> [String] {
         plan.stops
             .map { stopp in
                 let km = Int((stopp.progressMeters / 1000).rounded())
@@ -240,13 +246,12 @@ struct StationListSheet: View {
                 // Geht die Strecke nur mit einem anderen Anbieter auf, soll
                 // man das sehen, bevor man dort ohne Vertrag steht.
                 let fremd = trip.favoritesActive && !trip.isFavorite(stopp.station) ? " (kein Favorit)" : ""
-                return "km \(km) \(name)\(fremd), \(minuten) min"
+                return "km \(km) · \(name)\(fremd) · \(minuten) min"
             }
-            .joined(separator: "  ·  ")
     }
 
     private var summaryHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             if let summary = trip.routeSummary {
                 HStack(spacing: 6) {
                     Text(String(format: "%.0f km", summary.distanceKm))
@@ -271,7 +276,7 @@ struct StationListSheet: View {
                         }
                     }
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Theme.meta)
                 .textCase(nil)
 
@@ -284,15 +289,15 @@ struct StationListSheet: View {
     }
 
     private var filterRow: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             if trip.favoritesActive {
                 Toggle(isOn: $trip.listOnlyFavorites) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Nur bevorzugte Anbieter")
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                             .foregroundStyle(Theme.ink2)
-                        Text("\(trip.stations.filter { trip.isFavorite($0) }.count) von \(trip.stations.count) Stationen. Die Kacheln beim Fahren zeigen immer nur Favoriten.")
-                            .font(.system(size: 11))
+                        Text("\(trip.stations.filter { trip.isFavorite($0) }.count) von \(trip.stations.count) Stationen")
+                            .font(.system(size: 13))
                             .foregroundStyle(Theme.faint)
                     }
                 }
@@ -310,39 +315,34 @@ struct StationListSheet: View {
                 .onChange(of: trip.powerTier) { _, _ in trip.reapplyFilters() }
 
                 Text(trip.powerTier.explanation)
-                    .font(.system(size: 12))
+                    .font(.system(size: 14))
                     .foregroundStyle(Theme.meta)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text("Abstand von der Route")
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                         .foregroundStyle(Theme.ink2)
                     Spacer()
                     Text(abstandText(trip.maxDistanceFromRouteMeters))
-                        .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                        .font(.system(size: 16, weight: .semibold).monospacedDigit())
                         .foregroundStyle(Theme.ink)
                 }
                 Slider(value: $trip.maxDistanceFromRouteMeters, in: 200 ... 5000, step: 100) { editing in
                     if !editing { trip.reapplyFilters() }
                 }
                 .tint(Theme.signal)
-
-                Text("Luftlinie zur Strecke. Gilt für jede Station.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.faint)
-                    .textCase(nil)
             }
 
             Section {
                 HStack {
                     Text("Umweg höchstens")
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                         .foregroundStyle(Theme.ink2)
                     Spacer()
                     Text("\(Int(trip.maxDetourMinutes)) min")
-                        .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                        .font(.system(size: 16, weight: .semibold).monospacedDigit())
                         .foregroundStyle(Theme.ink)
                 }
                 Slider(value: $trip.maxDetourMinutes, in: 2 ... 30, step: 1) { editing in
@@ -350,21 +350,23 @@ struct StationListSheet: View {
                 }
                 .tint(Theme.signal)
 
-                // Ohne diesen Satz wirkt der Regler kaputt: Man stellt zwei
+                // Ohne diesen Hinweis wirkt der Regler kaputt: Man stellt zwei
                 // Minuten ein und bekommt weiter hundert Stationen, solange die
-                // Umwege noch nicht gerechnet sind.
-                Text(umwegHinweis)
-                .font(.system(size: 11))
-                .foregroundStyle(Theme.faint)
-                .textCase(nil)
-                .fixedSize(horizontal: false, vertical: true)
+                // Umwege noch nicht gerechnet sind. Sind alle bekannt, entfällt er.
+                if let hinweis = umwegHinweis {
+                    Text(hinweis)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.meta)
+                        .textCase(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             // Pflicht, nicht Zierde: Die Daten stehen unter CC BY 4.0, und
             // die Lizenz verlangt die Nennung dort, wo die Daten erscheinen.
             Section {
                 Text(trip.stationSourceNote)
-                    .font(.system(size: 11))
+                    .font(.system(size: 12))
                     .foregroundStyle(Theme.faint)
                     .textCase(nil)
                     .fixedSize(horizontal: false, vertical: true)
@@ -380,27 +382,17 @@ struct StationListSheet: View {
         return "rechne Umwege"
     }
 
-    /// Was der Umwegregler gerade kann.
-    private var umwegHinweis: String {
+    /// Was der Umwegregler gerade kann; nil, wenn er überall greift.
+    private var umwegHinweis: String? {
         let bekannt = trip.detourKnownCount
         let gesamt = trip.stations.count
         if trip.isComputingDetours {
-            return "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, bisher für "
-                + "\(bekannt) von \(gesamt) Stationen. Der Rest wird gerade gerechnet; "
-                + "bis dahin greift der Regler dort nicht."
+            return "Umwege für \(bekannt) von \(gesamt) Stationen gerechnet, der Rest folgt."
         }
         if bekannt < gesamt {
-            return "Echte Fahrzeit vom Abfahren bis zum Wiederauffahren, aber nur für "
-                + "\(bekannt) von \(gesamt) Stationen bekannt. Wo keiner bekannt ist, "
-                + "greift der Regler nicht."
+            return "Umweg nur für \(bekannt) von \(gesamt) Stationen bekannt."
         }
-        if trip.detourComputedCount == gesamt {
-            return "Mehrzeit, wenn das Navi über die Station routet, für alle "
-                + "\(gesamt) Stationen als eigene Route gerechnet."
-        }
-        return "Mehrzeit, wenn das Navi über die Station routet, für alle "
-            + "\(gesamt) Stationen. \(trip.detourComputedCount) davon als eigene Route "
-            + "gerechnet, der Rest von TomTom mitgeliefert."
+        return nil
     }
 
     private func formattedDuration(minutes: Double) -> String {
@@ -431,9 +423,9 @@ struct StationRow: View {
                             ? Theme.river
                             : (item.hasEditorialContent ? Theme.signal : Theme.faint)
                     )
-                    .frame(width: 26, height: 26)
+                    .frame(width: 30, height: 30)
                 Text("\(index)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
             }
 
@@ -441,20 +433,20 @@ struct StationRow: View {
                 HStack(spacing: 6) {
                     if isFavorite {
                         Image(systemName: "star.fill")
-                            .font(.system(size: 10))
+                            .font(.system(size: 12))
                             .foregroundStyle(Theme.busy)
                             .accessibilityLabel("Bevorzugter Anbieter")
                     }
                     Text(item.station.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
 
                     if isPlannedStop {
                         HStack(spacing: 3) {
-                            Image(systemName: "bolt.fill").font(.system(size: 8, weight: .bold))
+                            Image(systemName: "bolt.fill").font(.system(size: 10, weight: .bold))
                             Text("Ladestopp")
-                                .font(.system(size: 10, weight: .semibold))
+                                .font(.system(size: 12, weight: .semibold))
                         }
                         .foregroundStyle(.white)
                         .padding(.horizontal, 5)
@@ -471,9 +463,6 @@ struct StationRow: View {
                         // Daten sind kein Beleg für eine langsame Säule.
                         badge("kW unbekannt", color: Theme.faint)
                     }
-                    ForEach(item.station.distinctConnectorTypes.prefix(2), id: \.self) { type in
-                        badge(type.shortName, color: Theme.meta)
-                    }
                     if let detour = item.station.detourSeconds {
                         badge("+\(Int((detour / 60).rounded())) min", color: Theme.river)
                     } else if let abstand = item.station.distanceFromRouteMeters {
@@ -482,7 +471,7 @@ struct StationRow: View {
                         // auch so: Ein Umweg in Minuten und eine Luftlinie in
                         // Metern sind zwei verschiedene Dinge, und wer sie gleich
                         // beschriftet, lädt zum Vergleich von Unvergleichbarem ein.
-                        badge("\(Int(abstand.rounded())) m Luftlinie", color: Theme.meta)
+                        badge("\(Int(abstand.rounded())) m entfernt", color: Theme.meta)
                     }
                 }
 
@@ -490,7 +479,7 @@ struct StationRow: View {
                     availabilityLine(availability, size: item.station.deviceCount)
                 } else if let size = item.sizeText {
                     Text(size)
-                        .font(.system(size: 12).monospacedDigit())
+                        .font(.system(size: 14).monospacedDigit())
                         .foregroundStyle(Theme.meta)
                 }
 
@@ -499,15 +488,15 @@ struct StationRow: View {
                 }
             }
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, 7)
     }
 
     private func badge(_ text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .medium).monospacedDigit())
+            .font(.system(size: 14, weight: .medium).monospacedDigit())
             .foregroundStyle(color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
             .background(Theme.panel, in: RoundedRectangle(cornerRadius: 4))
     }
 
@@ -515,9 +504,9 @@ struct StationRow: View {
         HStack(spacing: 5) {
             Circle()
                 .fill(availability.isUsable ? Theme.free : Theme.busy)
-                .frame(width: 6, height: 6)
+                .frame(width: 8, height: 8)
             Text("\(availability.available) von \(availability.total) frei" + (devices.map { $0 > 1 ? " · \($0) Säulen" : " · 1 Säule" } ?? ""))
-                .font(.system(size: 12).monospacedDigit())
+                .font(.system(size: 14).monospacedDigit())
                 .foregroundStyle(Theme.meta)
         }
     }
@@ -531,11 +520,11 @@ struct StationRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 if let label = editorial.ratingLabel, let rating = editorial.rating {
                     Text("\(label) · \(String(format: "%.1f", rating))")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Theme.signal)
                 }
                 Text(editorial.verdictText ?? "")
-                    .font(.system(size: 12))
+                    .font(.system(size: 14))
                     .foregroundStyle(Theme.ink2)
                     .lineLimit(2)
             }
