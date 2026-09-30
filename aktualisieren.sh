@@ -227,11 +227,24 @@ fi
 #
 # Der Vergleich der Zeitstempel heilt das von selbst: Was aelter ist als die
 # letzte Erzeugung, steckt drin; was neuer ist, fehlt.
+#
+# Zweite Fassung (30.09.2026): Die Zeitstempel schlugen auch an, wenn sich nur
+# der Inhalt einer Datei geaendert hatte. Das braucht kein neues Projekt, Xcode
+# liest den Inhalt ohnehin von der Platte; neu erzeugt werden muss nur, wenn
+# Dateien dazukommen oder wegfallen oder project.yml sich aendert. Deshalb
+# steht nach jeder Erzeugung ein Fingerabdruck in .xcodegen-stand: die Liste
+# der Dateien unter LadeRoute/ und der Inhalt von project.yml. Weicht er ab,
+# wird erzeugt, sonst nicht, auch wenn eine fruehere Erzeugung ausgefallen ist.
+STAND_DATEI=".xcodegen-stand"
+aktueller_stand() {
+  { find LadeRoute -type f ! -name '.DS_Store' | LC_ALL=C sort; cat project.yml; } | shasum | cut -d' ' -f1
+}
+
 BRAUCHT_XCODEGEN=0
 
 if [ ! -d "LadeRoute.xcodeproj" ]; then
   BRAUCHT_XCODEGEN=1
-elif [ -n "$(find LadeRoute project.yml -newer LadeRoute.xcodeproj/project.pbxproj 2>/dev/null | head -1)" ]; then
+elif [ ! -f "$STAND_DATEI" ] || [ "$(cat "$STAND_DATEI")" != "$(aktueller_stand)" ]; then
   BRAUCHT_XCODEGEN=1
 fi
 
@@ -244,9 +257,25 @@ if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
   # offenen Xcode abgelehnt, und damit lehnte sie fast immer ab: Wer die App
   # entwickelt, hat Xcode offen. Ein offenes Xcode ohne laufenden Build vertraegt
   # ein neu erzeugtes Projekt problemlos, es laedt es nach.
-  if pgrep -x swift-frontend > /dev/null 2>&1 ||
-     pgrep -x xcodebuild > /dev/null 2>&1 ||
-     pgrep -x swift-driver > /dev/null 2>&1; then
+  #
+  # Nach dem Oeffnen indiziert Xcode im Hintergrund, mit denselben
+  # Compilerprozessen wie ein Build. Deshalb bis zu anderthalb Minuten
+  # warten, statt sofort aufzugeben (30.09.2026: "Xcode baut gerade", obwohl
+  # niemand baute).
+  baut_gerade() {
+    pgrep -x swift-frontend > /dev/null 2>&1 ||
+      pgrep -x xcodebuild > /dev/null 2>&1 ||
+      pgrep -x swift-driver > /dev/null 2>&1
+  }
+  if baut_gerade; then
+    sage "Xcode rechnet gerade (Build oder Indizierung), warte bis zu 90 Sekunden ..."
+    GEWARTET=0
+    while baut_gerade && [ "$GEWARTET" -lt 90 ]; do
+      sleep 3
+      GEWARTET=$((GEWARTET + 3))
+    done
+  fi
+  if baut_gerade; then
     sage "Xcode baut gerade, das Projekt wurde nicht neu erzeugt."
     sage "Nach dem Build noch einmal: lade"
     if [ "$STILL" -eq 1 ]; then
@@ -272,6 +301,7 @@ if [ "$BRAUCHT_XCODEGEN" -eq 1 ]; then
     fi
 
     xcodegen generate > /dev/null
+    aktueller_stand > "$STAND_DATEI"
     sage "Projekt neu erzeugt, es waren Dateien der App dabei."
 
     if [ "$XCODE_OFFEN" -eq 1 ]; then

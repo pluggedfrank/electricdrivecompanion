@@ -16,3 +16,6 @@ tools/.probe-cache/
 
 # Von xcodebuild in der CI erzeugt.
 build/
+
+# Fingerabdruck der letzten Projekterzeugung, von aktualisieren.sh
+.xcodegen-stand
