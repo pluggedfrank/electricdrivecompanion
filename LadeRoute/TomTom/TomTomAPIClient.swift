@@ -18,6 +18,9 @@ enum TomTomAPIError: LocalizedError {
     case http(status: Int, body: String)
     case decoding(underlying: Error)
     case matrixTooLarge(cells: Int)
+    /// 403 mit "InsufficientFunds": Das Kontingent ist aufgebraucht. Kein
+    /// zweiter Versuch, der kostet nur Zeit.
+    case quotaExhausted
 
     var errorDescription: String? {
         switch self {
@@ -40,6 +43,8 @@ enum TomTomAPIError: LocalizedError {
             }
         case let .decoding(underlying):
             return "Antwort nicht lesbar: \(underlying.localizedDescription)"
+        case .quotaExhausted:
+            return "Das TomTom-Kontingent ist aufgebraucht."
         case let .matrixTooLarge(cells):
             return "Matrix mit \(cells) Zellen, erlaubt sind \(DetourMatrix.maxCells). Vorher aufteilen."
         }
@@ -205,6 +210,8 @@ actor TomTomAPIClient {
 
         var merged: [String: ChargingStation] = [:]
         var order: [String] = []
+        var succeeded = 0
+        var lastError: Error?
 
         // Abschnitte nacheinander, nicht parallel: das Freemium-Kontingent zählt
         // pro Anfrage, die Reihenfolge entlang der Route bleibt erhalten, und
@@ -215,13 +222,25 @@ actor TomTomAPIClient {
             }
 
             let points = GeoUtils.downsample(segment, maxPoints: options.maxRoutePointsPerRequest)
-            let stations = try await searchSegment(points: points, options: options)
+            // Ein misslungener Abschnitt kostet nicht die übrigen. Nur ein
+            // leeres Kontingent bricht ab, dann scheitert jeder weitere auch.
+            let stations: [ChargingStation]
+            do {
+                stations = try await searchSegment(points: points, options: options)
+            } catch TomTomAPIError.quotaExhausted {
+                throw TomTomAPIError.quotaExhausted
+            } catch {
+                lastError = error
+                continue
+            }
+            succeeded += 1
             for station in stations where merged[station.id] == nil {
                 merged[station.id] = station
                 order.append(station.id)
             }
         }
 
+        if succeeded == 0, let lastError { throw lastError }
         return order.compactMap { merged[$0] }
     }
 
@@ -678,6 +697,12 @@ actor TomTomAPIClient {
 
             lastStatus = http.statusCode
             lastBody = String(data: data, encoding: .utf8) ?? ""
+
+            // Am 30.09.2026 so gesehen: 403 {"code":"InsufficientFunds",...}.
+            // Das ist keine Drosselung, Nachfassen hilft nicht.
+            if http.statusCode == 403, lastBody.contains("InsufficientFunds") {
+                throw TomTomAPIError.quotaExhausted
+            }
 
             // Alles außerhalb der Drosselungscodes ist sofort endgültig.
             if !Self.throttleStatus.contains(http.statusCode) { break }

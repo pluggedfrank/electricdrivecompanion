@@ -316,6 +316,10 @@ final class TripViewModel: ObservableObject {
     /// den Rest holen. Der Nutzer sieht so sofort etwas, statt eine halbe
     /// Minute auf die vollständige Liste zu warten.
     @Published private(set) var isWideningSearch = false
+    /// Warum Stationen fehlen, etwa im Ausland ohne Suchkontingent. Bis zum
+    /// 30.09.2026 landete das nur im Protokoll, und die Liste meldete "keine
+    /// Station erfüllt den Filter", obwohl gar nicht gesucht worden war.
+    @Published private(set) var stationSearchProblem: String?
 
     /// Läuft gerade die Umwegrechnung, eine Route je Station?
     ///
@@ -1177,6 +1181,7 @@ final class TripViewModel: ObservableObject {
         guard let route else { return }
 
         phase = .searchingStations
+        stationSearchProblem = nil
 
         // Das Register zuerst: keine Anfrage, keine Wartezeit, ganz
         // Deutschland. Die Stücke im Ausland sucht TomTom dazu; hat das
@@ -1273,8 +1278,11 @@ final class TripViewModel: ObservableObject {
         for piece in pieces where piece.count >= 2 {
             do {
                 found += try await api.chargingStationsAlongRoute(routeGeometry: piece, options: options)
+            } catch TomTomAPIError.quotaExhausted {
+                stationSearchProblem = "Stationen im Ausland fehlen: Das TomTom-Suchkontingent ist aufgebraucht."
+                break
             } catch {
-                print("Auslandssuche fehlgeschlagen: \(error.localizedDescription)")
+                stationSearchProblem = "Stationen im Ausland fehlen: \(error.localizedDescription)"
             }
             guard gilt(nummer) else { return }
         }

@@ -213,6 +213,9 @@ struct StationListSheet: View {
                 + "Mit dem Ladestand von dort reicht es \(Int((plan.rangeMeters / 1000).rounded())) km. "
                 + "Eine niedrigere Leistungsstufe bringt mehr Säulen in Frage."
         case .noStations:
+            if trip.stationSearchProblem != nil {
+                return "Auf einem Teil der Strecke konnte nicht gesucht werden, siehe oben."
+            }
             return "Auf dieser Strecke steht keine Station, die den Filter erfüllt."
         case .noProgress, .none:
             return nil
@@ -226,7 +229,9 @@ struct StationListSheet: View {
     }
 
     private func planHeadline(_ plan: ChargingPlan) -> String {
-        guard plan.isFeasible else { return "Mit diesem Filter geht die Strecke nicht auf" }
+        guard plan.isFeasible else {
+            return trip.stationSearchProblem != nil ? "Ladeplanung unvollständig" : "Mit diesem Filter geht die Strecke nicht auf"
+        }
         if plan.stops.isEmpty { return "Ohne Ladestopp zu schaffen" }
         let laden = Int((plan.totalChargingSeconds / 60).rounded())
         return plan.stops.count == 1
@@ -280,6 +285,13 @@ struct StationListSheet: View {
                 .foregroundStyle(Theme.meta)
                 .textCase(nil)
 
+                if let problem = trip.stationSearchProblem {
+                    Label(problem, systemImage: "exclamationmark.icloud")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Theme.signal)
+                        .textCase(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 chargingPlanLine
                 vehicleLine
                 driveButtons
