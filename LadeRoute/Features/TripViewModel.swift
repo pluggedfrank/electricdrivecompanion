@@ -706,7 +706,9 @@ final class TripViewModel: ObservableObject {
         } else {
             nextManeuver = nil
         }
-        if let text = step.text, voiceEnabled {
+        // Neben der Route gelten die Anweisungen der alten Linie nicht mehr.
+        // Still bleiben, bis die neue Route da ist.
+        if let text = step.text, voiceEnabled, fix.offsetMeters <= 50 {
             speaker.speak(text)
         }
     }
@@ -717,18 +719,31 @@ final class TripViewModel: ObservableObject {
     private func watchForDeviation(fix: RouteTracker.Fix, at coordinate: CLLocationCoordinate2D) {
         guard !isSimulatingDrive else { return }
         offRouteFixes = fix.offsetMeters > 50 ? offRouteFixes + 1 : 0
-        // Wer zu einer Säule abbiegt, verlässt die Route mit Absicht. Im
-        // Umkreis von 1 km um eine Station wird nicht neu geplant, sonst
-        // hieße es auf dem Weg dorthin alle 20 Sekunden "Route wird neu
-        // berechnet". Nach dem Stopp, weiter weg, greift es wieder.
-        if offRouteFixes >= 3, isNearAnyStation(coordinate, within: 1000) { return }
-        guard offRouteFixes >= 3, !isRerouting, let destination else { return }
-        if let last = lastRerouteAt, Date().timeIntervalSince(last) < 20 { return }
-        reroute(from: coordinate, to: destination)
+        guard !isRerouting, let destination else { return }
+        if shouldReroute(at: coordinate) {
+            reroute(from: coordinate, to: destination)
+        }
     }
 
-    private func isNearAnyStation(_ coordinate: CLLocationCoordinate2D, within meters: Double) -> Bool {
-        fetchedStations.contains { GeoUtils.distance($0.station.coordinate, coordinate) <= meters }
+    /// Wann neu geplant wird. Gegenstück zu neuPlanen() in
+    /// tools/lib/abweichung.mjs, die Tests dort sind der Maßstab.
+    ///
+    /// Wer zu einer Säule abbiegt, verlässt die Route mit Absicht; dann
+    /// nicht neu planen. Aber nur für Stationen, zu denen jemand absichtlich
+    /// fährt: das Zwischenziel (1,5 km), geplante Stopps (1 km), sonst erst
+    /// auf dem Gelände einer angezeigten Station (300 m). Die erste Fassung
+    /// sah jede aufbewahrte Station im Umkreis von 1 km, und in der Stadt
+    /// liegt fast überall eine: Auf der ersten iPhone-Fahrt kam nach dem
+    /// Abbiegen keine Ansage mehr, weil nie neu geplant wurde.
+    private func shouldReroute(at coordinate: CLLocationCoordinate2D) -> Bool {
+        guard offRouteFixes >= 3 else { return false }
+        if let last = lastRerouteAt, Date().timeIntervalSince(last) < 20 { return false }
+        if let via = viaStation, GeoUtils.distance(via.coordinate, coordinate) <= 1500 { return false }
+        if chargingPlan?.stops.contains(where: { GeoUtils.distance($0.station.coordinate, coordinate) <= 1000 }) == true {
+            return false
+        }
+        if stations.contains(where: { GeoUtils.distance($0.station.coordinate, coordinate) <= 300 }) { return false }
+        return true
     }
 
     private func reroute(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D, announce: String = "Route wird neu berechnet") {

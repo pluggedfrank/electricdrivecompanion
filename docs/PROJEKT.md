@@ -260,6 +260,11 @@ Eigenbau aus der Routing-API, ohne Navigation SDK:
   A31 für 209 Kilometer" nur bei langen Abschnitten. Musik wird leiser.
 - **Neuplanung**, wenn das Auto dreimal hintereinander mehr als 50 m neben der
   Route ist. Stationen werden auf die neue Linie gelegt, nicht neu gesucht.
+  Ausnahme nur auf dem Weg zu einer Säule: Zwischenziel 1,5 km, geplanter Stopp
+  1 km, sonst erst auf dem Gelände einer angezeigten Station (300 m). Die erste
+  Fassung sperrte im Umkreis von 1 km jeder aufbewahrten Station, in der Stadt
+  also fast immer; auf der ersten iPhone-Fahrt kam deshalb nach dem Abbiegen
+  keine Ansage mehr. Regel und Tests: `tools/lib/abweichung.mjs`.
 - **Fahransicht neu aufgeteilt:** Anweisung oben links, Kacheln rechts,
   Fahrleiste unten mit Beenden, Ankunft, Reststrecke, Akku, Ansage an/aus,
   Kamera. In der Simulation ein Tempoknopf 1×/3×/10×.

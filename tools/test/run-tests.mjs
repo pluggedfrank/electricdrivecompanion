@@ -30,6 +30,7 @@ import * as marken from '../lib/marken.mjs';
 import * as ansage from '../lib/ansage.mjs';
 import * as akku from '../lib/akku.mjs';
 import * as quellen from '../lib/quellen.mjs';
+import * as abweichung from '../lib/abweichung.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(join(here, 'fixtures', name), 'utf8'));
@@ -2321,4 +2322,25 @@ test('zusammenfuehren: TomTom-Treffer am Registerstandort faellt weg', () => {
     { id: 'tt:fastned', lat: 52.3, lon: 4.9 },
   ];
   assert.deepEqual(quellen.zusammenfuehren(register, tomtom).map((s) => s.id), ['bnetza:1', 'tt:fastned']);
+});
+
+// ---------------------------------------------------------------- Abweichung
+
+test('neuPlanen: eine Station 800 m entfernt haelt die Neuplanung nicht mehr auf', () => {
+  const position = { lat: 51.25, lon: 6.75 };
+  const station = oestlich(position, 800);
+  // Der Fall der ersten iPhone-Fahrt: irgendeine Station in der Stadt.
+  assert.equal(abweichung.neuPlanen({ abseits: 3, position, angezeigt: [station] }), true);
+  // Auf dem Gelaende einer angezeigten Station: nicht.
+  assert.equal(abweichung.neuPlanen({ abseits: 3, position, angezeigt: [oestlich(position, 200)] }), false);
+  // Auf dem Weg zum geplanten Stopp oder zum Zwischenziel: nicht.
+  assert.equal(abweichung.neuPlanen({ abseits: 3, position, geplant: [station] }), false);
+  assert.equal(abweichung.neuPlanen({ abseits: 3, position, zwischenziel: oestlich(position, 1400) }), false);
+});
+
+test('neuPlanen: erst ab drei Positionen daneben und nicht oefter als alle 20 Sekunden', () => {
+  const position = { lat: 51.25, lon: 6.75 };
+  assert.equal(abweichung.neuPlanen({ abseits: 2, position }), false);
+  assert.equal(abweichung.neuPlanen({ abseits: 3, position, sekundenSeit: 10 }), false);
+  assert.equal(abweichung.neuPlanen({ abseits: 3, position, sekundenSeit: 25 }), true);
 });
